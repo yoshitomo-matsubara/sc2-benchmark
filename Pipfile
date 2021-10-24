@@ -1,0 +1,21 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+torch = ">=1.10.0"
+torchvision = ">=0.11.1"
+numpy = "*"
+scipy = "*"
+cython = "*"
+pycocotools = ">=2.0.2"
+matplotlib = "*"
+seaborn = "*"
+torchdistill = ">=0.2.6"
+compressai = ">=1.1.8"
+
+[requires]
+python_version = "3.8"
