@@ -67,6 +67,7 @@ def get_argparser():
     parser.add_argument('--comp_device', default='cuda', help='device for compression model')
     parser.add_argument('--class_device', default='cuda', help='device for classification model')
     parser.add_argument('--log', help='log file path')
+    parser.add_argument('-log_config', action='store_true', help='log config')
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int, help='number of distributed processes')
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
@@ -194,6 +195,9 @@ def main(args):
     config = yaml_util.load_yaml_file(os.path.expanduser(args.config))
     if args.json is not None:
         overwrite_config(config, json.loads(args.json))
+
+    if args.log_config:
+        logger.info(config)
 
     comp_device = torch.device(args.comp_device)
     class_device = torch.device(args.class_device)
