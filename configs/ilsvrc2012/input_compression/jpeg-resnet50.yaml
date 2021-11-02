@@ -12,10 +12,13 @@ datasets:
             - type: 'Resize'
               params:
                 size: 256
-            - type: 'JpegCenterCrop'
+            - type: 'CenterCrop'
               params:
                 size: [224, 224]
-                jpeg_quality: 90
+            - type: 'PillowImageModule'
+              params:
+                format: 'JPEG'
+                quality: 90
             - type: 'ToTensor'
               params:
             - type: 'Normalize'
