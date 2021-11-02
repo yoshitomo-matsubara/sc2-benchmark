@@ -1,10 +1,8 @@
 import argparse
 import json
 import os
-from io import BytesIO
 
 import torch
-from PIL import Image
 from compressai.zoo import models as compression_model_dict
 from torch.backends import cudnn
 from torch.nn import DataParallel, functional
@@ -13,51 +11,18 @@ from torchdistill.common import file_util, yaml_util
 from torchdistill.common.constant import def_logger
 from torchdistill.common.main_util import is_main_process, init_distributed_mode, load_ckpt
 from torchdistill.datasets import util
-from torchdistill.datasets.transform import register_transform_class
 from torchdistill.datasets.util import build_transform
 from torchdistill.eval.classification import compute_accuracy
 from torchdistill.misc.log import setup_log_file, MetricLogger
 from torchdistill.models.official import get_image_classification_model
 from torchdistill.models.registry import get_model
-from torchvision.transforms import CenterCrop, Resize
-from torchvision.transforms.functional import InterpolationMode
+
+import sc2bench
 
 logger = def_logger.getChild(__name__)
 cudnn.benchmark = True
 cudnn.deterministic = True
 torch.multiprocessing.set_sharing_strategy('file_system')
-
-
-@register_transform_class
-class WrappedResize(Resize):
-    MODE_DICT = {
-        'nearest': InterpolationMode.NEAREST,
-        'bicubic': InterpolationMode.BICUBIC,
-        'bilinear': InterpolationMode.BILINEAR,
-        'box': InterpolationMode.BOX,
-        'hamming': InterpolationMode.HAMMING,
-        'lanczos': InterpolationMode.LANCZOS
-    }
-
-    def __init__(self, **kwargs):
-        interpolation = kwargs.pop('interpolation', None)
-        interpolation = self.MODE_DICT.get(interpolation, None)
-        super().__init__(**kwargs, interpolation=interpolation)
-
-
-@register_transform_class
-class JpegCenterCrop(CenterCrop):
-    def __init__(self, size, jpeg_quality=None):
-        super().__init__(size)
-        self.jpeg_quality = jpeg_quality
-
-    def __call__(self, img):
-        img = super().forward(img)
-        if self.jpeg_quality is not None:
-            img_buffer = BytesIO()
-            img.save(img_buffer, 'JPEG', quality=self.jpeg_quality)
-            img = Image.open(img_buffer)
-        return img
 
 
 def get_argparser():
@@ -137,7 +102,7 @@ def unpad_output(x, pad_tuple):
     return functional.pad(x, neg_pad_tuple)
 
 
-@torch.no_grad()
+@torch.inference_mode()
 def evaluate(compression_model, post_transform, classification_model, data_loader,
              comp_device, class_device, device_ids, distributed, log_freq=1000, title=None, header='Test:'):
     if distributed:
@@ -192,6 +157,7 @@ def main(args):
 
     distributed, device_ids = init_distributed_mode(args.world_size, args.dist_url)
     logger.info(args)
+    logger.info(f'sc2bench ver. {sc2bench.__version__}')
     config = yaml_util.load_yaml_file(os.path.expanduser(args.config))
     if args.json is not None:
         overwrite_config(config, json.loads(args.json))
