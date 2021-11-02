@@ -1,4 +1,4 @@
-with open('resource/analysis/arg_vs_jpeg_file_size.tsv', 'r') as fp:
+with open('../resource/analysis/arg_vs_jpeg_file_size.tsv', 'r') as fp:
 	arg_dict = dict()
 	for line in fp:
 		elements = line.strip().split('\t')
@@ -8,7 +8,7 @@ with open('resource/analysis/arg_vs_jpeg_file_size.tsv', 'r') as fp:
 		arg_dict[key] = elements[-1].split(' ')[0]
 
 line_list = list()
-with open('resource/analysis/results-imagenet.csv', 'r') as fp:
+with open('../resource/analysis/results-imagenet.csv', 'r') as fp:
 	next(fp)
 	for line in fp:
 		elements = line.strip().split(',')
@@ -19,7 +19,7 @@ with open('resource/analysis/results-imagenet.csv', 'r') as fp:
 		jpeg_file_size_kb = arg_dict[arg_str]
 		line_list.append(f'{model_name}\t{top1_acc}\t{param_count}\t{jpeg_file_size_kb}\t{img_size}')
 		
-with open('resource/analysis/offload_cost_vs_model_acc_size.tsv', 'w') as fp:
+with open('../resource/analysis/offload_cost_vs_model_acc_size.tsv', 'w') as fp:
 	fp.write('model name\ttop1 acc\t#params [M]\tjpeg file size [KB]\tinput size\n')
 	for line in line_list:
 		fp.write('{}\n'.format(line))
