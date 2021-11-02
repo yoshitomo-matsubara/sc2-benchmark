@@ -13,10 +13,13 @@ datasets:
               params:
                 size: 507
                 interpolation: 'bicubic'
-            - type: 'JpegCenterCrop'
+            - type: 'CenterCrop'
               params:
                 size: [475, 475]
-                jpeg_quality: 90
+            - type: 'PillowImageModule'
+              params:
+                format: 'JPEG'
+                quality: 90
             - type: 'ToTensor'
               params:
             - type: 'Normalize'
