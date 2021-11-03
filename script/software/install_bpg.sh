@@ -1,3 +1,5 @@
+mkdir ~/software
+cd ~/software
 wget https://bellard.org/bpg/libbpg-0.9.8.tar.gz
 tar -xvf libbpg-0.9.8.tar.gz
 cd libbpg-0.9.8/
