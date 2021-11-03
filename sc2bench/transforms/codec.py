@@ -189,8 +189,9 @@ class VtmModule(nn.Module):
     fmt = '.bin'
 
     def __init__(self, encoder_path, decoder_path, config_path, color_mode='ycbcr', quality=63):
+        # According to https://github.com/InterDigitalInc/CompressAI/issues/31,
+        # CompressAI used "encoder_intra_vtm.cfg" config file
         super().__init__()
-
         if color_mode not in ['ycbcr', 'rgb']:
             raise ValueError(f'Invalid color mode value: `{color_mode}`, which should be either "ycbcr" or "rgb"')
 
@@ -254,7 +255,8 @@ class VtmModule(nn.Module):
             '-f',
             '1',
             '--InputChromaFormat=444',
-            '--InputBitDepth=8'
+            '--InputBitDepth=8',
+            # "--ConformanceMode=1" # It looks like ConformanceMode arg is no longer supported
         ]
 
         if self.uses_rgb:
