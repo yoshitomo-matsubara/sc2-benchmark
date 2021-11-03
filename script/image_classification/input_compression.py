@@ -1,3 +1,7 @@
+"""
+This code is based on https://github.com/yoshitomo-matsubara/torchdistill/blob/main/examples/image_classification.py
+"""
+
 import argparse
 import json
 import os
