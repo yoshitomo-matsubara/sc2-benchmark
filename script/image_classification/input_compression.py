@@ -33,6 +33,11 @@ def get_argparser():
     parser.add_argument('--class_device', default='cuda', help='device for classification model')
     parser.add_argument('--log', help='log file path')
     parser.add_argument('-log_config', action='store_true', help='log config')
+    # distributed training parameters
+    parser.add_argument('--world_size', default=1, type=int, help='number of distributed processes')
+    parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
+    parser.add_argument('-adjust_lr', action='store_true',
+                        help='multiply learning rate by number of distributed processes (world_size)')
     return parser
 
 
