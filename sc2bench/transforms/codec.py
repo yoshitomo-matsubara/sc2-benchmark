@@ -12,7 +12,7 @@ from torchdistill.datasets.transform import register_transform_class
 from torchvision.transforms import Resize
 from torchvision.transforms.functional import InterpolationMode
 
-CODEC_TRANFORM_MODULE_DICT = dict()
+CODEC_TRANSFORM_MODULE_DICT = dict()
 
 
 def register_codec_transform_module(cls):
@@ -23,7 +23,7 @@ def register_codec_transform_module(cls):
     Returns:
         cls (class): registered codec transform module.
     """
-    CODEC_TRANFORM_MODULE_DICT[cls.__name__] = cls
+    CODEC_TRANSFORM_MODULE_DICT[cls.__name__] = cls
     register_transform_class(cls)
     return cls
 
@@ -66,7 +66,7 @@ class PillowImageModule(nn.Module):
         self.open_kwargs = open_kwargs if isinstance(open_kwargs, dict) else dict()
         self.save_kwargs = save_kwargs
 
-    def forward(self, pil_img):
+    def forward(self, pil_img, *args):
         """
         Args:
             pil_img (PIL Image): Image to be transformed.
@@ -76,7 +76,10 @@ class PillowImageModule(nn.Module):
         """
         img_buffer = BytesIO()
         pil_img.save(img_buffer, **self.save_kwargs)
-        return img_buffer.tell() if self.returns_file_size else Image.open(img_buffer, **self.open_kwargs)
+        output = img_buffer.tell() if self.returns_file_size else Image.open(img_buffer, **self.open_kwargs)
+        if len(args) > 0:
+            return output, *args
+        return output
 
 
 @register_codec_transform_module
