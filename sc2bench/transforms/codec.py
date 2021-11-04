@@ -1,5 +1,4 @@
 import os
-import platform
 from io import BytesIO
 from tempfile import mkstemp
 
@@ -13,16 +12,23 @@ from torchdistill.datasets.transform import register_transform_class
 from torchvision.transforms import Resize
 from torchvision.transforms.functional import InterpolationMode
 
-CODEC_MODULE_DICT = dict()
+CODEC_TRANSFORM_MODULE_DICT = dict()
 
 
-def register_codec_module(cls):
-    CODEC_MODULE_DICT[cls.__name__] = cls
+def register_codec_transform_module(cls):
+    """
+    Args:
+        cls (class): codec transform module to be registered.
+
+    Returns:
+        cls (class): registered codec transform module.
+    """
+    CODEC_TRANSFORM_MODULE_DICT[cls.__name__] = cls
     register_transform_class(cls)
     return cls
 
 
-@register_codec_module
+@register_codec_transform_module
 class WrappedResize(Resize):
     """
     `Resize` in torchvision wrapped to be defined by `interpolation` as a str object
@@ -45,33 +51,38 @@ class WrappedResize(Resize):
         super().__init__(**kwargs, interpolation=interpolation)
 
 
-@register_codec_module
+@register_codec_transform_module
 class PillowImageModule(nn.Module):
     """
     Generalized Pillow module to compress (decompress) images e.g., as part of transform pipeline.
     Args:
+        returns_file_size (bool): return file size of compressed object instead of PIL image if true.
         open_kwargs (dict or None): kwargs to be used as part of Image.open(img_buffer, **open_kwargs).
         save_kwargs (dict or None): kwargs to be used as part of Image.save(img_buffer, **save_kwargs).
     """
-    def __init__(self, open_kwargs=None, **save_kwargs):
+    def __init__(self, returns_file_size=False, open_kwargs=None, **save_kwargs):
         super().__init__()
+        self.returns_file_size = returns_file_size
         self.open_kwargs = open_kwargs if isinstance(open_kwargs, dict) else dict()
         self.save_kwargs = save_kwargs
 
-    def forward(self, pil_img):
+    def forward(self, pil_img, *args):
         """
         Args:
             pil_img (PIL Image): Image to be transformed.
 
         Returns:
-            PIL Image: Affine transformed image.
+            PIL Image or int: Affine transformed image or its file size if returns_file_size=True.
         """
         img_buffer = BytesIO()
         pil_img.save(img_buffer, **self.save_kwargs)
-        return Image.open(img_buffer, **self.open_kwargs)
+        output = img_buffer.tell() if self.returns_file_size else Image.open(img_buffer, **self.open_kwargs)
+        if len(args) > 0:
+            return output, *args
+        return output
 
 
-@register_codec_module
+@register_codec_transform_module
 class BpgModule(nn.Module):
     """
     BPG module to compress (decompress) images e.g., as part of transform pipeline.
@@ -173,7 +184,7 @@ class BpgModule(nn.Module):
         return reconst_img
 
 
-@register_codec_module
+@register_codec_transform_module
 class VtmModule(nn.Module):
     """
     VTM module to compress (decompress) images e.g., as part of transform pipeline.

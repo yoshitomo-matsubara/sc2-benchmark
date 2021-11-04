@@ -1,3 +1,7 @@
+"""
+This code is based on https://github.com/yoshitomo-matsubara/torchdistill/blob/main/examples/image_classification.py
+"""
+
 import argparse
 import json
 import os
@@ -146,7 +150,7 @@ def evaluate(compression_model, post_transform, classification_model, data_loade
     else:
         data_size = metric_logger.data_size.global_avg
         logger.info(' * Acc@1: {:.4f}\tAcc@5: {:.4f}\tData size: {:.4f} [KB]\n'.format(top1_accuracy,
-                                                                                    top5_accuracy, data_size))
+                                                                                       top5_accuracy, data_size))
     return metric_logger.acc1.global_avg
 
 
