@@ -134,17 +134,6 @@ def compute_compressed_file_size_for_cocosegment_dataset(codec_format, min_quali
         compute_compressed_file_size(split_config, is_segment, transform, codec_format, quality)
 
 
-def compute_compressed_file_size_with_transform_and_target(dataset, transform, codec_format, quality):
-    file_size_list = list()
-    for img, target in dataset:
-        img, _ = transform(img, target)
-        img_buffer = BytesIO()
-        img.save(img_buffer, codec_format, quality=quality)
-        file_size_list.append(img_buffer.tell() / 1024)
-    file_sizes = np.array(file_size_list)
-    print('{} quality: {}, File size [KB]: {} ± {}'.format(codec_format, quality, file_sizes.mean(), file_sizes.std()))
-
-
 def compute_compressed_file_size_for_pascalsegment_dataset(codec_format, min_quality, step_size, max_quality):
     for quality in range(max_quality, min_quality, -step_size):
         transform = CustomCompose([
