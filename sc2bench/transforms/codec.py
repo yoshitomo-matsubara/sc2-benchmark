@@ -81,6 +81,11 @@ class PillowImageModule(nn.Module):
             return output, *args
         return output
 
+    def __repr__(self):
+        return self.__class__.__name__ + \
+               '(returns_file_size={}, open_kwargs={}, save_kwargs={})'.format(self.returns_file_size,
+                                                                               self.open_kwargs, self.save_kwargs)
+
 
 @register_codec_transform_module
 class BpgModule(nn.Module):
@@ -95,12 +100,13 @@ class BpgModule(nn.Module):
         subsampling_mode (str or int): subsampling mode (420 or 444).
         bit_depth (str or int): bit depth (8 or 10).
         quality (int): quality value in range [0, 51].
+        returns_file_size (bool): flag to return file size.
     """
 
     fmt = '.bpg'
 
     def __init__(self, encoder_path, decoder_path, color_mode='ycbcr', encoder='x265',
-                 subsampling_mode='444', bit_depth='8', quality=50):
+                 subsampling_mode='444', bit_depth='8', quality=50, returns_file_size=False):
         super().__init__()
         if not isinstance(subsampling_mode, str):
             subsampling_mode = str(subsampling_mode)
@@ -130,6 +136,7 @@ class BpgModule(nn.Module):
         self.subsampling_mode = subsampling_mode
         self.bit_depth = bit_depth
         self.quality = quality
+        self.returns_file_size = returns_file_size
 
     def _get_encode_cmd(self, img_file_path, output_file_path):
         cmd = [
@@ -150,8 +157,8 @@ class BpgModule(nn.Module):
         ]
         return cmd
 
-    def _get_decode_cmd(self, out_filepath, reconst_file_path):
-        cmd = [self.decoder_path, '-o', reconst_file_path, out_filepath]
+    def _get_decode_cmd(self, output_file_path, reconst_file_path):
+        cmd = [self.decoder_path, '-o', reconst_file_path, output_file_path]
         return cmd
 
     def forward(self, pil_img):
@@ -161,6 +168,7 @@ class BpgModule(nn.Module):
 
         Returns:
             PIL Image: Affine transformed image.
+            (float): file size of BPG compressed data if self.returns_file_size is True.
         """
         fd_i, resized_input_filepath = mkstemp(suffix='.jpg')
         fd_r, reconst_file_path = mkstemp(suffix='.jpg')
@@ -169,6 +177,7 @@ class BpgModule(nn.Module):
 
         # Encode
         run_command(self._get_encode_cmd(resized_input_filepath, output_file_path))
+        file_size_byte = os.stat(output_file_path).st_size
 
         # Decode
         run_command(self._get_decode_cmd(output_file_path, reconst_file_path))
@@ -181,7 +190,15 @@ class BpgModule(nn.Module):
         os.remove(reconst_file_path)
         os.close(fd_o)
         os.remove(output_file_path)
-        return reconst_img
+        return file_size_byte if self.returns_file_size else reconst_img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(encoder_path={}, decoder_path={}, color_mode={}, ' \
+                                         'encoder={}, subsampling_mode={}, bit_depth={}, quality={}, ' \
+                                         'returns_file_size={})'.format(self.encoder_path, self.decoder_path,
+                                                                        self.color_mode, self.encoder,
+                                                                        self.subsampling_mode, self.bit_depth,
+                                                                        self.quality, self.returns_file_size)
 
 
 @register_codec_transform_module
@@ -195,11 +212,13 @@ class VtmModule(nn.Module):
         config_path (str): VTM configuration file path.
         color_mode (str): color mode ("ycbcr" or "rgb").
         quality (int): quality value in range [0, 63].
+        returns_file_size (bool): flag to return file size.
     """
 
     fmt = '.bin'
 
-    def __init__(self, encoder_path, decoder_path, config_path, color_mode='ycbcr', quality=63):
+    def __init__(self, encoder_path, decoder_path, config_path, color_mode='ycbcr',
+                 quality=63, returns_file_size=False):
         # According to https://github.com/InterDigitalInc/CompressAI/issues/31,
         # CompressAI used "encoder_intra_vtm.cfg" config file
         super().__init__()
@@ -214,6 +233,7 @@ class VtmModule(nn.Module):
         self.config_path = os.path.expanduser(config_path)
         self.uses_rgb = color_mode != 'ycbcr'
         self.quality = quality
+        self.returns_file_size = returns_file_size
 
     def forward(self, pil_img):
         """
@@ -222,6 +242,7 @@ class VtmModule(nn.Module):
 
         Returns:
             PIL Image: Affine transformed image.
+            (float): file size of BPG compressed data if self.returns_file_size is True.
         """
 
         # Taking 8bit input for now
@@ -230,8 +251,7 @@ class VtmModule(nn.Module):
         # Convert input image to yuv 444 file
         arr = np.asarray(pil_img)
         fd, yuv_path = mkstemp(suffix='.yuv')
-        out_filepath = os.path.splitext(yuv_path)[0] + self.fmt
-
+        output_file_path = os.path.splitext(yuv_path)[0] + self.fmt
         arr = arr.transpose((2, 0, 1))  # color channel first
 
         if not self.uses_rgb:
@@ -256,7 +276,7 @@ class VtmModule(nn.Module):
             '-o',
             '/dev/null',
             '-b',
-            out_filepath,
+            output_file_path,
             '-wdt',
             width,
             '-hgt',
@@ -277,13 +297,13 @@ class VtmModule(nn.Module):
                 '--OutputInternalColourSpace=0',
             ]
         run_command(cmd)
-
+        file_size = os.stat(output_file_path).st_size
         # cleanup encoder input
         os.close(fd)
         os.unlink(yuv_path)
 
         # Decode
-        cmd = [self.decoder_path, '-b', out_filepath, '-o', yuv_path, '-d', 8]
+        cmd = [self.decoder_path, '-b', output_file_path, '-o', yuv_path, '-d', 8]
         if self.uses_rgb:
             cmd.append('--OutputInternalColourSpace=GBRtoRGB')
 
@@ -299,6 +319,16 @@ class VtmModule(nn.Module):
 
         # Cleanup
         os.unlink(yuv_path)
-        os.unlink(out_filepath)
+        os.unlink(output_file_path)
         rec = Image.fromarray((rec_arr.clip(0, 1).transpose(1, 2, 0) * 255.0).astype(np.uint8))
+
+        if self.returns_file_size:
+            return rec, file_size
         return rec
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(encoder_path={}, decoder_path={}, config_path={}, ' \
+                                         'uses_rgb={}, quality={}, ' \
+                                         'returns_file_size={})'.format(self.encoder_path, self.decoder_path,
+                                                                        self.config_path, self.uses_rgb, self.quality,
+                                                                        self.returns_file_size)

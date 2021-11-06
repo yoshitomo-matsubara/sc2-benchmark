@@ -12,7 +12,7 @@ from torchvision.datasets import ImageFolder, VOCSegmentation
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import transforms
 
-from sc2bench.transforms.codec import PillowImageModule
+from sc2bench.transforms.codec import PillowImageModule, BpgModule, VtmModule
 from sc2bench.transforms.misc import ClearTargetTransform
 
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -32,6 +32,31 @@ def get_argparser():
     parser.add_argument('--format', default='JPEG', help='codec format')
     parser.add_argument('-highest_only', action='store_true', help='compute compressed size with highest quality only')
     return parser
+
+
+def get_codec_module(codec_format, quality):
+    if codec_format == 'BPG':
+        return BpgModule(encoder_path='~/software/libbpg-0.9.8/bpgenc', decoder_path='~/software/libbpg-0.9.8/bpgdec',
+                         quality=quality, returns_file_size=True)
+    elif codec_format == 'VTM':
+        return VtmModule(encoder_path='~/software/VVCSoftware_VTM/bin/EncoderAppStatic',
+                         decoder_path='~/software/VVCSoftware_VTM/bin/DecoderAppStatic',
+                         config_path='~/software/VVCSoftware_VTM/cfg/encoder_intra_vtm.cfg',
+                         color_mode='ycbcr', quality=quality, returns_file_size=True)
+    return PillowImageModule(returns_file_size=True, format=codec_format, quality=quality)
+
+
+def get_codec_module_kwargs(codec_format, quality):
+    if codec_format == 'BPG':
+        return {'encoder_path': '~/software/libbpg-0.9.8/bpgenc', 'decoder_path': '~/software/libbpg-0.9.8/bpgdec',
+                'quality': quality, 'returns_file_size': True}
+    elif codec_format == 'VTM':
+        return {'encoder_path': '~/software/VVCSoftware_VTM/bin/EncoderAppStatic',
+                'decoder_path': '~/software/VVCSoftware_VTM/bin/DecoderAppStatic',
+                'config_path': '~/software/VVCSoftware_VTM/cfg/encoder_intra_vtm.cfg',
+                'color_mode': 'ycbcr',
+                'quality': quality, 'returns_file_size': True}
+    return {'returns_file_size': True, 'format': codec_format, 'quality': quality}
 
 
 def compute_compressed_file_size_with_transform(dataset, codec_format, quality, batch_size=1):
@@ -68,9 +93,8 @@ def compute_compressed_file_size_for_imagenet_dataset(codec_format, min_quality,
         transforms.CenterCrop(img_size)
     ]
     for i, quality in enumerate(range(max_quality, min_quality, -step_size)):
-        transform = transforms.Compose(sub_transform_list + [
-            PillowImageModule(returns_file_size=True, format=codec_format, quality=quality)
-        ])
+        codec_transform = get_codec_module(codec_format, quality)
+        transform = transforms.Compose(sub_transform_list + [codec_transform])
         dataset = ImageFolder(root=root_dir_path, transform=transform)
         compute_compressed_file_size_with_transform(dataset, codec_format, quality, batch_size=1000)
         if highest_only and i == 0:
@@ -100,8 +124,7 @@ def compute_compressed_file_size_for_cocosegment_dataset(codec_format, min_quali
             'is_segment': True,
             'transforms_params': [
                 {'type': 'CustomRandomResize', 'params': {'min_size': 520, 'max_size': 520}},
-                {'type': 'PillowImageModule', 'params': {'returns_file_size': True, 'format': codec_format,
-                                                         'quality': quality}},
+                get_codec_module_kwargs(codec_format, quality),
                 {'type': 'ClearTargetTransform', 'params': {}},
             ]
         }
@@ -126,7 +149,7 @@ def compute_compressed_file_size_for_pascalsegment_dataset(codec_format, min_qua
     for quality in range(max_quality, min_quality, -step_size):
         transform = CustomCompose([
             CustomRandomResize(min_size=512, max_size=512),
-            PillowImageModule(returns_file_size=True, format=codec_format, quality=quality),
+            get_codec_module(codec_format, quality),
             ClearTargetTransform()
         ])
         dataset = VOCSegmentation(root=os.path.expanduser('~/dataset/'), image_set='val', year='2012',
