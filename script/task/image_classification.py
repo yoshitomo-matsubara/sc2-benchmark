@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import json
 import os
 import time
 
@@ -28,6 +29,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 def get_argparser():
     parser = argparse.ArgumentParser(description='Supervised compression for image classification tasks')
     parser.add_argument('--config', required=True, help='yaml file path')
+    parser.add_argument('--json', help='json string to overwrite config')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('--log', help='log file path')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help='start epoch')
@@ -41,6 +43,17 @@ def get_argparser():
     parser.add_argument('-adjust_lr', action='store_true',
                         help='multiply learning rate by number of distributed processes (world_size)')
     return parser
+
+
+def overwrite_config(org_config, sub_config):
+    for sub_key, sub_value in sub_config.items():
+        if sub_key in org_config:
+            if isinstance(sub_value, dict):
+                overwrite_config(org_config[sub_key], sub_value)
+            else:
+                org_config[sub_key] = sub_value
+        else:
+            org_config[sub_key] = sub_value
 
 
 def load_model(model_config, device, distributed):
@@ -160,6 +173,9 @@ def main(args):
     cudnn.benchmark = True
     set_seed(args.seed)
     config = yaml_util.load_yaml_file(os.path.expanduser(args.config))
+    if args.json is not None:
+        overwrite_config(config, json.loads(args.json))
+
     device = torch.device(args.device)
     dataset_dict = util.get_all_datasets(config['datasets'])
     models_config = config['models']
