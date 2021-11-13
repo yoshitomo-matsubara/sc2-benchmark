@@ -12,6 +12,9 @@ def register_analysis_class(cls):
 
 
 class BaseAnalyzer(object):
+    """
+    Base analyzer to analyze and summarize the wrapped modules and intermediate representations.
+    """
     def analyze(self, *args, **kwargs):
         raise NotImplementedError()
 
@@ -24,6 +27,12 @@ class BaseAnalyzer(object):
 
 @register_analysis_class
 class FileSizeAnalyzer(BaseAnalyzer):
+    """
+    Analyzer to
+    Args:
+        unit (str): unit of data size in bytes (`B`, `KB`, `MB`)
+        kwargs (dict): keyword arguments
+    """
     UNIT_DICT = {'B': 1, 'KB': 1024, 'MB': 1024 * 1024}
 
     def __init__(self, unit='KB', **kwargs):
@@ -38,7 +47,7 @@ class FileSizeAnalyzer(BaseAnalyzer):
 
     def summarize(self):
         file_sizes = np.array(self.file_size_list)
-        logger.info('Bottleneck size [KB]: mean {} std {} for {} samples'.format(self.unit, file_sizes.mean(),
+        logger.info('Bottleneck size [{}]: mean {} std {} for {} samples'.format(self.unit, file_sizes.mean(),
                                                                                  file_sizes.std(), len(file_sizes)))
 
     def clear(self):

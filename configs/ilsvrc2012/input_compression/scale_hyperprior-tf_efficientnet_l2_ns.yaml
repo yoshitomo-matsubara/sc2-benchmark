@@ -15,31 +15,47 @@ datasets:
                 interpolation: 'bicubic'
             - type: 'CenterCrop'
               params:
-                size: [800, 800]
+                size: &input_size [800, 800]
             - type: 'ToTensor'
               params:
+            - type: 'AdaptivePad'
+              params:
+                fill: 0
+                factor: 64
 
 models:
-  compression:
-    name: 'bmshj2018-hyperprior'
-    params:
-      pretrained: True
-      quality: 8
-      metric: 'mse'
-    ckpt: './resource/ckpt/input_compression/scale_hyperprior.pt'
-    post_transform_params:
-      - type: 'Normalize'
-        params:
-          mean: [0.485, 0.456, 0.406]
-          std: [0.229, 0.224, 0.225]
   model:
-    name: &model_name 'tf_efficientnet_l2_ns'
-    repo_or_dir: 'rwightman/pytorch-image-models'
+    name: 'InputCompressionClassifier'
     params:
-      num_classes: 1000
-      pretrained: True
-    experiment: &experiment !join [*dataset_name, '-', *model_name]
-    ckpt: !join ['./imagenet/vanilla/', *experiment, '.pt']
+      post_transform_params:
+        - type: 'CenterCrop'
+          params:
+            size: *input_size
+        - type: 'Normalize'
+          params:
+            mean: [0.485, 0.456, 0.406]
+            std: [0.229, 0.224, 0.225]
+      analysis_config:
+        analyzes_after_compress: True
+        analyzer_configs:
+          - type: 'FileSizeAnalyzer'
+            params:
+              unit: 'KB'
+    compression_model:
+      name: 'bmshj2018_hyperprior'
+      params:
+        pretrained: True
+        quality: 8
+        metric: 'mse'
+      ckpt: './resource/ckpt/input_compression/scale_hyperprior.pt'
+    classification_model:
+      name: &model_name 'tf_efficientnet_l2_ns'
+      repo_or_dir: 'rwightman/pytorch-image-models'
+      params:
+        num_classes: 1000
+        pretrained: True
+      experiment: &experiment !join [*dataset_name, '-', *model_name]
+      ckpt: !join ['./imagenet/vanilla/', *experiment, '.pt']
 
 test:
   test_data_loader:
