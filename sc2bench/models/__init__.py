@@ -1,5 +1,8 @@
 from . import registry
+from .backbone import BACKBONE_CLASS_DICT, BACKBONE_FUNC_DICT
 from .wrapper import WRAPPER_CLASS_DICT
 
 MODEL_DICT = dict()
+MODEL_DICT.update(BACKBONE_CLASS_DICT)
+MODEL_DICT.update(BACKBONE_FUNC_DICT)
 MODEL_DICT.update(WRAPPER_CLASS_DICT)
