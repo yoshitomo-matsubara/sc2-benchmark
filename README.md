@@ -1,9 +1,17 @@
 # SC2 Benchmark: Supervised Compression for Split Computing
 
 ## Setup
+
+For pipenv users,
 ```shell
 pipenv install --python 3.8
 pipenv install -e "."
+```
+
+For conda users,
+```shell
+conda env create -f environment.yaml
+pip install -e "."
 ```
 
 ## Analysis
