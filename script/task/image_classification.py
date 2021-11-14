@@ -17,10 +17,11 @@ from torchdistill.core.training import get_training_box
 from torchdistill.datasets import util
 from torchdistill.eval.classification import compute_accuracy
 from torchdistill.misc.log import setup_log_file, SmoothedValue, MetricLogger
-from torchdistill.models.official import get_image_classification_model
-from torchdistill.models.registry import get_model
 
-from sc2bench.models.wrapper import BaseWrapper, get_wrapped_model
+from sc2bench.analysis import check_if_analyzable
+from sc2bench.models.backbone import check_if_updatable
+from sc2bench.models.registry import load_classification_model
+from sc2bench.models.wrapper import get_wrapped_model
 
 logger = def_logger.getChild(__name__)
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -58,18 +59,11 @@ def overwrite_config(org_config, sub_config):
 
 def load_model(model_config, device, distributed):
     if 'compression_model' not in model_config:
-        model = get_image_classification_model(model_config, distributed)
-        if model is None:
-            repo_or_dir = model_config.get('repo_or_dir', None)
-            model = get_model(model_config['name'], repo_or_dir, **model_config['params'])
-
-        ckpt_file_path = model_config['ckpt']
-        load_ckpt(ckpt_file_path, model=model, strict=True)
-        return model.to(device)
+        return load_classification_model(model_config, device, distributed)
     return get_wrapped_model(model_config, 'classification', device, distributed)
 
 
-def train_one_epoch(training_box, device, epoch, log_freq):
+def train_one_epoch(training_box, aux_module, device, epoch, log_freq):
     metric_logger = MetricLogger(delimiter='  ')
     metric_logger.add_meter('lr', SmoothedValue(window_size=1, fmt='{value}'))
     metric_logger.add_meter('img/s', SmoothedValue(window_size=10, fmt='{value}'))
@@ -79,9 +73,19 @@ def train_one_epoch(training_box, device, epoch, log_freq):
         start_time = time.time()
         sample_batch, targets = sample_batch.to(device), targets.to(device)
         loss = training_box(sample_batch, targets, supp_dict)
+        aux_loss = None
+        if aux_module is not None:
+            aux_loss = aux_module.aux_loss()
+            aux_loss.backward()
+
         training_box.update_params(loss)
         batch_size = sample_batch.shape[0]
-        metric_logger.update(loss=loss.item(), lr=training_box.optimizer.param_groups[0]['lr'])
+
+        if aux_loss is None:
+            metric_logger.update(loss=loss.item(), lr=training_box.optimizer.param_groups[0]['lr'])
+        else:
+            metric_logger.update(loss=loss.item(), aux_loss=aux_loss.item(),
+                                 lr=training_box.optimizer.param_groups[0]['lr'])
         metric_logger.meters['img/s'].update(batch_size / (time.time() - start_time))
         if (torch.isnan(loss) or torch.isinf(loss)) and is_main_process():
             raise ValueError('The training loop was broken due to loss = {}'.format(loss))
@@ -99,7 +103,7 @@ def evaluate(model_wo_ddp, data_loader, device, device_ids, distributed, log_fre
         logger.info(title)
 
     model.eval()
-    analyzable = isinstance(model_wo_ddp, BaseWrapper)
+    analyzable = check_if_analyzable(model_wo_ddp)
     if analyzable:
         model_wo_ddp.activate_analysis()
 
@@ -140,10 +144,18 @@ def train(teacher_model, student_model, dataset_dict, ckpt_file_path, device, de
 
     log_freq = train_config['log_freq']
     student_model_without_ddp = student_model.module if module_util.check_if_wrapped(student_model) else student_model
+    aux_module = student_model_without_ddp.get_aux_module() if check_if_updatable(student_model_without_ddp) else None
+    epoch_to_update = train_config.get('epoch_to_update', None)
+    bottleneck_updated = False
     start_time = time.time()
     for epoch in range(args.start_epoch, training_box.num_epochs):
         training_box.pre_process(epoch=epoch)
-        train_one_epoch(training_box, device, epoch, log_freq)
+        if epoch_to_update is not None and epoch_to_update <= epoch and not bottleneck_updated:
+            logger.info('Updating entropy bottleneck')
+            student_model_without_ddp.update()
+            bottleneck_updated = True
+
+        train_one_epoch(training_box, aux_module, device, epoch, log_freq)
         val_top1_accuracy = evaluate(student_model, training_box.val_data_loader, device, device_ids, distributed,
                                      log_freq=log_freq, header='Validation:')
         if val_top1_accuracy > best_val_top1_accuracy and is_main_process():
@@ -202,6 +214,9 @@ def main(args):
     if not args.student_only and teacher_model is not None:
         evaluate(teacher_model, test_data_loader, device, device_ids, distributed,
                  title='[Teacher: {}]'.format(teacher_model_config['name']))
+
+    if check_if_updatable(student_model):
+        student_model.update()
     evaluate(student_model, test_data_loader, device, device_ids, distributed,
              title='[Student: {}]'.format(student_model_config['name']))
 

@@ -2,7 +2,7 @@ from torch import nn
 from torchdistill.datasets.util import build_transform
 from .registry import get_compression_model, load_classification_model
 
-from ..analysis import get_analyzer
+from ..analysis import AnalyzableModule
 
 WRAPPER_CLASS_DICT = dict()
 
@@ -19,45 +19,8 @@ def register_wrapper_class(cls):
     return cls
 
 
-class BaseWrapper(nn.Module):
-    """
-    Base wrapper module to analyze and summarize the wrapped modules and intermediate representations.
-    Args:
-        analyzer_configs (list of dicts): unit of data size in bytes (`B`, `KB`, `MB`)
-    """
-    def __init__(self, analyzer_configs):
-        super().__init__()
-        self.analyzers = [get_analyzer(analyzer_config['type'], **analyzer_config['params'])
-                          for analyzer_config in analyzer_configs]
-        self.activated_analysis = False
-
-    def forward(self, *args, **kwargs):
-        raise NotImplementedError()
-
-    def activate_analysis(self):
-        self.activated_analysis = True
-
-    def deactivate_analysis(self):
-        self.activated_analysis = False
-
-    def analyze(self, compressed_obj):
-        if not self.activated_analysis:
-            return
-
-        for analyzer in self.analyzers:
-            analyzer.analyze(compressed_obj)
-
-    def summarize(self):
-        for analyzer in self.analyzers:
-            analyzer.summarize()
-
-    def clear_analysis(self):
-        for analyzer in self.analyzers:
-            analyzer.clear()
-
-
 @register_wrapper_class
-class InputCompressionClassifier(BaseWrapper):
+class InputCompressionClassifier(AnalyzableModule):
     """
     Wrapper module for input compression model followed by classifier.
     Args:
