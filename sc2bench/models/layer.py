@@ -69,7 +69,6 @@ class FPBasedResNetBottleneck(BaseBottleneck):
     def forward(self, x):
         if not self.training:
             encoded_obj = self.encode(x)
-            self.analyze_compressed_object(encoded_obj)
             decoded_obj = self.decode(**encoded_obj)
             return decoded_obj
 
