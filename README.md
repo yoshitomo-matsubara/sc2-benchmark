@@ -11,6 +11,7 @@ pipenv install -e "."
 For conda users,
 ```shell
 conda env create -f environment.yaml
+conda activate sc2-benchmark
 pip install -e "."
 ```
 
