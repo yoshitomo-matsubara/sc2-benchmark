@@ -138,7 +138,6 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
             nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=1, bias=False),
             nn.ReLU(inplace=True),
             nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=0, bias=False),
-            nn.ReLU(inplace=True),
             nn.ReLU(inplace=True)
         ) if h_s is None else h_s
 
@@ -197,6 +196,64 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
             state_dict,
         )
         super().load_state_dict(state_dict)
+
+
+@register_layer_class
+class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
+    """
+    Mean-Scale Hyperprior(MSHP)-based bottleneck for ResNet.
+    Mean-Scale Hyperprior is proposed in "Joint Autoregressive and Hierarchical Priors for Learned Image Compression" by
+    D. Minnen, J. Balle, G.D. Toderici.
+    """
+    def __init__(self, num_input_channels=3, num_latent_channels=64,
+                 num_bottleneck_channels=24, num_target_channels=256):
+        h_a = nn.Sequential(
+            nn.Conv2d(num_bottleneck_channels, num_latent_channels, kernel_size=5, stride=2, padding=1, bias=False),
+            nn.LeakyReLU(inplace=True),
+            nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=5, stride=2, padding=2, bias=False)
+        )
+
+        h_s = nn.Sequential(
+            nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=1, bias=False),
+            nn.LeakyReLU(inplace=True),
+            nn.Conv2d(num_latent_channels, num_latent_channels * 3 // 2,
+                      kernel_size=2, stride=1, padding=0, bias=False),
+            nn.LeakyReLU(inplace=True),
+            nn.Conv2d(num_latent_channels * 3 // 2, num_latent_channels * 2,
+                      kernel_size=2, stride=1, padding=0, bias=False)
+        )
+        super().__init__(num_input_channels=num_input_channels, num_latent_channels=num_latent_channels,
+                         num_bottleneck_channels=num_bottleneck_channels, num_target_channels=num_target_channels,
+                         h_a=h_a, h_s=h_s)
+
+    def encode(self, x, **kwargs):
+        y = self.g_a(x)
+        z = self.h_a(y)
+        z_strings = self.entropy_bottleneck.compress(z)
+        z_hat = self.entropy_bottleneck.decompress(z_strings, z.size()[-2:])
+        gaussian_params = self.h_s(z_hat)
+        scales_hat, means_hat = gaussian_params.chunk(2, 1)
+        indexes = self.gaussian_conditional.build_indexes(scales_hat)
+        y_strings = self.gaussian_conditional.compress(y, indexes, means=means_hat)
+        return {'strings': [y_strings, z_strings], 'shape': z.size()[-2:]}
+
+    def decode(self, strings, shape):
+        assert isinstance(strings, list) and len(strings) == 2
+        z_hat = self.entropy_bottleneck.decompress(strings[1], shape)
+        gaussian_params = self.h_s(z_hat)
+        scales_hat, means_hat = gaussian_params.chunk(2, 1)
+        indexes = self.gaussian_conditional.build_indexes(scales_hat)
+        y_hat = self.gaussian_conditional.decompress(strings[0], indexes, means=means_hat)
+        return self.g_s(y_hat)
+
+    def forward2train(self, x):
+        y = self.g_a(x)
+        z = self.h_a(y)
+        z_hat, z_likelihoods = self.entropy_bottleneck(z)
+        gaussian_params = self.h_s(z_hat)
+        scales_hat, means_hat = gaussian_params.chunk(2, 1)
+        y_hat, y_likelihoods = self.gaussian_conditional(y, scales_hat, means=means_hat)
+        return self.g_s(y_hat)
 
 
 def get_layer(cls_name, **kwargs):
