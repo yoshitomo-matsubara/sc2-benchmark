@@ -84,13 +84,13 @@ class FPBasedResNetBottleneck(BaseBottleneck):
         return decoded_obj
 
     def forward(self, x):
-        if not self.training:
-            encoded_obj = self.encode(x)
-            decoded_obj = self.decode(**encoded_obj)
-            return decoded_obj
-
-        # if fine-tuning after "update"
+        # if fine-tune or evaluate after "update"
         if self.updated:
+            if not self.training:
+                encoded_obj = self.encode(x)
+                decoded_obj = self.decode(**encoded_obj)
+                return decoded_obj
+
             encoded_output = self.encoder(x)
             decoder_input =\
                 self.entropy_bottleneck.dequantize(self.entropy_bottleneck.quantize(encoded_output, 'dequantize'))
@@ -173,18 +173,11 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
         return self.g_s(y_hat)
 
     def forward(self, x):
-        if not self.training:
+        # if fine-tune or evaluate after "update"
+        if self.updated and not self.training:
             encoded_obj = self.encode(x)
             decoded_obj = self.decode(**encoded_obj)
             return decoded_obj
-
-        # if fine-tuning after "update"
-        if self.updated:
-            encoded_output = self.encoder(x)
-            decoder_input =\
-                self.entropy_bottleneck.dequantize(self.entropy_bottleneck.quantize(encoded_output, 'dequantize'))
-            decoder_input = decoder_input.detach()
-            return self.decoder(decoder_input)
         return self.forward2train(x)
 
     def update(self, scale_table=None, force=False):
