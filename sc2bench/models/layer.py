@@ -49,7 +49,7 @@ class FPBasedResNetBottleneck(BaseBottleneck):
     Factorized Prior is proposed in "Variational Image Compression with a Scale Hyperprior" by
     J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
     """
-    def __init__(self, num_input_channels=3, num_bottleneck_channels=16, num_target_channels=256):
+    def __init__(self, num_input_channels=3, num_bottleneck_channels=24, num_target_channels=256):
         super().__init__(entropy_bottleneck_channels=num_bottleneck_channels)
         self.encoder = nn.Sequential(
             nn.Conv2d(num_input_channels, num_bottleneck_channels * 4, kernel_size=5, stride=2, padding=2, bias=False),
@@ -107,7 +107,7 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
     J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
     """
     def __init__(self, num_input_channels=3, num_latent_channels=64,
-                 num_bottleneck_channels=16, num_target_channels=256, h_a=None, h_s=None):
+                 num_bottleneck_channels=24, num_target_channels=256, h_a=None, h_s=None):
         super().__init__(entropy_bottleneck_channels=num_latent_channels)
         self.g_a = nn.Sequential(
             nn.Conv2d(num_input_channels, num_bottleneck_channels * 4,
@@ -136,9 +136,9 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
 
         self.h_s = nn.Sequential(
             nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=1, bias=False),
-            GDN1(num_latent_channels),
+            nn.ReLU(inplace=True),
             nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=0, bias=False),
-            GDN1(num_latent_channels),
+            nn.ReLU(inplace=True),
             nn.ReLU(inplace=True)
         ) if h_s is None else h_s
 
@@ -196,7 +196,7 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
             ['_quantized_cdf', '_offset', '_cdf_length', 'scale_table'],
             state_dict,
         )
-        super().load_state_dict(state_dict, **kwargs)
+        super().load_state_dict(state_dict)
 
 
 def get_layer(cls_name, **kwargs):
