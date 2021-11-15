@@ -124,7 +124,7 @@ def evaluate(model_wo_ddp, data_loader, device, device_ids, distributed, log_fre
     top1_accuracy = metric_logger.acc1.global_avg
     top5_accuracy = metric_logger.acc5.global_avg
     logger.info(' * Acc@1 {:.4f}\tAcc@5 {:.4f}\n'.format(top1_accuracy, top5_accuracy))
-    if analyzable:
+    if analyzable and model_wo_ddp.activated_analysis:
         model_wo_ddp.summarize()
     return metric_logger.acc1.global_avg
 
