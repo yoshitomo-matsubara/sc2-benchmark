@@ -136,9 +136,9 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
 
         self.h_s = nn.Sequential(
             nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=1, bias=False),
-            GDN1(num_latent_channels),
+            nn.ReLU(inplace=True),
             nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=0, bias=False),
-            GDN1(num_latent_channels),
+            nn.ReLU(inplace=True),
             nn.ReLU(inplace=True)
         ) if h_s is None else h_s
 
@@ -196,7 +196,7 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
             ['_quantized_cdf', '_offset', '_cdf_length', 'scale_table'],
             state_dict,
         )
-        super().load_state_dict(state_dict, **kwargs)
+        super().load_state_dict(state_dict)
 
 
 def get_layer(cls_name, **kwargs):
