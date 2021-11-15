@@ -124,7 +124,7 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
             nn.Conv2d(num_bottleneck_channels, num_target_channels * 2, kernel_size=2, stride=1, padding=1, bias=False),
             GDN1(num_target_channels * 2, inverse=True),
             nn.Conv2d(num_target_channels * 2, num_target_channels, kernel_size=2, stride=1, padding=0, bias=False),
-            GDN1(num_latent_channels, inverse=True),
+            GDN1(num_target_channels, inverse=True),
             nn.Conv2d(num_target_channels, num_target_channels, kernel_size=2, stride=1, padding=1, bias=False)
         )
 
@@ -135,10 +135,14 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
         ) if h_a is None else h_a
 
         self.h_s = nn.Sequential(
-            nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=1, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=0, bias=False),
-            nn.ReLU(inplace=True)
+            nn.ConvTranspose2d(num_latent_channels, num_latent_channels,
+                               kernel_size=5, stride=2, padding=1, bias=False),
+            nn.LeakyReLU(inplace=True),
+            nn.ConvTranspose2d(num_latent_channels, num_latent_channels,
+                               kernel_size=5, stride=2, padding=1, bias=False),
+            nn.LeakyReLU(inplace=True),
+            nn.Conv2d(num_latent_channels, num_bottleneck_channels,
+                      kernel_size=5, stride=1, padding=0, bias=False)
         ) if h_s is None else h_s
 
         self.gaussian_conditional = GaussianConditional(None)
@@ -214,13 +218,14 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
         )
 
         h_s = nn.Sequential(
-            nn.Conv2d(num_latent_channels, num_latent_channels, kernel_size=2, stride=1, padding=1, bias=False),
+            nn.ConvTranspose2d(num_latent_channels, num_latent_channels,
+                               kernel_size=5, stride=2, padding=1, bias=False),
             nn.LeakyReLU(inplace=True),
-            nn.Conv2d(num_latent_channels, num_latent_channels * 3 // 2,
-                      kernel_size=2, stride=1, padding=0, bias=False),
+            nn.ConvTranspose2d(num_latent_channels, num_latent_channels * 3 // 2,
+                               kernel_size=5, stride=2, padding=1, bias=False),
             nn.LeakyReLU(inplace=True),
-            nn.Conv2d(num_latent_channels * 3 // 2, num_latent_channels * 2,
-                      kernel_size=2, stride=1, padding=0, bias=False)
+            nn.Conv2d(num_latent_channels * 3 // 2, num_bottleneck_channels * 2,
+                      kernel_size=5, stride=1, padding=0, bias=False)
         )
         super().__init__(num_input_channels=num_input_channels, num_latent_channels=num_latent_channels,
                          num_bottleneck_channels=num_bottleneck_channels, num_target_channels=num_target_channels,
