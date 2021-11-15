@@ -49,7 +49,7 @@ class FPBasedResNetBottleneck(BaseBottleneck):
     Factorized Prior is proposed in "Variational Image Compression with a Scale Hyperprior" by
     J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
     """
-    def __init__(self, num_input_channels=3, num_bottleneck_channels=16, num_target_channels=256):
+    def __init__(self, num_input_channels=3, num_bottleneck_channels=24, num_target_channels=256):
         super().__init__(entropy_bottleneck_channels=num_bottleneck_channels)
         self.encoder = nn.Sequential(
             nn.Conv2d(num_input_channels, num_bottleneck_channels * 4, kernel_size=5, stride=2, padding=2, bias=False),
@@ -107,7 +107,7 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
     J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
     """
     def __init__(self, num_input_channels=3, num_latent_channels=64,
-                 num_bottleneck_channels=16, num_target_channels=256, h_a=None, h_s=None):
+                 num_bottleneck_channels=24, num_target_channels=256, h_a=None, h_s=None):
         super().__init__(entropy_bottleneck_channels=num_latent_channels)
         self.g_a = nn.Sequential(
             nn.Conv2d(num_input_channels, num_bottleneck_channels * 4,
