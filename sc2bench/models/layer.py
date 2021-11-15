@@ -36,8 +36,8 @@ class BaseBottleneck(CompressionModel):
         raise NotImplementedError()
 
     def update(self, force=False):
-        super().update(force=force)
         self.updated = True
+        return super().update(force=force)
 
 
 @register_layer_class
