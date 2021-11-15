@@ -1,3 +1,4 @@
+import torch
 from torchdistill.datasets.util import build_transform
 from torchdistill.models.registry import register_model_class, register_model_func
 from torchvision import models
@@ -72,7 +73,11 @@ class SplittableResNet(UpdatableBackbone):
             return x
 
         x = self.avgpool(x)
-        return x if self.fc is None else self.fc(x)
+        if self.fc is None:
+            return x
+
+        x = torch.flatten(x, 1)
+        return self.fc(x)
 
     def update(self):
         self.bottleneck_layer.update()
