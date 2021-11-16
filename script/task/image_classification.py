@@ -104,9 +104,6 @@ def evaluate(model_wo_ddp, data_loader, device, device_ids, distributed, log_fre
 
     model.eval()
     analyzable = check_if_analyzable(model_wo_ddp)
-    if analyzable:
-        model_wo_ddp.activate_analysis()
-
     metric_logger = MetricLogger(delimiter='  ')
     for image, target in metric_logger.log_every(data_loader, log_freq, header):
         image = image.to(device, non_blocking=True)
@@ -217,6 +214,9 @@ def main(args):
 
     if check_if_updatable(student_model):
         student_model.update()
+
+    if check_if_analyzable(student_model):
+        student_model.activate_analysis()
     evaluate(student_model, test_data_loader, device, device_ids, distributed,
              title='[Student: {}]'.format(student_model_config['name']))
 
