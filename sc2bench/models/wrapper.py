@@ -20,13 +20,13 @@ def register_wrapper_class(cls):
 
 
 @register_wrapper_class
-class InputCompressionClassifier(AnalyzableModule):
+class NeuralInputCompressionClassifier(AnalyzableModule):
     """
-    Wrapper module for input compression model followed by classifier.
+    Wrapper module for neural input compression model followed by classifier.
     Args:
         classification_model (nn.Module): classification model
         pre_transform_params (dict): keyword configurations for transform sequence for input data
-        compression_model (nn.Module): input compression model
+        compression_model (nn.Module): neural input compression model
         post_transform_params (dict): keyword configurations for transform sequence after compression model
         analysis_config (dict): configuration for analysis
     """
