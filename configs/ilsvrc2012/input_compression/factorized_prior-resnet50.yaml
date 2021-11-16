@@ -24,7 +24,7 @@ datasets:
 
 models:
   model:
-    name: 'InputCompressionClassifier'
+    name: 'NeuralInputCompressionClassifier'
     params:
       post_transform_params:
         - type: 'CenterCrop'
