@@ -63,10 +63,11 @@ def load_model(model_config, device, distributed):
     return get_wrapped_model(model_config, 'classification', device, distributed)
 
 
-def train_one_epoch(training_box, aux_module, device, epoch, log_freq):
+def train_one_epoch(training_box, aux_module, bottleneck_updated, device, epoch, log_freq):
     metric_logger = MetricLogger(delimiter='  ')
     metric_logger.add_meter('lr', SmoothedValue(window_size=1, fmt='{value}'))
     metric_logger.add_meter('img/s', SmoothedValue(window_size=10, fmt='{value}'))
+    uses_aux_loss = aux_module is not None and not bottleneck_updated
     header = 'Epoch: [{}]'.format(epoch)
     for sample_batch, targets, supp_dict in \
             metric_logger.log_every(training_box.train_data_loader, log_freq, header):
@@ -79,17 +80,17 @@ def train_one_epoch(training_box, aux_module, device, epoch, log_freq):
         start_time = time.time()
         loss = training_box(sample_batch, targets, supp_dict)
         aux_loss = None
-        if aux_module is not None:
+        if uses_aux_loss:
             aux_loss = aux_module.aux_loss()
             aux_loss.backward()
 
         training_box.update_params(loss)
         batch_size = len(sample_batch)
-        if aux_loss is None:
-            metric_logger.update(loss=loss.item(), lr=training_box.optimizer.param_groups[0]['lr'])
-        else:
+        if uses_aux_loss:
             metric_logger.update(loss=loss.item(), aux_loss=aux_loss.item(),
                                  lr=training_box.optimizer.param_groups[0]['lr'])
+        else:
+            metric_logger.update(loss=loss.item(), lr=training_box.optimizer.param_groups[0]['lr'])
         metric_logger.meters['img/s'].update(batch_size / (time.time() - start_time))
         if (torch.isnan(loss) or torch.isinf(loss)) and is_main_process():
             raise ValueError('The training loop was broken due to loss = {}'.format(loss))
@@ -160,7 +161,7 @@ def train(teacher_model, student_model, dataset_dict, ckpt_file_path, device, de
             student_model_without_ddp.update()
             bottleneck_updated = True
 
-        train_one_epoch(training_box, aux_module, device, epoch, log_freq)
+        train_one_epoch(training_box, aux_module, bottleneck_updated, device, epoch, log_freq)
         val_top1_accuracy = evaluate(student_model, training_box.val_data_loader, device, device_ids, distributed,
                                      log_freq=log_freq, header='Validation:')
         if val_top1_accuracy > best_val_top1_accuracy and is_main_process():
