@@ -262,6 +262,14 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
 
 
 def get_layer(cls_name, **kwargs):
+    """
+    Args:
+        cls_name (str): layer class name.
+        kwargs (dict): keyword arguments.
+
+    Returns:
+        BaseBottleneck or None: layer module that is instance of `BaseBottleneck` if found. None otherwise.
+    """
     if cls_name not in LAYER_CLASS_DICT:
         return None
     return LAYER_CLASS_DICT[cls_name](**kwargs)

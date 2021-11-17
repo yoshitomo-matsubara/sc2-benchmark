@@ -15,27 +15,39 @@ datasets:
             - type: 'CenterCrop'
               params:
                 size: [224, 224]
-            - type: 'VtmModule'
-              params:
-                encoder_path: '~/software/VVCSoftware_VTM/bin/EncoderAppStatic'
-                decoder_path: '~/software/VVCSoftware_VTM/bin/DecoderAppStatic'
-                config_path: '~/software/VVCSoftware_VTM/cfg/encoder_intra_vtm.cfg'
-                color_mode: 'ycbcr'
-                quality: 63
-            - type: 'ToTensor'
-              params:
-            - type: 'Normalize'
-              params:
-                mean: [0.485, 0.456, 0.406]
-                std: [0.229, 0.224, 0.225]
 
 models:
   model:
-    name: &model_name 'resnet50'
+    name: 'CodecInputCompressionClassifier'
     params:
-      num_classes: 1000
-      pretrained: True
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/', *model_name, '.pt']
+      codec_params:
+        - type: 'VTMModule'
+          params:
+            encoder_path: '~/software/VVCSoftware_VTM/bin/EncoderAppStatic'
+            decoder_path: '~/software/VVCSoftware_VTM/bin/DecoderAppStatic'
+            config_path: '~/software/VVCSoftware_VTM/cfg/encoder_intra_vtm.cfg'
+            color_mode: 'ycbcr'
+            quality: 63
+            returns_file_size: True
+      post_transform_params:
+        - type: 'ToTensor'
+          params:
+        - type: 'Normalize'
+          params:
+            mean: [0.485, 0.456, 0.406]
+            std: [0.229, 0.224, 0.225]
+      analysis_config:
+        analyzer_configs:
+          - type: 'FileSizeAccumulator'
+            params:
+              unit: 'KB'
+    classification_model:
+      name: &model_name 'resnet50'
+      params:
+        num_classes: 1000
+        pretrained: True
+      experiment: &experiment !join [*dataset_name, '-', *model_name]
+      ckpt: !join ['./resource/ckpt/', *experiment, '.pt']
 
 test:
   test_data_loader:

@@ -16,9 +16,9 @@ fi
 for quality in $(seq ${MIN_QUALITY} ${STEP_SIZE} ${MAX_QUALITY});
 do
   sed -i "s/quality:.*/quality: ${quality}/g" configs/ilsvrc2012/input_compression/${BASE_NAME}.yaml
-  pipenv run python script/task/input_compression.py \
+  pipenv run python script/task/image_classification.py \
   --config configs/ilsvrc2012/input_compression/${BASE_NAME}.yaml \
-  --log log/${FORMAT_NAME}_compression/${BASE_NAME}-quality${quality}.txt
+  --log log/${FORMAT_NAME}_compression/${BASE_NAME}-quality${quality}.txt -student_only -test_only
 done
 
 sed -i "s/quality:.*/quality:/g" configs/ilsvrc2012/input_compression/${BASE_NAME}.yaml

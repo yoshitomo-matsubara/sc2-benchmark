@@ -76,7 +76,7 @@ class BaseAnalyzer(object):
 @register_analysis_class
 class FileSizeAnalyzer(BaseAnalyzer):
     """
-    Analyzer to
+    Analyzer to measure file size of compressed object in the designated unit
     Args:
         unit (str): unit of data size in bytes (`B`, `KB`, `MB`)
         kwargs (dict): keyword arguments
@@ -102,10 +102,27 @@ class FileSizeAnalyzer(BaseAnalyzer):
         self.file_size_list.clear()
 
 
+@register_analysis_class
+class FileSizeAccumulator(FileSizeAnalyzer):
+    """
+    Accumulator to store pre-computed file size in the designated unit
+    Args:
+        unit (str): unit of data size in bytes (`B`, `KB`, `MB`)
+        kwargs (dict): keyword arguments
+    """
+    UNIT_DICT = {'B': 1, 'KB': 1024, 'MB': 1024 * 1024}
+
+    def __init__(self, unit='KB', **kwargs):
+        super().__init__(unit=unit, **kwargs)
+
+    def analyze(self, file_size):
+        self.file_size_list.append(file_size / self.unit_size)
+
+
 def get_analyzer(cls_name, **kwargs):
     """
     Args:
-        cls_name (str): PyTorch module to be checked.
+        cls_name (str): module class name.
         kwargs (dict): keyword arguments.
 
     Returns:

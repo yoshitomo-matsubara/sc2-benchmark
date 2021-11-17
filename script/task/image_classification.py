@@ -58,7 +58,7 @@ def overwrite_config(org_config, sub_config):
 
 
 def load_model(model_config, device, distributed):
-    if 'compression_model' not in model_config:
+    if 'classification_model' not in model_config:
         return load_classification_model(model_config, device, distributed)
     return get_wrapped_model(model_config, 'classification', device, distributed)
 
@@ -70,8 +70,13 @@ def train_one_epoch(training_box, aux_module, device, epoch, log_freq):
     header = 'Epoch: [{}]'.format(epoch)
     for sample_batch, targets, supp_dict in \
             metric_logger.log_every(training_box.train_data_loader, log_freq, header):
+        if isinstance(sample_batch, torch.Tensor):
+            sample_batch = sample_batch.to(device)
+
+        if isinstance(targets, torch.Tensor):
+            targets = targets.to(device)
+
         start_time = time.time()
-        sample_batch, targets = sample_batch.to(device), targets.to(device)
         loss = training_box(sample_batch, targets, supp_dict)
         aux_loss = None
         if aux_module is not None:
@@ -79,8 +84,7 @@ def train_one_epoch(training_box, aux_module, device, epoch, log_freq):
             aux_loss.backward()
 
         training_box.update_params(loss)
-        batch_size = sample_batch.shape[0]
-
+        batch_size = len(sample_batch)
         if aux_loss is None:
             metric_logger.update(loss=loss.item(), lr=training_box.optimizer.param_groups[0]['lr'])
         else:
@@ -106,13 +110,17 @@ def evaluate(model_wo_ddp, data_loader, device, device_ids, distributed, log_fre
     analyzable = check_if_analyzable(model_wo_ddp)
     metric_logger = MetricLogger(delimiter='  ')
     for image, target in metric_logger.log_every(data_loader, log_freq, header):
-        image = image.to(device, non_blocking=True)
-        target = target.to(device, non_blocking=True)
+        if isinstance(image, torch.Tensor):
+            image = image.to(device, non_blocking=True)
+
+        if isinstance(target, torch.Tensor):
+            target = target.to(device, non_blocking=True)
+
         output = model(image)
         acc1, acc5 = compute_accuracy(output, target, topk=(1, 5))
         # FIXME need to take into account that the datasets
         # could have been padded in distributed setup
-        batch_size = image.shape[0]
+        batch_size = len(image)
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
 

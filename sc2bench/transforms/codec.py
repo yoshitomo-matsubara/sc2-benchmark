@@ -72,14 +72,15 @@ class PillowImageModule(nn.Module):
             pil_img (PIL Image): Image to be transformed.
 
         Returns:
-            PIL Image or int: Affine transformed image or its file size if returns_file_size=True.
+            PIL Image or a tuple of PIL Image and int: Affine transformed image or with its file size if returns_file_size=True.
         """
         img_buffer = BytesIO()
         pil_img.save(img_buffer, **self.save_kwargs)
-        output = img_buffer.tell() if self.returns_file_size else Image.open(img_buffer, **self.open_kwargs)
-        if len(args) > 0:
-            return output, *args
-        return output
+        file_size = img_buffer.tell()
+        pil_img = Image.open(img_buffer, **self.open_kwargs)
+        if self.returns_file_size:
+            return pil_img, file_size
+        return pil_img
 
     def __repr__(self):
         return self.__class__.__name__ + \
@@ -88,7 +89,7 @@ class PillowImageModule(nn.Module):
 
 
 @register_codec_transform_module
-class BpgModule(nn.Module):
+class BPGModule(nn.Module):
     """
     BPG module to compress (decompress) images e.g., as part of transform pipeline.
     Modified https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py
@@ -167,8 +168,7 @@ class BpgModule(nn.Module):
             pil_img (PIL Image): Image to be transformed.
 
         Returns:
-            PIL Image: Affine transformed image.
-            (float): file size of BPG compressed data if self.returns_file_size is True.
+            PIL Image or a tuple of PIL Image and float: Affine transformed image or with its file size of BPG compressed data if returns_file_size=True.
         """
         fd_i, resized_input_filepath = mkstemp(suffix='.jpg')
         fd_r, reconst_file_path = mkstemp(suffix='.jpg')
@@ -190,7 +190,9 @@ class BpgModule(nn.Module):
         os.remove(reconst_file_path)
         os.close(fd_o)
         os.remove(output_file_path)
-        return file_size_byte if self.returns_file_size else reconst_img
+        if self.returns_file_size:
+            return reconst_img, file_size_byte
+        return reconst_img
 
     def __repr__(self):
         return self.__class__.__name__ + '(encoder_path={}, decoder_path={}, color_mode={}, ' \
@@ -202,7 +204,7 @@ class BpgModule(nn.Module):
 
 
 @register_codec_transform_module
-class VtmModule(nn.Module):
+class VTMModule(nn.Module):
     """
     VTM module to compress (decompress) images e.g., as part of transform pipeline.
     Modified https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py
@@ -241,8 +243,7 @@ class VtmModule(nn.Module):
             pil_img (PIL Image): Image to be transformed.
 
         Returns:
-            PIL Image: Affine transformed image.
-            (float): file size of BPG compressed data if self.returns_file_size is True.
+            PIL Image or a tuple of PIL Image and float: Affine transformed image or with its file size of VTM compressed data if returns_file_size=True.
         """
 
         # Taking 8bit input for now
