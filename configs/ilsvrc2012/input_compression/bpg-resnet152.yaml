@@ -15,25 +15,37 @@ datasets:
             - type: 'CenterCrop'
               params:
                 size: [224, 224]
-            - type: 'BpgModule'
-              params:
-                encoder_path: '~/software/libbpg-0.9.8/bpgenc'
-                decoder_path: '~/software/libbpg-0.9.8/bpgdec'
-                quality: 50
-            - type: 'ToTensor'
-              params:
-            - type: 'Normalize'
-              params:
-                mean: [0.485, 0.456, 0.406]
-                std: [0.229, 0.224, 0.225]
 
 models:
   model:
-    name: &model_name 'resnet101'
+    name: 'CodecInputCompressionClassifier'
     params:
-      num_classes: 1000
-      pretrained: True
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/', *model_name, '.pt']
+      codec_params:
+        - type: 'BPGModule'
+          params:
+            encoder_path: '~/software/libbpg-0.9.8/bpgenc'
+            decoder_path: '~/software/libbpg-0.9.8/bpgdec'
+            quality: 50
+            returns_file_size: True
+      post_transform_params:
+        - type: 'ToTensor'
+          params:
+        - type: 'Normalize'
+          params:
+            mean: [0.485, 0.456, 0.406]
+            std: [0.229, 0.224, 0.225]
+      analysis_config:
+        analyzer_configs:
+          - type: 'FileSizeAccumulator'
+            params:
+              unit: 'KB'
+    classification_model:
+      name: &model_name 'resnet152'
+      params:
+        num_classes: 1000
+        pretrained: True
+      experiment: &experiment !join [*dataset_name, '-', *model_name]
+      ckpt: !join ['./resource/ckpt/', *experiment, '.pt']
 
 test:
   test_data_loader:

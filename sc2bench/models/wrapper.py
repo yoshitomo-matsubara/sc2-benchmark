@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 from torchdistill.datasets.util import build_transform
 from .registry import get_compression_model, load_classification_model
@@ -20,6 +21,51 @@ def register_wrapper_class(cls):
 
 
 @register_wrapper_class
+class CodecInputCompressionClassifier(AnalyzableModule):
+    """
+    Wrapper module for codec input compression model followed by classifier.
+    Args:
+        classification_model (nn.Module): classification model
+        codec_params (dict): keyword configurations for transform sequence for codec
+        post_transform_params (dict): keyword configurations for transform sequence after compression model
+        analysis_config (dict): configuration for analysis
+    """
+    def __init__(self, classification_model, device, codec_params=None,
+                 post_transform_params=None, analysis_config=None, **kwargs):
+        if analysis_config is None:
+            analysis_config = dict()
+
+        super().__init__(analysis_config.get('analyzer_configs', list()))
+        self.codec_encoder_decoder = build_transform(codec_params)
+        self.device = device
+        self.classification_model = classification_model
+        self.post_transform = build_transform(post_transform_params)
+
+    def forward(self, x):
+        """
+        Args:
+            x (list of PIL Images): input sample.
+
+        Returns:
+            Tensor: output tensor from self.classification_model.
+        """
+
+        tmp_list = list()
+        for sub_x in x:
+            if self.codec_encoder_decoder is not None:
+                sub_x, file_size = self.codec_encoder_decoder(sub_x)
+                if not self.training:
+                    self.analyze(file_size)
+
+            if self.post_transform is not None:
+                sub_x = self.post_transform(sub_x)
+
+            tmp_list.append(sub_x.unsqueeze(0))
+        x = torch.hstack(tmp_list).to(self.device)
+        return self.classification_model(x)
+
+
+@register_wrapper_class
 class NeuralInputCompressionClassifier(AnalyzableModule):
     """
     Wrapper module for neural input compression model followed by classifier.
@@ -31,7 +77,7 @@ class NeuralInputCompressionClassifier(AnalyzableModule):
         analysis_config (dict): configuration for analysis
     """
     def __init__(self, classification_model, pre_transform_params=None, compression_model=None,
-                 post_transform_params=None, analysis_config=None):
+                 post_transform_params=None, analysis_config=None, **kwargs):
         if analysis_config is None:
             analysis_config = dict()
 
@@ -102,11 +148,11 @@ def get_wrapped_model(wrapper_model_config, task, device, distributed):
         raise ValueError('wrapper_model_name `{}` is not expected'.format(wrapper_model_name))
 
     if task == 'classification':
-        compression_model_config = wrapper_model_config['compression_model']
+        compression_model_config = wrapper_model_config.get('compression_model', None)
         compression_model = get_compression_model(compression_model_config, device)
         classification_model_config = wrapper_model_config['classification_model']
         model = load_classification_model(classification_model_config, device, distributed)
     else:
         raise ValueError(f'task `{task}` is not expected')
-    return WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model,
+    return WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model, device=device,
                                                   **wrapper_model_config['params'])

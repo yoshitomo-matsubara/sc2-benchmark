@@ -12,7 +12,7 @@ from torchvision.datasets import ImageFolder, VOCSegmentation
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import transforms
 
-from sc2bench.transforms.codec import PillowImageModule, BpgModule, VtmModule
+from sc2bench.transforms.codec import PillowImageModule, BPGModule, VTMModule
 from sc2bench.transforms.misc import ClearTargetTransform
 
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -36,10 +36,10 @@ def get_argparser():
 
 def get_codec_module(codec_format, quality):
     if codec_format == 'BPG':
-        return BpgModule(encoder_path='~/software/libbpg-0.9.8/bpgenc', decoder_path='~/software/libbpg-0.9.8/bpgdec',
+        return BPGModule(encoder_path='~/software/libbpg-0.9.8/bpgenc', decoder_path='~/software/libbpg-0.9.8/bpgdec',
                          quality=quality, returns_file_size=True)
     elif codec_format == 'VTM':
-        return VtmModule(encoder_path='~/software/VVCSoftware_VTM/bin/EncoderAppStatic',
+        return VTMModule(encoder_path='~/software/VVCSoftware_VTM/bin/EncoderAppStatic',
                          decoder_path='~/software/VVCSoftware_VTM/bin/DecoderAppStatic',
                          config_path='~/software/VVCSoftware_VTM/cfg/encoder_intra_vtm.cfg',
                          color_mode='ycbcr', quality=quality, returns_file_size=True)
