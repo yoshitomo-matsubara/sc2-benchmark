@@ -59,7 +59,7 @@ class SplittableResNet(UpdatableBackbone):
         if self.pre_transform is not None:
             x = self.pre_transform(x)
 
-        if self.bottleneck_updated:
+        if self.bottleneck_updated and not self.training:
             x = self.bottleneck_layer.encode(x)
             self.analyze(x)
             x = self.bottleneck_layer.decode(**x)
