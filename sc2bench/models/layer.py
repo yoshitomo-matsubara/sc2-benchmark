@@ -2,7 +2,7 @@ import torch
 from compressai.entropy_models import GaussianConditional
 from compressai.layers import GDN1
 from compressai.models import CompressionModel
-from compressai.models.priors import get_scale_table
+from compressai.models.google import get_scale_table
 from compressai.models.utils import update_registered_buffers
 from torch import nn
 
@@ -77,6 +77,12 @@ class FPBasedResNetBottleneck(BaseBottleneck):
         latent_hat = self.entropy_bottleneck.decompress(strings[0], shape)
         return self.decoder(latent_hat)
 
+    def get_means(self, x):
+        medians = self.entropy_bottleneck._get_medians().detach()
+        spatial_dims = len(x.size()) - 2
+        medians = self.entropy_bottleneck._extend_ndims(medians, spatial_dims)
+        return medians.expand(x.size(0), *([-1] * (spatial_dims + 1)))
+
     def forward2train(self, x):
         encoded_obj = self.encoder(x)
         y_hat, y_likelihoods = self.entropy_bottleneck(encoded_obj)
@@ -93,7 +99,9 @@ class FPBasedResNetBottleneck(BaseBottleneck):
 
             encoded_output = self.encoder(x)
             decoder_input =\
-                self.entropy_bottleneck.dequantize(self.entropy_bottleneck.quantize(encoded_output, 'dequantize'))
+                self.entropy_bottleneck.dequantize(
+                    self.entropy_bottleneck.quantize(encoded_output, 'dequantize', self.get_means(encoded_output))
+                )
             decoder_input = decoder_input.detach()
             return self.decoder(decoder_input)
         return self.forward2train(x)
@@ -152,20 +160,27 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
     def encode(self, x, **kwargs):
         y = self.g_a(x)
         z = self.h_a(torch.abs(y))
+        z_shape = z.size()[-2:]
         z_strings = self.entropy_bottleneck.compress(z)
-        z_hat = self.entropy_bottleneck.decompress(z_strings, z.size()[-2:])
+        z_hat = self.entropy_bottleneck.decompress(z_strings, z_shape)
         scales_hat = self.h_s(z_hat)
-        indexes = self.gaussian_conditional.build_indexes(scales_hat)
-        y_strings = self.gaussian_conditional.compress(y, indexes)
-        return {'strings': [y_strings, z_strings], 'shape': z.size()[-2:]}
+        indices = self.gaussian_conditional.build_indexes(scales_hat)
+        y_strings = self.gaussian_conditional.compress(y, indices)
+        return {'strings': [y_strings, z_strings], 'shape': z_shape}
 
     def decode(self, strings, shape):
         assert isinstance(strings, list) and len(strings) == 2
         z_hat = self.entropy_bottleneck.decompress(strings[1], shape)
         scales_hat = self.h_s(z_hat)
-        indexes = self.gaussian_conditional.build_indexes(scales_hat)
-        y_hat = self.gaussian_conditional.decompress(strings[0], indexes, z_hat.dtype)
+        indices = self.gaussian_conditional.build_indexes(scales_hat)
+        y_hat = self.gaussian_conditional.decompress(strings[0], indices, z_hat.dtype)
         return self.g_s(y_hat)
+
+    def get_means(self, x):
+        medians = self.entropy_bottleneck._get_medians().detach()
+        spatial_dims = len(x.size()) - 2
+        medians = self.entropy_bottleneck._extend_ndims(medians, spatial_dims)
+        return medians.expand(x.size(0), *([-1] * (spatial_dims + 1)))
 
     def forward2train(self, x):
         y = self.g_a(x)
@@ -177,10 +192,26 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
 
     def forward(self, x):
         # if fine-tune or evaluate after "update"
-        if self.updated and not self.training:
-            encoded_obj = self.encode(x)
-            decoded_obj = self.decode(**encoded_obj)
-            return decoded_obj
+        if self.updated:
+            if not self.training:
+                encoded_obj = self.encode(x)
+                decoded_obj = self.decode(**encoded_obj)
+                return decoded_obj
+
+            y = self.g_a(x)
+            # z = self.h_a(torch.abs(y))
+            # z_hat = self.entropy_bottleneck.dequantize(
+            #     self.entropy_bottleneck.quantize(z, 'dequantize', self.get_means(z))
+            # )
+            # scales_hat = self.h_s(z_hat)
+            # indices = self.gaussian_conditional.build_indexes(scales_hat)
+            # y_strings = self.gaussian_conditional.compress(y, indices)
+            # y_hat = self.gaussian_conditional.decompress(y_strings, indices, z_hat.dtype)
+            y_hat = self.gaussian_conditional.dequantize(
+                self.gaussian_conditional.quantize(y, 'dequantize', self.get_means(y))
+            )
+            y_hat = y_hat.detach()
+            return self.g_s(y_hat)
         return self.forward2train(x)
 
     def update(self, scale_table=None, force=False):
@@ -235,20 +266,21 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
         y = self.g_a(x)
         z = self.h_a(y)
         z_strings = self.entropy_bottleneck.compress(z)
-        z_hat = self.entropy_bottleneck.decompress(z_strings, z.size()[-2:])
+        z_shape = z.size()[-2:]
+        z_hat = self.entropy_bottleneck.decompress(z_strings, z_shape)
         gaussian_params = self.h_s(z_hat)
         scales_hat, means_hat = gaussian_params.chunk(2, 1)
-        indexes = self.gaussian_conditional.build_indexes(scales_hat)
-        y_strings = self.gaussian_conditional.compress(y, indexes, means=means_hat)
-        return {'strings': [y_strings, z_strings], 'shape': z.size()[-2:]}
+        indices = self.gaussian_conditional.build_indexes(scales_hat)
+        y_strings = self.gaussian_conditional.compress(y, indices, means=means_hat)
+        return {'strings': [y_strings, z_strings], 'shape': z_shape}
 
     def decode(self, strings, shape):
         assert isinstance(strings, list) and len(strings) == 2
         z_hat = self.entropy_bottleneck.decompress(strings[1], shape)
         gaussian_params = self.h_s(z_hat)
         scales_hat, means_hat = gaussian_params.chunk(2, 1)
-        indexes = self.gaussian_conditional.build_indexes(scales_hat)
-        y_hat = self.gaussian_conditional.decompress(strings[0], indexes, means=means_hat)
+        indices = self.gaussian_conditional.build_indexes(scales_hat)
+        y_hat = self.gaussian_conditional.decompress(strings[0], indices, means=means_hat)
         return self.g_s(y_hat)
 
     def forward2train(self, x):
@@ -259,6 +291,33 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
         scales_hat, means_hat = gaussian_params.chunk(2, 1)
         y_hat, y_likelihoods = self.gaussian_conditional(y, scales_hat, means=means_hat)
         return self.g_s(y_hat)
+
+    def forward(self, x):
+        # if fine-tune or evaluate after "update"
+        if self.updated:
+            if not self.training:
+                encoded_obj = self.encode(x)
+                decoded_obj = self.decode(**encoded_obj)
+                return decoded_obj
+
+            y = self.g_a(x)
+            z = self.h_a(y)
+            z_hat = self.entropy_bottleneck.dequantize(
+                self.entropy_bottleneck.quantize(z, 'dequantize', self.get_means(z))
+            )
+            gaussian_params = self.h_s(z_hat)
+            scales_hat, means_hat = gaussian_params.chunk(2, 1)
+
+            # indices = self.gaussian_conditional.build_indexes(scales_hat)
+            # y_strings = self.gaussian_conditional.compress(y, indices)
+            # y_hat = self.gaussian_conditional.decompress(y_strings, indices, means=means_hat)
+
+            y_hat = self.gaussian_conditional.dequantize(
+                self.gaussian_conditional.quantize(y, 'dequantize', means_hat)
+            )
+            y_hat = y_hat.detach()
+            return self.g_s(y_hat)
+        return self.forward2train(x)
 
 
 def get_layer(cls_name, **kwargs):
