@@ -56,7 +56,7 @@ class PillowImageModule(nn.Module):
     """
     Generalized Pillow module to compress (decompress) images e.g., as part of transform pipeline.
     Args:
-        returns_file_size (bool): return file size of compressed object instead of PIL image if true.
+        returns_file_size (bool): return file size of compressed object in addition to PIL image if true.
         open_kwargs (dict or None): kwargs to be used as part of Image.open(img_buffer, **open_kwargs).
         save_kwargs (dict or None): kwargs to be used as part of Image.save(img_buffer, **save_kwargs).
     """
@@ -81,6 +81,38 @@ class PillowImageModule(nn.Module):
         if self.returns_file_size:
             return pil_img, file_size
         return pil_img
+
+    def __repr__(self):
+        return self.__class__.__name__ + \
+               '(returns_file_size={}, open_kwargs={}, save_kwargs={})'.format(self.returns_file_size,
+                                                                               self.open_kwargs, self.save_kwargs)
+
+
+@register_codec_transform_module
+class PillowTensorModule(nn.Module):
+    """
+    Generalized Pillow module to compress (decompress) tensors e.g., as part of transform pipeline.
+    Args:
+        returns_file_size (bool): return file size of compressed object in addition to PIL image if true.
+        open_kwargs (dict or None): kwargs to be used as part of Image.open(img_buffer, **open_kwargs).
+        save_kwargs (dict or None): kwargs to be used as part of Image.save(img_buffer, **save_kwargs).
+    """
+    def __init__(self, returns_file_size=False, open_kwargs=None, **save_kwargs):
+        super().__init__()
+        self.returns_file_size = returns_file_size
+        self.open_kwargs = open_kwargs if isinstance(open_kwargs, dict) else dict()
+        self.save_kwargs = save_kwargs
+
+    def forward(self, x, *args):
+        """
+        Args:
+            x (torch.Tensor): Tensor to be transformed.
+
+        Returns:
+            torch.Tensor or a tuple of torch.Tensor and int: Affine transformed image or with its file size if returns_file_size=True.
+        """
+
+        return x
 
     def __repr__(self):
         return self.__class__.__name__ + \
