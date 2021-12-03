@@ -1,5 +1,6 @@
 import torch
 from torchdistill.datasets.util import build_transform
+from torchdistill.models.registry import get_model
 from torchdistill.models.registry import register_model_class, register_model_func
 from torchvision import models
 from torchvision.ops import misc as misc_nn_ops
@@ -39,7 +40,7 @@ class UpdatableBackbone(AnalyzableModule):
 
 
 class SplittableResNet(UpdatableBackbone):
-    def __init__(self, bottleneck_layer, resnet_model, skips_avgpool=True, skips_fc=True,
+    def __init__(self, bottleneck_layer, resnet_model, inplanes=None, skips_avgpool=True, skips_fc=True,
                  pre_transform_params=None, analysis_config=None):
         if analysis_config is None:
             analysis_config = dict()
@@ -51,9 +52,10 @@ class SplittableResNet(UpdatableBackbone):
         self.layer2 = resnet_model.layer2
         self.layer3 = resnet_model.layer3
         self.layer4 = resnet_model.layer4
-        self.avgpool = None if skips_avgpool else resnet_model.avgpool
+        self.avgpool = None if skips_avgpool \
+            else resnet_model.global_pool if hasattr(resnet_model, 'global_pool') else resnet_model.avgpool
         self.fc = None if skips_fc else resnet_model.fc
-        self.inplanes = resnet_model.inplanes
+        self.inplanes = resnet_model.inplanes if inplanes is None else inplanes
 
     def forward(self, x):
         if self.pre_transform is not None:
@@ -88,14 +90,24 @@ class SplittableResNet(UpdatableBackbone):
 
 
 @register_backbone_func
-def splittable_resnet(bottleneck_config, resnet_name='resnet50', skips_avgpool=True, skips_fc=True,
+def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, skips_avgpool=True, skips_fc=True,
                       pre_transform_params=None, analysis_config=None, **resnet_kwargs):
     bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
     if resnet_kwargs.pop('norm_layer', '') == 'FrozenBatchNorm2d':
         resnet_model = models.__dict__[resnet_name](norm_layer=misc_nn_ops.FrozenBatchNorm2d, **resnet_kwargs)
     else:
         resnet_model = models.__dict__[resnet_name](**resnet_kwargs)
-    return SplittableResNet(bottleneck_layer, resnet_model, skips_avgpool, skips_fc,
+    return SplittableResNet(bottleneck_layer, resnet_model, inplanes, skips_avgpool, skips_fc,
+                            pre_transform_params, analysis_config)
+
+
+@register_backbone_func
+def splittable_resnest(bottleneck_config, resnest_name='resnest50d', torch_hub_repo='rwightman/pytorch-image-models',
+                       inplanes=None, skips_avgpool=True, skips_fc=True, pre_transform_params=None,
+                       analysis_config=None, **resnest_kwargs):
+    bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
+    resnest_model = get_model(resnest_name, repo_or_dir=torch_hub_repo, **resnest_kwargs)
+    return SplittableResNet(bottleneck_layer, resnest_model, inplanes, skips_avgpool, skips_fc,
                             pre_transform_params, analysis_config)
 
 
