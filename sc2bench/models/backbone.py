@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import torch
 from torchdistill.datasets.util import build_transform
 from torchdistill.models.registry import get_model
@@ -84,6 +86,15 @@ class SplittableResNet(UpdatableBackbone):
     def update(self):
         self.bottleneck_layer.update()
         self.bottleneck_updated = True
+
+    def load_state_dict(self, state_dict, **kwargs):
+        entropy_bottleneck_state_dict = OrderedDict()
+        for key in list(state_dict.keys()):
+            if key.startswith('bottleneck_layer.'):
+                entropy_bottleneck_state_dict[key.replace('bottleneck_layer.', '')] = state_dict.pop(key)
+
+        super().load_state_dict(state_dict, strict=False)
+        self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)
 
     def get_aux_module(self, **kwargs):
         return self.bottleneck_layer
