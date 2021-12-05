@@ -1,9 +1,11 @@
+import timm
 from compressai.zoo.image import model_architectures
 from torchdistill.common import misc_util
 from torchdistill.common.constant import def_logger
 from torchdistill.common.main_util import load_ckpt
 from torchdistill.models.official import get_image_classification_model
 from torchdistill.models.registry import get_model
+
 from .backbone import get_backbone
 
 logger = def_logger.getChild(__name__)
@@ -59,12 +61,16 @@ def get_compression_model(compression_model_config, device):
 def load_classification_model(model_config, device, distributed):
     sync_bn = model_config.get('sync_bn', False)
     model = get_image_classification_model(model_config, distributed, sync_bn)
+    model_name = model_config['name']
+    if model is None and model_name in timm.models.__dict__:
+        model = timm.models.__dict__[model_name](**model_config['params'])
+
     if model is None:
-        model = get_backbone(model_config['name'], **model_config['params'])
+        model = get_backbone(model_name, **model_config['params'])
 
     if model is None:
         repo_or_dir = model_config.get('repo_or_dir', None)
-        model = get_model(model_config['name'], repo_or_dir, **model_config['params'])
+        model = get_model(model_name, repo_or_dir, **model_config['params'])
 
     ckpt_file_path = model_config['ckpt']
     load_ckpt(ckpt_file_path, model=model, strict=True)
