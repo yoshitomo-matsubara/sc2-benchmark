@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 import torch
-from timm.models import resnest
+from timm.models import resnest, regnet
 from torchdistill.datasets.util import build_transform
 from torchdistill.models.registry import register_model_class, register_model_func
 from torchvision import models
@@ -100,6 +100,57 @@ class SplittableResNet(UpdatableBackbone):
         return self.bottleneck_layer
 
 
+class SplittableRegNet(UpdatableBackbone):
+    def __init__(self, bottleneck_layer, regnet_model, inplanes=None, skips_head=True,
+                 pre_transform_params=None, analysis_config=None):
+        if analysis_config is None:
+            analysis_config = dict()
+
+        super().__init__(analysis_config.get('analyzer_configs', list()))
+        self.pre_transform = build_transform(pre_transform_params)
+        self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
+        self.bottleneck_layer = bottleneck_layer
+        self.s2 = regnet_model.s2
+        self.s3 = regnet_model.s3
+        self.s4 = regnet_model.s4
+        self.head = None if skips_head else regnet_model.head
+        self.inplanes = inplanes
+
+    def forward(self, x):
+        if self.pre_transform is not None:
+            x = self.pre_transform(x)
+
+        if self.bottleneck_updated and not self.training:
+            x = self.bottleneck_layer.encode(x)
+            self.analyze(x)
+            x = self.bottleneck_layer.decode(**x)
+        else:
+            x = self.bottleneck_layer(x)
+
+        x = self.s2(x)
+        x = self.s3(x)
+        x = self.s4(x)
+        if self.head is None:
+            return x
+        return self.head(x)
+
+    def update(self):
+        self.bottleneck_layer.update()
+        self.bottleneck_updated = True
+
+    def load_state_dict(self, state_dict, **kwargs):
+        entropy_bottleneck_state_dict = OrderedDict()
+        for key in list(state_dict.keys()):
+            if key.startswith('bottleneck_layer.'):
+                entropy_bottleneck_state_dict[key.replace('bottleneck_layer.', '')] = state_dict.pop(key)
+
+        super().load_state_dict(state_dict, strict=False)
+        self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)
+
+    def get_aux_module(self, **kwargs):
+        return self.bottleneck_layer
+
+
 @register_backbone_func
 def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, skips_avgpool=True, skips_fc=True,
                       pre_transform_params=None, analysis_config=None, **resnet_kwargs):
@@ -118,6 +169,15 @@ def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=No
     bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
     resnest_model = resnest.__dict__[resnest_name](**resnest_kwargs)
     return SplittableResNet(bottleneck_layer, resnest_model, inplanes, skips_avgpool, skips_fc,
+                            pre_transform_params, analysis_config)
+
+
+@register_backbone_func
+def splittable_regnet(bottleneck_config, reget_name='regnety_064', inplanes=None, skips_head=True,
+                      pre_transform_params=None, analysis_config=None, **resnest_kwargs):
+    bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
+    regnet_model = regnet.__dict__[reget_name](**resnest_kwargs)
+    return SplittableRegNet(bottleneck_layer, regnet_model, inplanes, skips_head,
                             pre_transform_params, analysis_config)
 
 
