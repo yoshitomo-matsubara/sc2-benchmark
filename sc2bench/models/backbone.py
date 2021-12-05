@@ -1,8 +1,8 @@
 from collections import OrderedDict
 
 import torch
+from timm.models import resnest
 from torchdistill.datasets.util import build_transform
-from torchdistill.models.registry import get_model
 from torchdistill.models.registry import register_model_class, register_model_func
 from torchvision import models
 from torchvision.ops import misc as misc_nn_ops
@@ -113,11 +113,10 @@ def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, 
 
 
 @register_backbone_func
-def splittable_resnest(bottleneck_config, resnest_name='resnest50d', torch_hub_repo='rwightman/pytorch-image-models',
-                       inplanes=None, skips_avgpool=True, skips_fc=True, pre_transform_params=None,
-                       analysis_config=None, **resnest_kwargs):
+def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=None, skips_avgpool=True, skips_fc=True,
+                       pre_transform_params=None, analysis_config=None, **resnest_kwargs):
     bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
-    resnest_model = get_model(resnest_name, repo_or_dir=torch_hub_repo, **resnest_kwargs)
+    resnest_model = resnest.__dict__[resnest_name](**resnest_kwargs)
     return SplittableResNet(bottleneck_layer, resnest_model, inplanes, skips_avgpool, skips_fc,
                             pre_transform_params, analysis_config)
 
