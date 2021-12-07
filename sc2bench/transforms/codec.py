@@ -10,7 +10,7 @@ from compressai.utils.bench.codecs import run_command
 from torch import nn
 from torchdistill.datasets.transform import register_transform_class
 from torchvision.transforms import Resize
-from torchvision.transforms.functional import InterpolationMode
+from torchvision.transforms.functional import InterpolationMode, to_pil_image, to_tensor
 
 CODEC_TRANSFORM_MODULE_DICT = dict()
 
@@ -103,16 +103,44 @@ class PillowTensorModule(nn.Module):
         self.open_kwargs = open_kwargs if isinstance(open_kwargs, dict) else dict()
         self.save_kwargs = save_kwargs
 
-    def forward(self, x, *args):
+    def forward(self, x, quality, *args): # quality range [0-95]
         """
         Args:
-            x (torch.Tensor): Tensor to be transformed.
+            x (torch.Tensor): Tensor to be transformed. shape B, C, H, W
 
         Returns:
             torch.Tensor or a tuple of torch.Tensor and int: Affine transformed image or with its file size if returns_file_size=True.
         """
+        splited_features = x.split(3, dim=1)
+        last_shape = splited_features[-1].shape
+        if last_shape[1] == 2:
+            more_splited_last_features = splited_features[-1].split(1, dim=1)
+            splited_features = splited_features[:-1] + more_splited_last_features
 
-        return x
+        idx, norm_max, norm_min, compressed_splited_features, fsize = 0, [], [], [], 0
+        for batch_features in splited_features:  # N 3 H W
+            compressed_batch_features = []
+            for each_feature in batch_features:  # 3 H W
+                norm_max.append(each_feature.max())
+                norm_min.append(each_feature.min())
+                normed_feature = (each_feature - norm_min[idx]) / norm_max[idx] # normalize to [0, 1]
+                img = to_pil_image(normed_feature)
+                img.save(f"compressed_feature_{idx}.jpg", quality=quality, optimize=True, **self.save_kwargs)
+                fsize = os.path.getsize(f"compressed_feature_{idx}.jpg")
+                img = Image.open(f"compressed_feature_{idx}.jpg", **self.open_kwargs)
+                tensor = to_tensor(img)
+                tensor = tensor * norm_max[idx] + norm_min[idx]
+                compressed_batch_features.append(tensor)
+                os.remove(f"compressed_feature_{idx}.jpg")
+                idx += 1
+
+            compressed_batch_features = torch.stack(compressed_batch_features, 0)
+            compressed_splited_features.append(compressed_batch_features)
+        compressed_features = torch.cat(compressed_splited_features, 1)
+        if self.returns_file_size:
+            return compressed_features, fsize
+        else:
+            return compressed_batch_features
 
     def __repr__(self):
         return self.__class__.__name__ + \
