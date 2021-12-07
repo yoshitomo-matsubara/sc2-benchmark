@@ -1,8 +1,9 @@
 import torch
 from torch import nn
 from torchdistill.datasets.util import build_transform
-from .registry import get_compression_model, load_classification_model
+from torchdistill.models.util import redesign_model
 
+from .registry import get_compression_model, load_classification_model
 from ..analysis import AnalyzableModule
 
 WRAPPER_CLASS_DICT = dict()
@@ -114,6 +115,58 @@ class NeuralInputCompressionClassifier(AnalyzableModule):
         if self.post_transform is not None:
             x = self.post_transform(x)
         return self.classification_model(x)
+
+
+@register_wrapper_class
+class CodecFeatureCompressionClassifier(AnalyzableModule):
+    """
+    Wrapper module for codec feature compression model injected to a classifier.
+    Args:
+        classification_model (nn.Module): classification model
+        encoder_config (dict): keyword configurations to design an encoder from modules in classification_model
+        codec_params (dict): keyword configurations for transform sequence for codec
+        decoder_config (dict): keyword configurations to design a decoder from modules in classification_model
+        classifier_config (dict): keyword configurations to design a classifier from modules in classification_model
+        post_transform_params (dict): keyword configurations for transform sequence after compression model
+        analysis_config (dict): configuration for analysis
+    """
+    def __init__(self, classification_model, device, encoder_config=None, codec_params=None, decoder_config=None,
+                 classifier_config=None, post_transform_params=None, analysis_config=None, **kwargs):
+        if analysis_config is None:
+            analysis_config = dict()
+
+        super().__init__(analysis_config.get('analyzer_configs', list()))
+        self.codec_encoder_decoder = build_transform(codec_params)
+        self.device = device
+        self.encoder = redesign_model(classification_model, encoder_config, model_label='encoder')
+        self.decoder = redesign_model(classification_model, decoder_config, model_label='decoder')
+        self.classifier = redesign_model(classification_model, classifier_config, model_label='classification')
+        self.post_transform = build_transform(post_transform_params)
+
+    def forward(self, x):
+        """
+        Args:
+            x (Tensor): input sample.
+
+        Returns:
+            Tensor: output tensor from self.classifier.
+        """
+        x = self.encoder(x)
+        tmp_list = list()
+        for sub_x in x:
+            if self.codec_encoder_decoder is not None:
+                sub_x, file_size = self.codec_encoder_decoder(sub_x)
+                if not self.training:
+                    self.analyze(file_size)
+
+            if self.post_transform is not None:
+                sub_x = self.post_transform(sub_x)
+            tmp_list.append(sub_x.unsqueeze(0))
+
+        x = torch.hstack(tmp_list).to(self.device)
+        x = self.decoder(x)
+        x = torch.flatten(x, 1)
+        return self.classifier(x)
 
 
 def wrap_model(wrapper_model_name, model, compressor, **kwargs):
