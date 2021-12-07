@@ -8,11 +8,20 @@ from PIL import Image
 from compressai.transforms.functional import rgb2ycbcr, ycbcr2rgb
 from compressai.utils.bench.codecs import run_command
 from torch import nn
+from torchdistill.common import file_util
 from torchdistill.datasets.transform import register_transform_class
-from torchvision.transforms import Resize
+from torchvision.transforms import RandomResizedCrop, Resize
 from torchvision.transforms.functional import InterpolationMode, to_pil_image, to_tensor
 
 CODEC_TRANSFORM_MODULE_DICT = dict()
+INTERPOLATION_MODE_DICT = {
+    'nearest': InterpolationMode.NEAREST,
+    'bicubic': InterpolationMode.BICUBIC,
+    'bilinear': InterpolationMode.BILINEAR,
+    'box': InterpolationMode.BOX,
+    'hamming': InterpolationMode.HAMMING,
+    'lanczos': InterpolationMode.LANCZOS
+}
 
 
 def register_codec_transform_module(cls):
@@ -29,6 +38,20 @@ def register_codec_transform_module(cls):
 
 
 @register_codec_transform_module
+class WrappedRandomResizedCrop(RandomResizedCrop):
+    """
+    `RandomResizedCrop` in torchvision wrapped to be defined by `interpolation` as a str object
+    Args:
+        interpolation (str or None): Desired interpolation mode (`nearest`, `bicubic`, `bilinear`, `box`, `hamming`, `lanczos`)
+        kwargs (dict): kwargs for `RandomResizedCrop` in torchvision
+    """
+    def __init__(self, interpolation=None, **kwargs):
+        if interpolation is not None:
+            interpolation = INTERPOLATION_MODE_DICT.get(interpolation, None)
+        super().__init__(**kwargs, interpolation=interpolation)
+
+
+@register_codec_transform_module
 class WrappedResize(Resize):
     """
     `Resize` in torchvision wrapped to be defined by `interpolation` as a str object
@@ -36,18 +59,9 @@ class WrappedResize(Resize):
         interpolation (str or None): Desired interpolation mode (`nearest`, `bicubic`, `bilinear`, `box`, `hamming`, `lanczos`)
         kwargs (dict): kwargs for `Resize` in torchvision
     """
-    MODE_DICT = {
-        'nearest': InterpolationMode.NEAREST,
-        'bicubic': InterpolationMode.BICUBIC,
-        'bilinear': InterpolationMode.BILINEAR,
-        'box': InterpolationMode.BOX,
-        'hamming': InterpolationMode.HAMMING,
-        'lanczos': InterpolationMode.LANCZOS
-    }
-
     def __init__(self, interpolation=None, **kwargs):
         if interpolation is not None:
-            interpolation = self.MODE_DICT.get(interpolation, None)
+            interpolation = INTERPOLATION_MODE_DICT.get(interpolation, None)
         super().__init__(**kwargs, interpolation=interpolation)
 
 
@@ -103,7 +117,7 @@ class PillowTensorModule(nn.Module):
         self.open_kwargs = open_kwargs if isinstance(open_kwargs, dict) else dict()
         self.save_kwargs = save_kwargs
 
-    def forward(self, x, quality, *args): # quality range [0-95]
+    def forward(self, x, *args):
         """
         Args:
             x (torch.Tensor): Tensor to be transformed. shape B, C, H, W
@@ -111,36 +125,40 @@ class PillowTensorModule(nn.Module):
         Returns:
             torch.Tensor or a tuple of torch.Tensor and int: Affine transformed image or with its file size if returns_file_size=True.
         """
-        splited_features = x.split(3, dim=1)
-        last_shape = splited_features[-1].shape
+        split_features = x.split(3, dim=1)
+        last_shape = split_features[-1].shape
         if last_shape[1] == 2:
-            more_splited_last_features = splited_features[-1].split(1, dim=1)
-            splited_features = splited_features[:-1] + more_splited_last_features
+            more_split_last_features = split_features[-1].split(1, dim=1)
+            split_features = split_features[:-1] + more_split_last_features
 
-        idx, norm_max, norm_min, compressed_splited_features, fsize = 0, [], [], [], 0
-        for batch_features in splited_features:  # N 3 H W
-            compressed_batch_features = []
+        idx, file_size = 0, 0
+        norm_max_list, norm_min_list, reconstructed_split_feature_list = list(), list(), list()
+        for batch_features in split_features:  # N 3 H W
+            reconstructed_batch_features = list()
             for each_feature in batch_features:  # 3 H W
-                norm_max.append(each_feature.max())
-                norm_min.append(each_feature.min())
-                normed_feature = (each_feature - norm_min[idx]) / norm_max[idx] # normalize to [0, 1]
-                img = to_pil_image(normed_feature)
-                img.save(f"compressed_feature_{idx}.jpg", quality=quality, optimize=True, **self.save_kwargs)
-                fsize = os.path.getsize(f"compressed_feature_{idx}.jpg")
-                img = Image.open(f"compressed_feature_{idx}.jpg", **self.open_kwargs)
-                tensor = to_tensor(img)
-                tensor = tensor * norm_max[idx] + norm_min[idx]
-                compressed_batch_features.append(tensor)
-                os.remove(f"compressed_feature_{idx}.jpg")
+                norm_max_list.append(each_feature.max())
+                norm_min_list.append(each_feature.min())
+                # normalize to [0, 1]
+                normed_feature = (each_feature - norm_min_list[idx]) / norm_max_list[idx]
+                pil_img = to_pil_image(normed_feature)
+                img_buffer = BytesIO()
+                # Compress split feature by codec
+                pil_img.save(img_buffer, **self.save_kwargs)
+                file_size += img_buffer.tell()
+                pil_img = Image.open(img_buffer, **self.open_kwargs)
+                tensor = to_tensor(pil_img)
+                tensor = tensor * norm_max_list[idx] + norm_min_list[idx]
+                reconstructed_batch_features.append(tensor)
                 idx += 1
 
-            compressed_batch_features = torch.stack(compressed_batch_features, 0)
-            compressed_splited_features.append(compressed_batch_features)
-        compressed_features = torch.cat(compressed_splited_features, 1)
+            reconstructed_batch_features = torch.stack(reconstructed_batch_features, 0)
+            reconstructed_split_feature_list.append(reconstructed_batch_features)
+        reconstructed_features = torch.cat(reconstructed_split_feature_list, 1)
+        # File size: Compressed feature by codec + values to denormalize (norm_min_list, norm_max_list)
+        file_size += file_util.get_binary_object_size(norm_min_list) + file_util.get_binary_object_size(norm_max_list)
         if self.returns_file_size:
-            return compressed_features, fsize
-        else:
-            return compressed_batch_features
+            return reconstructed_features, file_size
+        return reconstructed_features
 
     def __repr__(self):
         return self.__class__.__name__ + \
