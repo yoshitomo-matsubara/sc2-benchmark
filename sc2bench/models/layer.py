@@ -49,23 +49,36 @@ class FPBasedResNetBottleneck(BaseBottleneck):
     Factorized Prior is proposed in "Variational Image Compression with a Scale Hyperprior" by
     J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
     """
-    def __init__(self, num_input_channels=3, num_bottleneck_channels=24, num_target_channels=256):
+    def __init__(self, num_input_channels=3, num_bottleneck_channels=24, num_target_channels=256,
+                 encoder_channel_sizes=None, decoder_channel_sizes=None):
+        if encoder_channel_sizes is None:
+            encoder_channel_sizes = \
+                [num_input_channels, num_bottleneck_channels * 4, num_bottleneck_channels * 2, num_bottleneck_channels]
+
+        if decoder_channel_sizes is None:
+            decoder_channel_sizes = \
+                [encoder_channel_sizes[-1], num_target_channels * 2, num_target_channels, num_target_channels]
+
         super().__init__(entropy_bottleneck_channels=num_bottleneck_channels)
         self.encoder = nn.Sequential(
-            nn.Conv2d(num_input_channels, num_bottleneck_channels * 4, kernel_size=5, stride=2, padding=2, bias=False),
-            GDN1(num_bottleneck_channels * 4),
-            nn.Conv2d(num_bottleneck_channels * 4, num_bottleneck_channels * 2,
+            nn.Conv2d(encoder_channel_sizes[0], encoder_channel_sizes[1],
                       kernel_size=5, stride=2, padding=2, bias=False),
-            GDN1(num_bottleneck_channels * 2),
-            nn.Conv2d(num_bottleneck_channels * 2, num_bottleneck_channels,
+            GDN1(encoder_channel_sizes[1]),
+            nn.Conv2d(encoder_channel_sizes[1], encoder_channel_sizes[2],
+                      kernel_size=5, stride=2, padding=2, bias=False),
+            GDN1(encoder_channel_sizes[2]),
+            nn.Conv2d(encoder_channel_sizes[2], encoder_channel_sizes[3],
                       kernel_size=2, stride=1, padding=0, bias=False)
         )
         self.decoder = nn.Sequential(
-            nn.Conv2d(num_bottleneck_channels, num_target_channels * 2, kernel_size=2, stride=1, padding=1, bias=False),
-            GDN1(num_target_channels * 2, inverse=True),
-            nn.Conv2d(num_target_channels * 2, num_target_channels, kernel_size=2, stride=1, padding=0, bias=False),
-            GDN1(num_target_channels, inverse=True),
-            nn.Conv2d(num_target_channels, num_target_channels, kernel_size=2, stride=1, padding=1, bias=False)
+            nn.Conv2d(decoder_channel_sizes[0], decoder_channel_sizes[1],
+                      kernel_size=2, stride=1, padding=1, bias=False),
+            GDN1(decoder_channel_sizes[1], inverse=True),
+            nn.Conv2d(decoder_channel_sizes[1], decoder_channel_sizes[2],
+                      kernel_size=2, stride=1, padding=0, bias=False),
+            GDN1(decoder_channel_sizes[2], inverse=True),
+            nn.Conv2d(decoder_channel_sizes[2], decoder_channel_sizes[3],
+                      kernel_size=2, stride=1, padding=1, bias=False)
         )
 
     def encode(self, x, **kwargs):

@@ -9,10 +9,18 @@ from compressai.transforms.functional import rgb2ycbcr, ycbcr2rgb
 from compressai.utils.bench.codecs import run_command
 from torch import nn
 from torchdistill.datasets.transform import register_transform_class
-from torchvision.transforms import Resize
+from torchvision.transforms import RandomResizedCrop, Resize
 from torchvision.transforms.functional import InterpolationMode
 
 CODEC_TRANSFORM_MODULE_DICT = dict()
+INTERPOLATION_MODE_DICT = {
+    'nearest': InterpolationMode.NEAREST,
+    'bicubic': InterpolationMode.BICUBIC,
+    'bilinear': InterpolationMode.BILINEAR,
+    'box': InterpolationMode.BOX,
+    'hamming': InterpolationMode.HAMMING,
+    'lanczos': InterpolationMode.LANCZOS
+}
 
 
 def register_codec_transform_module(cls):
@@ -29,6 +37,20 @@ def register_codec_transform_module(cls):
 
 
 @register_codec_transform_module
+class WrappedRandomResizedCrop(RandomResizedCrop):
+    """
+    `RandomResizedCrop` in torchvision wrapped to be defined by `interpolation` as a str object
+    Args:
+        interpolation (str or None): Desired interpolation mode (`nearest`, `bicubic`, `bilinear`, `box`, `hamming`, `lanczos`)
+        kwargs (dict): kwargs for `RandomResizedCrop` in torchvision
+    """
+    def __init__(self, interpolation=None, **kwargs):
+        if interpolation is not None:
+            interpolation = INTERPOLATION_MODE_DICT.get(interpolation, None)
+        super().__init__(**kwargs, interpolation=interpolation)
+
+
+@register_codec_transform_module
 class WrappedResize(Resize):
     """
     `Resize` in torchvision wrapped to be defined by `interpolation` as a str object
@@ -36,18 +58,9 @@ class WrappedResize(Resize):
         interpolation (str or None): Desired interpolation mode (`nearest`, `bicubic`, `bilinear`, `box`, `hamming`, `lanczos`)
         kwargs (dict): kwargs for `Resize` in torchvision
     """
-    MODE_DICT = {
-        'nearest': InterpolationMode.NEAREST,
-        'bicubic': InterpolationMode.BICUBIC,
-        'bilinear': InterpolationMode.BILINEAR,
-        'box': InterpolationMode.BOX,
-        'hamming': InterpolationMode.HAMMING,
-        'lanczos': InterpolationMode.LANCZOS
-    }
-
     def __init__(self, interpolation=None, **kwargs):
         if interpolation is not None:
-            interpolation = self.MODE_DICT.get(interpolation, None)
+            interpolation = INTERPOLATION_MODE_DICT.get(interpolation, None)
         super().__init__(**kwargs, interpolation=interpolation)
 
 
