@@ -132,14 +132,16 @@ class PillowTensorModule(nn.Module):
             more_split_last_features = split_features[-1].split(1, dim=0)
             split_features = split_features[:-1] + more_split_last_features
 
-        idx, file_size = 0, 0
+        file_size = 0
         norm_max_list, norm_min_list, reconstructed_split_feature_list = list(), list(), list()
         for split_feature in split_features:
             # split_feature: (3 or 1, H, W)
-            norm_max_list.append(split_feature.max())
-            norm_min_list.append(split_feature.min())
+            max_value = split_feature.max()
+            min_value = split_feature.min()
+            norm_max_list.append(max_value)
+            norm_min_list.append(min_value)
             # normalize to [0, 1]
-            normed_feature = (split_feature - norm_min_list[idx]) / norm_max_list[idx]
+            normed_feature = (split_feature - min_value) / max_value
             pil_img = to_pil_image(normed_feature)
             img_buffer = BytesIO()
             # Compress split feature by codec
@@ -147,9 +149,8 @@ class PillowTensorModule(nn.Module):
             file_size += img_buffer.tell()
             pil_img = Image.open(img_buffer, **self.open_kwargs)
             tensor = to_tensor(pil_img)
-            tensor = tensor.to(device) * norm_max_list[idx] + norm_min_list[idx]
+            tensor = tensor.to(device) * max_value + min_value
             reconstructed_split_feature_list.append(tensor)
-            idx += 1
 
         reconstructed_batch_features = torch.vstack(reconstructed_split_feature_list)
         # File size: Compressed feature by codec + values to denormalize (norm_min_list, norm_max_list)
