@@ -120,45 +120,46 @@ class PillowTensorModule(nn.Module):
     def forward(self, x, *args):
         """
         Args:
-            x (torch.Tensor): Tensor to be transformed. shape B, C, H, W
+            x (torch.Tensor): Tensor (C, H, W) to be transformed
 
         Returns:
             torch.Tensor or a tuple of torch.Tensor and int: Affine transformed image or with its file size if returns_file_size=True.
         """
-        split_features = x.split(3, dim=1)
+        device = x.device
+        split_features = x.split(3, dim=0)
         last_shape = split_features[-1].shape
-        if last_shape[1] == 2:
-            more_split_last_features = split_features[-1].split(1, dim=1)
+        if last_shape[0] == 2:
+            more_split_last_features = split_features[-1].split(1, dim=0)
             split_features = split_features[:-1] + more_split_last_features
 
         idx, file_size = 0, 0
         norm_max_list, norm_min_list, reconstructed_split_feature_list = list(), list(), list()
-        for batch_features in split_features:  # N 3 H W
-            reconstructed_batch_features = list()
-            for each_feature in batch_features:  # 3 H W
-                norm_max_list.append(each_feature.max())
-                norm_min_list.append(each_feature.min())
-                # normalize to [0, 1]
-                normed_feature = (each_feature - norm_min_list[idx]) / norm_max_list[idx]
-                pil_img = to_pil_image(normed_feature)
-                img_buffer = BytesIO()
-                # Compress split feature by codec
-                pil_img.save(img_buffer, **self.save_kwargs)
-                file_size += img_buffer.tell()
-                pil_img = Image.open(img_buffer, **self.open_kwargs)
-                tensor = to_tensor(pil_img)
-                tensor = tensor * norm_max_list[idx] + norm_min_list[idx]
-                reconstructed_batch_features.append(tensor)
-                idx += 1
+        for split_feature in split_features:
+            # split_feature: (3 or 1, H, W)
+            norm_max_list.append(split_feature.max())
+            norm_min_list.append(split_feature.min())
+            # normalize to [0, 1]
+            normed_feature = (split_feature - norm_min_list[idx]) / norm_max_list[idx]
+            pil_img = to_pil_image(normed_feature)
+            img_buffer = BytesIO()
+            # Compress split feature by codec
+            pil_img.save(img_buffer, **self.save_kwargs)
+            file_size += img_buffer.tell()
+            pil_img = Image.open(img_buffer, **self.open_kwargs)
+            tensor = to_tensor(pil_img)
+            tensor = tensor.to(device) * norm_max_list[idx] + norm_min_list[idx]
+            reconstructed_split_feature_list.append(tensor)
+            idx += 1
 
-            reconstructed_batch_features = torch.stack(reconstructed_batch_features, 0)
-            reconstructed_split_feature_list.append(reconstructed_batch_features)
-        reconstructed_features = torch.cat(reconstructed_split_feature_list, 1)
+        reconstructed_batch_features = torch.vstack(reconstructed_split_feature_list)
         # File size: Compressed feature by codec + values to denormalize (norm_min_list, norm_max_list)
-        file_size += file_util.get_binary_object_size(norm_min_list) + file_util.get_binary_object_size(norm_max_list)
+        norm_data_size = \
+            file_util.get_binary_object_size(norm_min_list, unit_size=1) \
+            + file_util.get_binary_object_size(norm_max_list, unit_size=1)
+        file_size += norm_data_size
         if self.returns_file_size:
-            return reconstructed_features, file_size
-        return reconstructed_features
+            return reconstructed_batch_features, file_size
+        return reconstructed_batch_features
 
     def __repr__(self):
         return self.__class__.__name__ + \
