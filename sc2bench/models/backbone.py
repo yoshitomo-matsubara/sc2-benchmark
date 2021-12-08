@@ -65,7 +65,8 @@ class SplittableResNet(UpdatableBackbone):
 
         if self.bottleneck_updated and not self.training:
             x = self.bottleneck_layer.encode(x)
-            self.analyze(x)
+            if self.analyzes_after_compress:
+                self.analyze(x)
             x = self.bottleneck_layer.decode(**x)
         else:
             x = self.bottleneck_layer(x)
@@ -122,7 +123,8 @@ class SplittableRegNet(UpdatableBackbone):
 
         if self.bottleneck_updated and not self.training:
             x = self.bottleneck_layer.encode(x)
-            self.analyze(x)
+            if self.analyzes_after_compress:
+                self.analyze(x)
             x = self.bottleneck_layer.decode(**x)
         else:
             x = self.bottleneck_layer(x)
