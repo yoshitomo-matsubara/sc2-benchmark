@@ -148,19 +148,22 @@ class PillowTensorModule(nn.Module):
             pil_img.save(img_buffer, **self.save_kwargs)
             file_size += img_buffer.tell()
             pil_img = Image.open(img_buffer, **self.open_kwargs)
+            if split_feature.shape[0] == 1 and pil_img.mode != 'L':
+                pil_img = pil_img.convert('L')
+
             tensor = to_tensor(pil_img)
             tensor = tensor.to(device) * max_value + min_value
             reconstructed_split_feature_list.append(tensor)
 
-        reconstructed_batch_features = torch.vstack(reconstructed_split_feature_list)
+        reconstructed_features = torch.vstack(reconstructed_split_feature_list)
         # File size: Compressed feature by codec + values to denormalize (norm_min_list, norm_max_list)
         norm_data_size = \
             file_util.get_binary_object_size(norm_min_list, unit_size=1) \
             + file_util.get_binary_object_size(norm_max_list, unit_size=1)
         file_size += norm_data_size
         if self.returns_file_size:
-            return reconstructed_batch_features, file_size
-        return reconstructed_batch_features
+            return reconstructed_features, file_size
+        return reconstructed_features
 
     def __repr__(self):
         return self.__class__.__name__ + \
