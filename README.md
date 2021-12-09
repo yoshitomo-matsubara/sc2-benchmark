@@ -15,6 +15,15 @@ conda activate sc2-benchmark
 pip install -e "."
 ```
 
+## Codec-based feature compression
+```shell
+# JPEG
+python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/jpeg-resnet50.yaml
+# WebP
+python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/webp-resnet50.yaml
+```
+
+
 ## Analysis
 
 ### Trade-off
