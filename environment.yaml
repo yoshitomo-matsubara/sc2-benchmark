@@ -53,6 +53,7 @@ dependencies:
     - scipy==1.7.2
     - seaborn==0.11.2
     - setuptools==59.2.0
+    - timm==0.4.12
     - tomli==1.2.2
     - torch==1.10.0
     - torchdistill==0.2.7
