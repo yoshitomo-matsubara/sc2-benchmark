@@ -128,25 +128,35 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
     J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
     """
     def __init__(self, num_input_channels=3, num_latent_channels=64,
-                 num_bottleneck_channels=24, num_target_channels=256, h_a=None, h_s=None):
+                 num_bottleneck_channels=24, num_target_channels=256, h_a=None, h_s=None,
+                 g_a_channel_sizes=None, g_s_channel_sizes=None):
+        if g_a_channel_sizes is None:
+            g_a_channel_sizes = \
+                [num_input_channels, num_bottleneck_channels * 4, num_bottleneck_channels * 2, num_bottleneck_channels]
+        else:
+            num_bottleneck_channels = g_a_channel_sizes[3]
+
+        if g_s_channel_sizes is None:
+            g_s_channel_sizes = \
+                [g_a_channel_sizes[-1], num_target_channels * 2, num_target_channels, num_target_channels]
         super().__init__(entropy_bottleneck_channels=num_latent_channels)
         self.g_a = nn.Sequential(
-            nn.Conv2d(num_input_channels, num_bottleneck_channels * 4,
+            nn.Conv2d(g_a_channel_sizes[0], g_a_channel_sizes[1],
                       kernel_size=5, stride=2, padding=2, bias=False),
-            GDN1(num_bottleneck_channels * 4),
-            nn.Conv2d(num_bottleneck_channels * 4, num_bottleneck_channels * 2,
+            GDN1(g_a_channel_sizes[1]),
+            nn.Conv2d(g_a_channel_sizes[1], g_a_channel_sizes[2],
                       kernel_size=5, stride=2, padding=2, bias=False),
-            GDN1(num_bottleneck_channels * 2),
-            nn.Conv2d(num_bottleneck_channels * 2, num_bottleneck_channels,
+            GDN1(g_a_channel_sizes[2]),
+            nn.Conv2d(g_a_channel_sizes[2], g_a_channel_sizes[3],
                       kernel_size=2, stride=1, padding=0, bias=False)
         )
 
         self.g_s = nn.Sequential(
-            nn.Conv2d(num_bottleneck_channels, num_target_channels * 2, kernel_size=2, stride=1, padding=1, bias=False),
-            GDN1(num_target_channels * 2, inverse=True),
-            nn.Conv2d(num_target_channels * 2, num_target_channels, kernel_size=2, stride=1, padding=0, bias=False),
-            GDN1(num_target_channels, inverse=True),
-            nn.Conv2d(num_target_channels, num_target_channels, kernel_size=2, stride=1, padding=1, bias=False)
+            nn.Conv2d(g_s_channel_sizes[0], g_s_channel_sizes[1], kernel_size=2, stride=1, padding=1, bias=False),
+            GDN1(g_s_channel_sizes[1], inverse=True),
+            nn.Conv2d(g_s_channel_sizes[1], g_s_channel_sizes[2], kernel_size=2, stride=1, padding=0, bias=False),
+            GDN1(g_s_channel_sizes[2], inverse=True),
+            nn.Conv2d(g_s_channel_sizes[2], g_s_channel_sizes[3], kernel_size=2, stride=1, padding=1, bias=False)
         )
 
         self.h_a = nn.Sequential(
@@ -254,7 +264,8 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
     D. Minnen, J. Balle, G.D. Toderici.
     """
     def __init__(self, num_input_channels=3, num_latent_channels=64,
-                 num_bottleneck_channels=24, num_target_channels=256):
+                 num_bottleneck_channels=24, num_target_channels=256,
+                 g_a_channel_sizes=None, g_s_channel_sizes=None):
         h_a = nn.Sequential(
             nn.Conv2d(num_bottleneck_channels, num_latent_channels, kernel_size=5, stride=2, padding=1, bias=False),
             nn.LeakyReLU(inplace=True),
@@ -273,7 +284,7 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
         )
         super().__init__(num_input_channels=num_input_channels, num_latent_channels=num_latent_channels,
                          num_bottleneck_channels=num_bottleneck_channels, num_target_channels=num_target_channels,
-                         h_a=h_a, h_s=h_s)
+                         h_a=h_a, h_s=h_s, g_a_channel_sizes=g_a_channel_sizes, g_s_channel_sizes=g_s_channel_sizes)
 
     def encode(self, x, **kwargs):
         y = self.g_a(x)
