@@ -127,7 +127,7 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
     Scale Hyperprior is proposed in "Variational Image Compression with a Scale Hyperprior" by
     J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
     """
-    def __init__(self, num_input_channels=3, num_latent_channels=64,
+    def __init__(self, num_input_channels=3, num_latent_channels=16,
                  num_bottleneck_channels=24, num_target_channels=256, h_a=None, h_s=None,
                  g_a_channel_sizes=None, g_s_channel_sizes=None):
         if g_a_channel_sizes is None:
