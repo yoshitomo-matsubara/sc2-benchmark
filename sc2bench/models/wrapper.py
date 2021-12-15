@@ -1,8 +1,13 @@
+from collections import OrderedDict
+
 import torch
 from torch import nn
+from torchdistill.common.main_util import load_ckpt
 from torchdistill.datasets.util import build_transform
 from torchdistill.models.util import redesign_model
 
+from .backbone import UpdatableBackbone
+from .layer import EntropyBottleneckLayer
 from .registry import get_compression_model, load_classification_model
 from ..analysis import AnalyzableModule
 
@@ -169,6 +174,70 @@ class CodecFeatureCompressionClassifier(AnalyzableModule):
         return self.classifier(x)
 
 
+@register_wrapper_class
+class EntropicClassifier(UpdatableBackbone):
+    """
+    Wrapper module for entropic compression model injected to a classifier.
+    Args:
+        classification_model (nn.Module): classification model
+        encoder_config (dict): keyword configurations to design an encoder from modules in classification_model
+        compression_model_params (dict): keyword configurations for CompressionModel in compressai
+        decoder_config (dict): keyword configurations to design a decoder from modules in classification_model
+        classifier_config (dict): keyword configurations to design a classifier from modules in classification_model
+        analysis_config (dict): configuration for analysis
+    """
+    def __init__(self, classification_model, encoder_config, compression_model_params, decoder_config,
+                 classifier_config, analysis_config=None, **kwargs):
+        if analysis_config is None:
+            analysis_config = dict()
+
+        super().__init__(analysis_config.get('analyzer_configs', list()))
+        self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
+        self.entropy_bottleneck = EntropyBottleneckLayer(**compression_model_params)
+        self.encoder = nn.Identity() if encoder_config.get('ignored', False) \
+            else redesign_model(classification_model, encoder_config, model_label='encoder')
+        self.decoder = nn.Identity() if decoder_config.get('ignored', False) \
+            else redesign_model(classification_model, decoder_config, model_label='decoder')
+        self.classifier = redesign_model(classification_model, classifier_config, model_label='classification')
+
+    def forward(self, x):
+        """
+        Args:
+            x (Tensor): input sample.
+
+        Returns:
+            Tensor: output tensor from self.classifier.
+        """
+        x = self.encoder(x)
+        if self.bottleneck_updated and not self.training:
+            x = self.entropy_bottleneck.compress(x)
+            if self.analyzes_after_compress:
+                self.analyze(x)
+            x = self.entropy_bottleneck.decompress(**x)
+        else:
+            x, _ = self.entropy_bottleneck(x)
+
+        x = self.decoder(x)
+        x = torch.flatten(x, 1)
+        return self.classifier(x)
+
+    def update(self):
+        self.entropy_bottleneck.update()
+        self.bottleneck_updated = True
+
+    def load_state_dict(self, state_dict, **kwargs):
+        entropy_bottleneck_state_dict = OrderedDict()
+        for key in list(state_dict.keys()):
+            if key.startswith('entropy_bottleneck.'):
+                entropy_bottleneck_state_dict[key.replace('entropy_bottleneck.', '', 1)] = state_dict.pop(key)
+
+        super().load_state_dict(state_dict, strict=False)
+        self.entropy_bottleneck.load_state_dict(entropy_bottleneck_state_dict)
+
+    def get_aux_module(self, **kwargs):
+        return self.entropy_bottleneck
+
+
 def wrap_model(wrapper_model_name, model, compressor, **kwargs):
     """
     Args:
@@ -207,5 +276,10 @@ def get_wrapped_model(wrapper_model_config, task, device, distributed):
         model = load_classification_model(classification_model_config, device, distributed)
     else:
         raise ValueError(f'task `{task}` is not expected')
-    return WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model, device=device,
-                                                  **wrapper_model_config['params'])
+
+    wrapped_model = WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model, device=device,
+                                                           **wrapper_model_config['params'])
+    ckpt_file_path = wrapper_model_config.get('ckpt', None)
+    if ckpt_file_path is not None:
+        load_ckpt(ckpt_file_path, model=wrapped_model, strict=False)
+    return wrapped_model

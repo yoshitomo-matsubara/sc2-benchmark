@@ -92,7 +92,7 @@ class SplittableResNet(UpdatableBackbone):
         entropy_bottleneck_state_dict = OrderedDict()
         for key in list(state_dict.keys()):
             if key.startswith('bottleneck_layer.'):
-                entropy_bottleneck_state_dict[key.replace('bottleneck_layer.', '')] = state_dict.pop(key)
+                entropy_bottleneck_state_dict[key.replace('bottleneck_layer.', '', 1)] = state_dict.pop(key)
 
         super().load_state_dict(state_dict, strict=False)
         self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)
@@ -144,7 +144,7 @@ class SplittableRegNet(UpdatableBackbone):
         entropy_bottleneck_state_dict = OrderedDict()
         for key in list(state_dict.keys()):
             if key.startswith('bottleneck_layer.'):
-                entropy_bottleneck_state_dict[key.replace('bottleneck_layer.', '')] = state_dict.pop(key)
+                entropy_bottleneck_state_dict[key.replace('bottleneck_layer.', '', 1)] = state_dict.pop(key)
 
         super().load_state_dict(state_dict, strict=False)
         self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)

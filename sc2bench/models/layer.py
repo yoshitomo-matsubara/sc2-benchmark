@@ -21,6 +21,32 @@ def register_layer_class(cls):
     return cls
 
 
+class EntropyBottleneckLayer(CompressionModel):
+    """
+    Entropy bottleneck layer as a simple CompressionModel in compressai
+    The entropy bottleneck layer is proposed in "Variational Image Compression with a Scale Hyperprior" by
+    J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.updated = False
+
+    def forward(self, x):
+        return self.entropy_bottleneck(x)
+
+    def compress(self, x):
+        strings = self.entropy_bottleneck.compress(x)
+        return {'strings': [strings], 'shape': x.size()[-2:]}
+
+    def decompress(self, strings, shape):
+        assert isinstance(strings, list) and len(strings) == 1
+        return self.entropy_bottleneck.decompress(strings[0], shape)
+
+    def update(self, force=False):
+        self.updated = True
+        return super().update(force=force)
+
+
 class BaseBottleneck(CompressionModel):
     def __init__(self, entropy_bottleneck_channels):
         super().__init__(entropy_bottleneck_channels=entropy_bottleneck_channels)
@@ -222,14 +248,6 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
                 return decoded_obj
 
             y = self.g_a(x)
-            # z = self.h_a(torch.abs(y))
-            # z_hat = self.entropy_bottleneck.dequantize(
-            #     self.entropy_bottleneck.quantize(z, 'dequantize', self.get_means(z))
-            # )
-            # scales_hat = self.h_s(z_hat)
-            # indices = self.gaussian_conditional.build_indexes(scales_hat)
-            # y_strings = self.gaussian_conditional.compress(y, indices)
-            # y_hat = self.gaussian_conditional.decompress(y_strings, indices, z_hat.dtype)
             y_hat = self.gaussian_conditional.dequantize(
                 self.gaussian_conditional.quantize(y, 'dequantize', self.get_means(y))
             )
@@ -263,7 +281,7 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
     Mean-Scale Hyperprior is proposed in "Joint Autoregressive and Hierarchical Priors for Learned Image Compression" by
     D. Minnen, J. Balle, G.D. Toderici.
     """
-    def __init__(self, num_input_channels=3, num_latent_channels=64,
+    def __init__(self, num_input_channels=3, num_latent_channels=16,
                  num_bottleneck_channels=24, num_target_channels=256,
                  g_a_channel_sizes=None, g_s_channel_sizes=None):
         h_a = nn.Sequential(
@@ -331,11 +349,6 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
             )
             gaussian_params = self.h_s(z_hat)
             scales_hat, means_hat = gaussian_params.chunk(2, 1)
-
-            # indices = self.gaussian_conditional.build_indexes(scales_hat)
-            # y_strings = self.gaussian_conditional.compress(y, indices)
-            # y_hat = self.gaussian_conditional.decompress(y_strings, indices, means=means_hat)
-
             y_hat = self.gaussian_conditional.dequantize(
                 self.gaussian_conditional.quantize(y, 'dequantize', means_hat)
             )
