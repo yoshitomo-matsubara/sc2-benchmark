@@ -248,14 +248,6 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
                 return decoded_obj
 
             y = self.g_a(x)
-            # z = self.h_a(torch.abs(y))
-            # z_hat = self.entropy_bottleneck.dequantize(
-            #     self.entropy_bottleneck.quantize(z, 'dequantize', self.get_means(z))
-            # )
-            # scales_hat = self.h_s(z_hat)
-            # indices = self.gaussian_conditional.build_indexes(scales_hat)
-            # y_strings = self.gaussian_conditional.compress(y, indices)
-            # y_hat = self.gaussian_conditional.decompress(y_strings, indices, z_hat.dtype)
             y_hat = self.gaussian_conditional.dequantize(
                 self.gaussian_conditional.quantize(y, 'dequantize', self.get_means(y))
             )
@@ -357,11 +349,6 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
             )
             gaussian_params = self.h_s(z_hat)
             scales_hat, means_hat = gaussian_params.chunk(2, 1)
-
-            # indices = self.gaussian_conditional.build_indexes(scales_hat)
-            # y_strings = self.gaussian_conditional.compress(y, indices)
-            # y_hat = self.gaussian_conditional.decompress(y_strings, indices, means=means_hat)
-
             y_hat = self.gaussian_conditional.dequantize(
                 self.gaussian_conditional.quantize(y, 'dequantize', means_hat)
             )
