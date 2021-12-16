@@ -25,7 +25,8 @@ setup(
         'cython',
         'pycocotools>=2.0.2',
         'torchdistill>=0.2.7',
-        'compressai>=1.1.8'
+        'compressai>=1.1.8',
+        'timm>=0.4.12'
     ],
     extras_require={
         'test': ['pytest']
