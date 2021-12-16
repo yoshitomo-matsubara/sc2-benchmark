@@ -238,12 +238,12 @@ class EntropicClassifier(UpdatableBackbone):
         return self.entropy_bottleneck
 
 
-def wrap_model(wrapper_model_name, model, compressor, **kwargs):
+def wrap_model(wrapper_model_name, model, compression_model, **kwargs):
     """
     Args:
         wrapper_model_name (str): wrapper model key in wrapper model register.
         model (nn.Module): model to be wrapped.
-        compressor (nn.Module): compressor to be wrapped.
+        compression_model (nn.Module): compressor to be wrapped.
         **kwargs (dict): keyword arguments to instantiate a wrapper object.
 
     Returns:
@@ -251,7 +251,7 @@ def wrap_model(wrapper_model_name, model, compressor, **kwargs):
     """
     if wrapper_model_name not in WRAPPER_CLASS_DICT:
         raise ValueError('wrapper_model_name `{}` is not expected'.format(wrapper_model_name))
-    return WRAPPER_CLASS_DICT[wrapper_model_name](model, compressor=compressor, **kwargs)
+    return WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model, **kwargs)
 
 
 def get_wrapped_model(wrapper_model_config, task, device, distributed):
