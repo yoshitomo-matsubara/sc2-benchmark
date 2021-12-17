@@ -1,3 +1,4 @@
+from . import collator
 from .codec import CODEC_TRANSFORM_MODULE_DICT
 from .misc import MISC_TRANSFORM_MODULE_DICT
 

@@ -1,5 +1,6 @@
 import collections
 
+import numpy as np
 import torch
 from PIL.Image import Image
 from torch import nn
@@ -7,6 +8,7 @@ from torch._six import string_classes
 from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_collate_err_msg_format
 from torchdistill.datasets.collator import register_collate_func
 from torchdistill.datasets.transform import register_transform_class
+from torchvision.transforms import functional as F
 from torchvision.transforms.functional import pad
 
 MISC_TRANSFORM_MODULE_DICT = dict()
@@ -128,3 +130,24 @@ class AdaptivePad(nn.Module):
             'factor of {}'.format(padded_vertical_size, padded_horizontal_size, self.factor)
         padding = [horizontal_pad_size // 2, vertical_pad_size // 2]
         return pad(x, padding, self.fill, self.padding_mode)
+
+
+@register_misc_transform_module
+class CustomToTensor(object):
+    """
+    Customized ToTensor module that can be applied to sample and target selectively.
+    Args:
+        converts_sample (bool): apply to_tensor to sample if True.
+        converts_target (bool): apply torch.as_tensor to target if True.
+    """
+    def __init__(self, converts_sample=True, converts_target=True):
+        self.converts_sample = converts_sample
+        self.converts_target = converts_target
+
+    def __call__(self, image, target):
+        if self.converts_sample:
+            image = F.to_tensor(image)
+
+        if self.converts_target:
+            target = torch.as_tensor(np.array(target), dtype=torch.int64)
+        return image, target
