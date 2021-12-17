@@ -59,8 +59,7 @@ def get_compression_model(compression_model_config, device):
 
 
 def load_classification_model(model_config, device, distributed):
-    sync_bn = model_config.get('sync_bn', False)
-    model = get_image_classification_model(model_config, distributed, sync_bn)
+    model = get_image_classification_model(model_config, distributed)
     model_name = model_config['name']
     if model is None and model_name in timm.models.__dict__:
         model = timm.models.__dict__[model_name](**model_config['params'])
