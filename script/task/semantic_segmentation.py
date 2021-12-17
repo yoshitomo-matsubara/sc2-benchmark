@@ -207,7 +207,7 @@ def main(args):
     teacher_model = load_model(teacher_model_config, device) if teacher_model_config is not None else None
     student_model_config =\
         models_config['student_model'] if 'student_model' in models_config else models_config['model']
-    ckpt_file_path = student_model_config['ckpt']
+    ckpt_file_path = student_model_config.get('ckpt', None)
     student_model = load_model(student_model_config, device)
     if args.log_config:
         logger.info(config)
@@ -222,10 +222,11 @@ def main(args):
     test_data_loader_config = test_config['test_data_loader']
     test_data_loader = util.build_data_loader(dataset_dict[test_data_loader_config['dataset_id']],
                                               test_data_loader_config, distributed)
+    log_freq = test_config.get('log_freq', 1000)
     num_classes = args.num_classes
     if not args.student_only and teacher_model is not None:
         evaluate(teacher_model, test_data_loader, device, device_ids, distributed, num_classes=num_classes,
-                 title='[Teacher: {}]'.format(teacher_model_config['name']))
+                 log_freq=log_freq, title='[Teacher: {}]'.format(teacher_model_config['name']))
 
     if check_if_updatable(student_model):
         student_model.update()
@@ -233,7 +234,7 @@ def main(args):
     if check_if_analyzable(student_model):
         student_model.activate_analysis()
     evaluate(student_model, test_data_loader, device, device_ids, distributed, num_classes=num_classes,
-             title='[Student: {}]'.format(student_model_config['name']))
+             log_freq=log_freq, title='[Student: {}]'.format(student_model_config['name']))
 
 
 if __name__ == '__main__':
