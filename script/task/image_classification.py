@@ -21,7 +21,7 @@ from torchdistill.misc.log import setup_log_file, SmoothedValue, MetricLogger
 from sc2bench.analysis import check_if_analyzable
 from sc2bench.models.backbone import check_if_updatable
 from sc2bench.models.registry import load_classification_model
-from sc2bench.models.wrapper import get_wrapped_model
+from sc2bench.models.wrapper import get_wrapped_classification_model
 
 logger = def_logger.getChild(__name__)
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -60,7 +60,7 @@ def overwrite_config(org_config, sub_config):
 def load_model(model_config, device, distributed):
     if 'classification_model' not in model_config:
         return load_classification_model(model_config, device, distributed)
-    return get_wrapped_model(model_config, 'classification', device, distributed)
+    return get_wrapped_classification_model(model_config, device, distributed)
 
 
 def train_one_epoch(training_box, aux_module, bottleneck_updated, device, epoch, log_freq):
