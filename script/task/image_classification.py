@@ -19,6 +19,7 @@ from torchdistill.eval.classification import compute_accuracy
 from torchdistill.misc.log import setup_log_file, SmoothedValue, MetricLogger
 
 from sc2bench.analysis import check_if_analyzable
+from sc2bench.common.config_util import overwrite_config
 from sc2bench.models.backbone import check_if_updatable
 from sc2bench.models.registry import load_classification_model
 from sc2bench.models.wrapper import get_wrapped_classification_model
@@ -44,17 +45,6 @@ def get_argparser():
     parser.add_argument('-adjust_lr', action='store_true',
                         help='multiply learning rate by number of distributed processes (world_size)')
     return parser
-
-
-def overwrite_config(org_config, sub_config):
-    for sub_key, sub_value in sub_config.items():
-        if sub_key in org_config:
-            if isinstance(sub_value, dict):
-                overwrite_config(org_config[sub_key], sub_value)
-            else:
-                org_config[sub_key] = sub_value
-        else:
-            org_config[sub_key] = sub_value
 
 
 def load_model(model_config, device, distributed):
@@ -193,6 +183,7 @@ def main(args):
     set_seed(args.seed)
     config = yaml_util.load_yaml_file(os.path.expanduser(args.config))
     if args.json is not None:
+        logger.info('Overwriting config')
         overwrite_config(config, json.loads(args.json))
 
     device = torch.device(args.device)
