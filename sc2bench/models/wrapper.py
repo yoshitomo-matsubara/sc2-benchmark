@@ -238,12 +238,12 @@ class EntropicClassifier(UpdatableBackbone):
         return self.entropy_bottleneck
 
 
-def wrap_model(wrapper_model_name, model, compressor, **kwargs):
+def wrap_model(wrapper_model_name, model, compression_model, **kwargs):
     """
     Args:
         wrapper_model_name (str): wrapper model key in wrapper model register.
         model (nn.Module): model to be wrapped.
-        compressor (nn.Module): compressor to be wrapped.
+        compression_model (nn.Module): compressor to be wrapped.
         **kwargs (dict): keyword arguments to instantiate a wrapper object.
 
     Returns:
@@ -251,14 +251,13 @@ def wrap_model(wrapper_model_name, model, compressor, **kwargs):
     """
     if wrapper_model_name not in WRAPPER_CLASS_DICT:
         raise ValueError('wrapper_model_name `{}` is not expected'.format(wrapper_model_name))
-    return WRAPPER_CLASS_DICT[wrapper_model_name](model, compressor=compressor, **kwargs)
+    return WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model, **kwargs)
 
 
-def get_wrapped_model(wrapper_model_config, task, device, distributed):
+def get_wrapped_classification_model(wrapper_model_config, device, distributed):
     """
     Args:
         wrapper_model_config (dict): wrapper model configuration.
-        task (str): task category ('classification', 'object_detection', or 'semantic_segmentation').
         device (device): torch device.
         distributed (bool): uses distributed training model.
 
@@ -269,14 +268,10 @@ def get_wrapped_model(wrapper_model_config, task, device, distributed):
     if wrapper_model_name not in WRAPPER_CLASS_DICT:
         raise ValueError('wrapper_model_name `{}` is not expected'.format(wrapper_model_name))
 
-    if task == 'classification':
-        compression_model_config = wrapper_model_config.get('compression_model', None)
-        compression_model = get_compression_model(compression_model_config, device)
-        classification_model_config = wrapper_model_config['classification_model']
-        model = load_classification_model(classification_model_config, device, distributed)
-    else:
-        raise ValueError(f'task `{task}` is not expected')
-
+    compression_model_config = wrapper_model_config.get('compression_model', None)
+    compression_model = get_compression_model(compression_model_config, device)
+    classification_model_config = wrapper_model_config['classification_model']
+    model = load_classification_model(classification_model_config, device, distributed)
     wrapped_model = WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model, device=device,
                                                            **wrapper_model_config['params'])
     ckpt_file_path = wrapper_model_config.get('ckpt', None)
