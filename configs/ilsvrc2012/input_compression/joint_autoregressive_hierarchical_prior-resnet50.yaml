@@ -46,7 +46,6 @@ models:
         pretrained: True
         quality: 8
         metric: 'mse'
-      uses_cpu: True
       ckpt: './resource/ckpt/input_compression/joint_autoregressive_hierarchical_prior.pt'
     classification_model:
       name: &model_name 'resnet50'

@@ -48,13 +48,12 @@ def get_compression_model(compression_model_config, device):
 
     compression_model_name = compression_model_config['name']
     compression_model_kwargs = compression_model_config['params']
-    uses_cpu = compression_model_config.get('uses_cpu', False)
     compression_model_ckpt_file_path = compression_model_config.get('ckpt', None)
     if compression_model_name in COMPRESSAI_DICT:
         compression_model_update = compression_model_config.get('update', True)
         compression_model = get_compressai_model(compression_model_name, compression_model_ckpt_file_path,
                                                  compression_model_update, **compression_model_kwargs)
-        return compression_model.cpu() if uses_cpu else compression_model.to(device)
+        return compression_model.to(device)
     raise ValueError('compression_model_name `{}` is not expected'.format(compression_model_name))
 
 

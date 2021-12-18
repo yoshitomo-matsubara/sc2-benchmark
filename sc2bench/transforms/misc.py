@@ -102,14 +102,20 @@ class AdaptivePad(nn.Module):
     Transform module that adaptively determines the size of padded sample.
     Args:
         fill (int): padded value.
+        padding_position (str): 'hw' (default) to pad left and right for padding horizontal size // 2 and top and
+            bottom for padding vertical size // 2; 'right_bottom' to pad bottom and right only.
         padding_mode (str): padding mode passed to pad module.
         factor (int): factor value for the padded input sample.
+        returns_org_patch_size (bool): returns original patch size.
     """
-    def __init__(self, fill=0, padding_mode='constant', factor=128):
+    def __init__(self, fill=0, padding_position='hw', padding_mode='constant',
+                 factor=128, returns_org_patch_size=False):
         super().__init__()
         self.fill = fill
+        self.padding_position = padding_position
         self.padding_mode = padding_mode
         self.factor = factor
+        self.returns_org_patch_size = returns_org_patch_size
 
     def forward(self, x):
         """
@@ -117,9 +123,9 @@ class AdaptivePad(nn.Module):
             x (PIL Image or Tensor): input sample.
 
         Returns:
-            PIL Image or Tensor: padded input sample.
+            PIL Image or a tuple of PIL Image and int: padded input sample or with its patch size (height, width)
+                if returns_org_patch_size=True.
         """
-
         height, width = x.shape[-2:]
         vertical_pad_size = 0 if height % self.factor == 0 else int((height // self.factor + 1) * self.factor - height)
         horizontal_pad_size = 0 if width % self.factor == 0 else int((width // self.factor + 1) * self.factor - width)
@@ -128,8 +134,12 @@ class AdaptivePad(nn.Module):
         assert padded_vertical_size % self.factor == 0 and padded_horizontal_size % self.factor == 0, \
             'padded vertical and horizontal sizes ({}, {}) should be ' \
             'factor of {}'.format(padded_vertical_size, padded_horizontal_size, self.factor)
-        padding = [horizontal_pad_size // 2, vertical_pad_size // 2]
-        return pad(x, padding, self.fill, self.padding_mode)
+        padding = [horizontal_pad_size // 2, vertical_pad_size // 2] if self.padding_position == 'equal_side' \
+            else [0, 0, horizontal_pad_size, vertical_pad_size]
+        x = pad(x, padding, self.fill, self.padding_mode)
+        if self.returns_org_patch_size:
+            return x, (height, width)
+        return x
 
 
 @register_misc_transform_module
