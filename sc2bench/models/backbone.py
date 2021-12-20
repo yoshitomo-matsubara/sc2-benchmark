@@ -42,6 +42,7 @@ class UpdatableBackbone(AnalyzableModule):
 
 
 class SplittableResNet(UpdatableBackbone):
+    # Referred to the ResNet implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py
     def __init__(self, bottleneck_layer, resnet_model, inplanes=None, skips_avgpool=True, skips_fc=True,
                  pre_transform_params=None, analysis_config=None):
         if analysis_config is None:
@@ -102,6 +103,7 @@ class SplittableResNet(UpdatableBackbone):
 
 
 class SplittableRegNet(UpdatableBackbone):
+    # Referred to the RegNet implementation at https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/regnet.py
     def __init__(self, bottleneck_layer, regnet_model, inplanes=None, skips_head=True,
                  pre_transform_params=None, analysis_config=None):
         if analysis_config is None:
@@ -176,9 +178,9 @@ def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=No
 
 @register_backbone_func
 def splittable_regnet(bottleneck_config, reget_name='regnety_064', inplanes=None, skips_head=True,
-                      pre_transform_params=None, analysis_config=None, **resnest_kwargs):
+                      pre_transform_params=None, analysis_config=None, **regnet_kwargs):
     bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
-    regnet_model = regnet.__dict__[reget_name](**resnest_kwargs)
+    regnet_model = regnet.__dict__[reget_name](**regnet_kwargs)
     return SplittableRegNet(bottleneck_layer, regnet_model, inplanes, skips_head,
                             pre_transform_params, analysis_config)
 
