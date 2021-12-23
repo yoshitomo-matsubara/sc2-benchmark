@@ -113,7 +113,6 @@ def evaluate(model_wo_ddp, data_loader, device, device_ids, distributed, num_cla
         if isinstance(targets, torch.Tensor):
             targets = targets.to(device)
 
-        torch.cuda.synchronize()
         model_time = time.time()
         outputs = model(sample_batch)
         model_time = time.time() - model_time
