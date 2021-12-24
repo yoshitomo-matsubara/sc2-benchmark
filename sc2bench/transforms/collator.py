@@ -3,8 +3,8 @@ from torchdistill.datasets.collator import register_collate_func
 
 
 def cat_list(images, fill_value=0):
-    if len(images) == 1:
-        return torch.stack(images) if isinstance(images[0], torch.Tensor) else images
+    if len(images) == 1 and not isinstance(images[0], torch.Tensor):
+        return images
 
     max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
     batch_shape = (len(images),) + max_size
