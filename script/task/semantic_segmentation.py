@@ -22,7 +22,7 @@ from torchdistill.optim.util import customize_lr_config
 
 from sc2bench.analysis import check_if_analyzable
 from sc2bench.common.config_util import overwrite_config
-from sc2bench.models.backbone import check_if_updatable
+from sc2bench.models.segmentation.base import check_if_updatable_segmentation_model
 from sc2bench.models.segmentation.registry import load_segmentation_model
 from sc2bench.models.segmentation.wrapper import get_wrapped_segmentation_model
 
@@ -145,7 +145,8 @@ def train(teacher_model, student_model, dataset_dict, ckpt_file_path, device, de
 
     log_freq = train_config['log_freq']
     student_model_without_ddp = student_model.module if module_util.check_if_wrapped(student_model) else student_model
-    aux_module = student_model_without_ddp.get_aux_module() if check_if_updatable(student_model_without_ddp) else None
+    aux_module = student_model_without_ddp.get_aux_module() \
+        if check_if_updatable_segmentation_model(student_model_without_ddp) else None
     epoch_to_update = train_config.get('epoch_to_update', None)
     bottleneck_updated = False
     start_time = time.time()
@@ -227,7 +228,7 @@ def main(args):
         evaluate(teacher_model, test_data_loader, device, device_ids, distributed, num_classes=num_classes,
                  log_freq=log_freq, title='[Teacher: {}]'.format(teacher_model_config['name']))
 
-    if check_if_updatable(student_model):
+    if check_if_updatable_segmentation_model(student_model):
         student_model.update()
 
     if check_if_analyzable(student_model):
