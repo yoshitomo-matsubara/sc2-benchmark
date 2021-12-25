@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 import torch
-from timm.models import resnest, regnet
+from timm.models import resnest, regnet, vision_transformer_hybrid
 from torchdistill.datasets.util import build_transform
 from torchdistill.models.registry import register_model_class, register_model_func
 from torchvision import models
@@ -39,6 +39,10 @@ class UpdatableBackbone(AnalyzableModule):
 
     def get_aux_module(self, **kwargs):
         raise NotImplementedError()
+
+
+def check_if_updatable(model):
+    return isinstance(model, UpdatableBackbone)
 
 
 class SplittableResNet(UpdatableBackbone):
@@ -155,6 +159,73 @@ class SplittableRegNet(UpdatableBackbone):
         return self.bottleneck_layer
 
 
+class SplittableHybridViT(UpdatableBackbone):
+    # Referred to Hybrid ViT implementation at https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
+    def __init__(self, bottleneck_layer, hybrid_vit_model, num_pruned_stages=1, skips_head=True,
+                 pre_transform_params=None, analysis_config=None):
+        if analysis_config is None:
+            analysis_config = dict()
+
+        super().__init__(analysis_config.get('analyzer_configs', list()))
+        self.pre_transform = build_transform(pre_transform_params)
+        self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
+        self.bottleneck_layer = bottleneck_layer
+        self.patch_embed_pruned_stages = hybrid_vit_model.patch_embed.backbone.stages[num_pruned_stages:]
+        self.patch_embed_norm = hybrid_vit_model.patch_embed.backbone.norm
+        self.patch_embed_head = hybrid_vit_model.patch_embed.backbone.head
+        self.patch_embed_proj = hybrid_vit_model.patch_embed.proj
+        self.cls_token = hybrid_vit_model.cls_token
+        self.pos_embed = hybrid_vit_model.pos_embed
+        self.pos_drop = hybrid_vit_model.pos_drop
+        self.blocks = hybrid_vit_model.blocks
+        self.norm = hybrid_vit_model.norm
+        self.pre_logits = hybrid_vit_model.pre_logits
+        self.head = None if skips_head else hybrid_vit_model.head
+
+    def forward(self, x):
+        if self.pre_transform is not None:
+            x = self.pre_transform(x)
+
+        if self.bottleneck_updated and not self.training:
+            x = self.bottleneck_layer.encode(x)
+            if self.analyzes_after_compress:
+                self.analyze(x)
+            x = self.bottleneck_layer.decode(**x)
+        else:
+            x = self.bottleneck_layer(x)
+
+        x = self.patch_embed_pruned_stages(x)
+        x = self.patch_embed_norm(x)
+        x = self.patch_embed_head(x)
+        x = self.patch_embed_proj(x).flatten(2).transpose(1, 2)
+
+        cls_token = self.cls_token.expand(x.shape[0], -1, -1)
+        x = torch.cat((cls_token, x), dim=1)
+        x = self.pos_drop(x + self.pos_embed)
+        x = self.blocks(x)
+        x = self.norm(x)
+        x = self.pre_logits(x[:, 0])
+        if self.head is None:
+            return x
+        return self.head(x)
+
+    def update(self):
+        self.bottleneck_layer.update()
+        self.bottleneck_updated = True
+
+    def load_state_dict(self, state_dict, **kwargs):
+        entropy_bottleneck_state_dict = OrderedDict()
+        for key in list(state_dict.keys()):
+            if key.startswith('bottleneck_layer.'):
+                entropy_bottleneck_state_dict[key.replace('bottleneck_layer.', '', 1)] = state_dict.pop(key)
+
+        super().load_state_dict(state_dict, strict=False)
+        self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)
+
+    def get_aux_module(self, **kwargs):
+        return self.bottleneck_layer
+
+
 @register_backbone_func
 def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, skips_avgpool=True, skips_fc=True,
                       pre_transform_params=None, analysis_config=None, **resnet_kwargs):
@@ -185,13 +256,18 @@ def splittable_regnet(bottleneck_config, regnet_name='regnety_064', inplanes=Non
                             pre_transform_params, analysis_config)
 
 
+@register_backbone_func
+def splittable_hybrid_vit(bottleneck_config, hybrid_vit_name='vit_small_r26_s32_224', num_pruned_stages=1,
+                          skips_head=True, pre_transform_params=None, analysis_config=None, **hybrid_vit_kwargs):
+    bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
+    hybrid_vit_model = vision_transformer_hybrid.__dict__[hybrid_vit_name](**hybrid_vit_kwargs)
+    return SplittableHybridViT(bottleneck_layer, hybrid_vit_model, num_pruned_stages, skips_head,
+                               pre_transform_params, analysis_config)
+
+
 def get_backbone(cls_or_func_name, **kwargs):
     if cls_or_func_name in BACKBONE_CLASS_DICT:
         return BACKBONE_CLASS_DICT[cls_or_func_name](**kwargs)
     elif cls_or_func_name in BACKBONE_FUNC_DICT:
         return BACKBONE_FUNC_DICT[cls_or_func_name](**kwargs)
     return None
-
-
-def check_if_updatable(model):
-    return isinstance(model, UpdatableBackbone)
