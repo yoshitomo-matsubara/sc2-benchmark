@@ -90,7 +90,7 @@ def train_one_epoch(training_box, aux_module, bottleneck_updated, device, epoch,
             raise ValueError('The training loop was broken due to loss = {}'.format(loss))
 
 
-@torch.no_grad()
+@torch.inference_mode()
 def evaluate(model_wo_ddp, data_loader, device, device_ids, distributed, num_classes,
              log_freq=1000, title=None, header='Test:'):
     model = model_wo_ddp.to(device)
