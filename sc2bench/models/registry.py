@@ -57,7 +57,7 @@ def get_compression_model(compression_model_config, device):
     raise ValueError('compression_model_name `{}` is not expected'.format(compression_model_name))
 
 
-def load_classification_model(model_config, device, distributed):
+def load_classification_model(model_config, device, distributed, strict=True):
     model = get_image_classification_model(model_config, distributed)
     model_name = model_config['name']
     if model is None and model_name in timm.models.__dict__:
@@ -71,5 +71,5 @@ def load_classification_model(model_config, device, distributed):
         model = get_model(model_name, repo_or_dir, **model_config['params'])
 
     ckpt_file_path = model_config['ckpt']
-    load_ckpt(ckpt_file_path, model=model, strict=True)
+    load_ckpt(ckpt_file_path, model=model, strict=strict)
     return model.to(device)
