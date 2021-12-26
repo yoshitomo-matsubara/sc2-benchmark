@@ -31,7 +31,7 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 
 def get_argparser():
-    parser = argparse.ArgumentParser(description='Knowledge distillation for semantic segmentation models')
+    parser = argparse.ArgumentParser(description='Supervised compression for semantic segmentation tasks')
     parser.add_argument('--config', required=True, help='yaml file path')
     parser.add_argument('--json', help='json string to overwrite config')
     parser.add_argument('--device', default='cuda', help='device')
