@@ -56,7 +56,7 @@ dependencies:
     - timm==0.4.12
     - tomli==1.2.2
     - torch==1.10.0
-    - torchdistill==0.2.8
+    - torchdistill==0.2.9
     - torchvision==0.11.1
     - typing-extensions==4.0.0
 prefix: /home/yoshitom/.conda/envs/sc2-benchmark
