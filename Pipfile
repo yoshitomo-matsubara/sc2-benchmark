@@ -14,7 +14,7 @@ cython = "*"
 pycocotools = ">=2.0.2"
 matplotlib = "*"
 seaborn = "*"
-torchdistill = ">=0.2.9"
+torchdistill = ">=0.3.1"
 compressai = ">=1.1.9"
 sc2bench = {editable = true, path = "."}
 timm = "*"
