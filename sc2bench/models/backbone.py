@@ -45,6 +45,64 @@ def check_if_updatable(model):
     return isinstance(model, UpdatableBackbone)
 
 
+class FeatureExtractionBackbone(UpdatableBackbone):
+    # Referred to the IntermediateLayerGetter implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/_utils.py
+    def __init__(self, model, return_layer_dict, analyzer_configs, analyzes_after_compress=False,
+                 analyzable_layer_key=None):
+        if not set(return_layer_dict).issubset([name for name, _ in model.named_children()]):
+            raise ValueError('return_layer_dict are not present in model')
+
+        super().__init__(analyzer_configs)
+        org_return_layer_dict = return_layer_dict
+        return_layer_dict = {str(k): str(v) for k, v in return_layer_dict.items()}
+        layer_dict = OrderedDict()
+        for name, module in model.named_children():
+            layer_dict[name] = module
+            if name in return_layer_dict:
+                return_layer_dict.pop(name)
+            # Once all the return layers are extracted, the remaining layers are no longer used, thus pruned
+            if len(return_layer_dict) == 0:
+                break
+
+        for key, module in layer_dict.items():
+            self.add_module(key, module)
+
+        self.return_layer_dict = org_return_layer_dict
+        self.analyzable_layer_key = analyzable_layer_key
+        self.analyzes_after_compress = analyzes_after_compress
+
+    def forward(self, x):
+        out = OrderedDict()
+        for module_key, module in self.named_children():
+            if module_key == self.analyzable_layer_key and self.bottleneck_updated and not self.training:
+                x = module.encode(x)
+                if self.analyzes_after_compress:
+                    self.analyze(x)
+                x = module.decode(**x)
+            else:
+                x = module(x)
+
+            if module_key in self.return_layer_dict:
+                out_name = self.return_layer_dict[module_key]
+                out[out_name] = x
+        return out
+
+    def check_if_updatable(self):
+        if self.analyzable_layer_key is None or self.analyzable_layer_key not in self._modules:
+            return False
+        return True
+
+    def update(self):
+        if not self.check_if_updatable():
+            raise KeyError(f'`analyzable_layer_key` ({self.analyzable_layer_key}) does not '
+                           f'exist in {self}')
+        self._modules[self.analyzable_layer_key].update()
+        self.bottleneck_updated = True
+
+    def get_aux_module(self, **kwargs):
+        return self._modules[self.analyzable_layer_key] if self.check_if_updatable() else None
+
+
 class SplittableResNet(UpdatableBackbone):
     # Referred to the ResNet implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py
     def __init__(self, bottleneck_layer, resnet_model, inplanes=None, skips_avgpool=True, skips_fc=True,
