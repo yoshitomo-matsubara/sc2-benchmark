@@ -40,6 +40,7 @@ models:
           - type: 'FileSizeAnalyzer'
             params:
               unit: 'KB'
+      uses_cpu4compression_model: True
     compression_model:
       name: 'mbt2018'
       params:

@@ -41,6 +41,8 @@ def get_argparser():
     parser.add_argument('--seed', type=int, help='seed in random number generator')
     parser.add_argument('-test_only', action='store_true', help='only test the models')
     parser.add_argument('-student_only', action='store_true', help='test the student model only')
+    parser.add_argument('-no_dp_eval', action='store_true',
+                        help='perform evaluation without DistributedDataParallel/DataParallel')
     parser.add_argument('-log_config', action='store_true', help='log config')
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int, help='number of distributed processes')
@@ -91,13 +93,15 @@ def train_one_epoch(training_box, aux_module, bottleneck_updated, device, epoch,
 
 
 @torch.inference_mode()
-def evaluate(model_wo_ddp, data_loader, device, device_ids, distributed, num_classes,
+def evaluate(model_wo_ddp, data_loader, device, device_ids, distributed, num_classes, no_dp_eval=False,
              log_freq=1000, title=None, header='Test:'):
     model = model_wo_ddp.to(device)
-    if distributed:
+    if distributed and not no_dp_eval:
         model = DistributedDataParallel(model, device_ids=device_ids)
-    elif device.type.startswith('cuda'):
+    elif device.type.startswith('cuda') and not no_dp_eval:
         model = DataParallel(model, device_ids=device_ids)
+    elif hasattr(model, 'use_cpu4compression'):
+        model.use_cpu4compression()
 
     if title is not None:
         logger.info(title)
@@ -149,6 +153,7 @@ def train(teacher_model, student_model, dataset_dict, ckpt_file_path, device, de
         if check_if_updatable_segmentation_model(student_model_without_ddp) else None
     epoch_to_update = train_config.get('epoch_to_update', None)
     bottleneck_updated = False
+    no_dp_eval = args.no_dp_eval
     start_time = time.time()
     for epoch in range(args.start_epoch, training_box.num_epochs):
         training_box.pre_process(epoch=epoch)
@@ -160,7 +165,7 @@ def train(teacher_model, student_model, dataset_dict, ckpt_file_path, device, de
         train_one_epoch(training_box, aux_module, bottleneck_updated, device, epoch, log_freq)
         val_seg_evaluator =\
             evaluate(student_model, training_box.val_data_loader, device, device_ids, distributed,
-                     num_classes=args.num_classes, log_freq=log_freq, header='Validation:')
+                     num_classes=args.num_classes, no_dp_eval=no_dp_eval, log_freq=log_freq, header='Validation:')
 
         val_acc_global, val_acc, val_iou = val_seg_evaluator.compute()
         val_miou = val_iou.mean().item()
@@ -223,10 +228,11 @@ def main(args):
     test_data_loader = util.build_data_loader(dataset_dict[test_data_loader_config['dataset_id']],
                                               test_data_loader_config, distributed)
     log_freq = test_config.get('log_freq', 1000)
+    no_dp_eval = args.no_dp_eval
     num_classes = args.num_classes
     if not args.student_only and teacher_model is not None:
         evaluate(teacher_model, test_data_loader, device, device_ids, distributed, num_classes=num_classes,
-                 log_freq=log_freq, title='[Teacher: {}]'.format(teacher_model_config['name']))
+                 no_dp_eval=no_dp_eval, log_freq=log_freq, title='[Teacher: {}]'.format(teacher_model_config['name']))
 
     if check_if_updatable_segmentation_model(student_model):
         student_model.update()
@@ -234,7 +240,7 @@ def main(args):
     if check_if_analyzable(student_model):
         student_model.activate_analysis()
     evaluate(student_model, test_data_loader, device, device_ids, distributed, num_classes=num_classes,
-             log_freq=log_freq, title='[Student: {}]'.format(student_model_config['name']))
+             no_dp_eval=no_dp_eval, log_freq=log_freq, title='[Student: {}]'.format(student_model_config['name']))
 
 
 if __name__ == '__main__':

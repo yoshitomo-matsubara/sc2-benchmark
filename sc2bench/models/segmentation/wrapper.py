@@ -65,7 +65,7 @@ class NeuralInputCompressionSegmentationModel(AnalyzableModule):
         analysis_config (dict): configuration for analysis
     """
     def __init__(self, segmentation_model, pre_transform_params=None, compression_model=None,
-                 post_transform_params=None, analysis_config=None, **kwargs):
+                 uses_cpu4compression_model=False, post_transform_params=None, analysis_config=None, **kwargs):
         if analysis_config is None:
             analysis_config = dict()
 
@@ -74,8 +74,13 @@ class NeuralInputCompressionSegmentationModel(AnalyzableModule):
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
         self.pre_transform = build_transform(pre_transform_params)
         self.compression_model = compression_model
+        self.uses_cpu4compression_model = uses_cpu4compression_model
         self.segmentation_model = segmentation_model
         self.post_transform = build_transform(post_transform_params)
+
+    def use_cpu4compression(self):
+        if self.uses_cpu4compression_model and self.compression_model is not None:
+            self.compression_model = self.compression_model.cpu()
 
     def forward(self, x):
         """
