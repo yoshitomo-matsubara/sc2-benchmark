@@ -32,6 +32,7 @@ class CodecInputCompressionClassifier(AnalyzableModule):
     Wrapper module for codec input compression model followed by classifier.
     Args:
         classification_model (nn.Module): classification model
+        device (torch.device): torch device
         codec_params (dict): keyword configurations for transform sequence for codec
         post_transform_params (dict): keyword configurations for transform sequence after compression model
         analysis_config (dict): configuration for analysis
@@ -128,6 +129,7 @@ class CodecFeatureCompressionClassifier(AnalyzableModule):
     Wrapper module for codec feature compression model injected to a classifier.
     Args:
         classification_model (nn.Module): classification model
+        device (torch.device): torch device
         encoder_config (dict): keyword configurations to design an encoder from modules in classification_model
         codec_params (dict): keyword configurations for transform sequence for codec
         decoder_config (dict): keyword configurations to design a decoder from modules in classification_model

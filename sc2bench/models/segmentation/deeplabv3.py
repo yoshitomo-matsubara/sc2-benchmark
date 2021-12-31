@@ -21,9 +21,9 @@ def create_deeplabv3(backbone_model, num_input_channels=2048, uses_aux=False, nu
 
 
 @register_segmentation_model_func
-def custom_deeplabv3(backbone_config, pretrained=True, progress=True, num_input_channels=2048,
-                     uses_aux=False, num_aux_channels=1024, return_layer_dict=None, analysis_config=None,
-                     analyzable_layer_key=None, num_classes=21, start_ckpt_file_path=None, **kwargs):
+def deeplabv3(backbone_config, pretrained=True, progress=True, num_input_channels=2048, uses_aux=False,
+              num_aux_channels=1024, return_layer_dict=None, analysis_config=None,
+              analyzable_layer_key=None, num_classes=21, start_ckpt_file_path=None, **kwargs):
     if analysis_config is None:
         analysis_config = dict()
 
