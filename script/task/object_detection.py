@@ -196,7 +196,7 @@ def train(teacher_model, student_model, dataset_dict, ckpt_file_path, device, de
     val_iou_type = iou_types[0] if isinstance(iou_types, (list, tuple)) and len(iou_types) > 0 else 'bbox'
     student_model_without_ddp = student_model.module if module_util.check_if_wrapped(student_model) else student_model
     aux_module = student_model_without_ddp.get_aux_module() \
-        if check_if_updatable_segmentation_model(student_model_without_ddp) else None
+        if check_if_updatable_detection_model(student_model_without_ddp) else None
     epoch_to_update = train_config.get('epoch_to_update', None)
     bottleneck_updated = False
     no_dp_eval = args.no_dp_eval
