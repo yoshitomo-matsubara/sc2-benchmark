@@ -14,5 +14,5 @@ do
   pipenv run python script/task/object_detection.py \
   --config configs/coco2017/input_compression/${BASE_NAME}.yaml \
   --log log/input_compression/${BASE_NAME}-quality${quality}.txt \
-  --json "${json_str}" -student_only -test_only
+  --json "${json_str}" -student_only -test_only -no_dp_eval
 done

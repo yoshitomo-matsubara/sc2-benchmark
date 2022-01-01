@@ -18,7 +18,7 @@ do
   sed -i "s/quality:.*/quality: ${quality}/g" configs/pascal_voc2012/input_compression/${BASE_NAME}.yaml
   pipenv run python script/task/semantic_segmentation.py \
   --config configs/pascal_voc2012/input_compression/${BASE_NAME}.yaml \
-  --log log/${FORMAT_NAME}_compression/${BASE_NAME}-quality${quality}.txt -student_only -test_only
+  --log log/${FORMAT_NAME}_compression/${BASE_NAME}-quality${quality}.txt -student_only -test_only -no_dp_eval
 done
 
 sed -i "s/quality:.*/quality:/g" configs/pascal_voc2012/input_compression/${BASE_NAME}.yaml
