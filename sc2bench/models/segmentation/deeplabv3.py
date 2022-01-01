@@ -21,13 +21,13 @@ def create_deeplabv3(backbone_model, num_input_channels=2048, uses_aux=False, nu
 
 
 @register_segmentation_model_func
-def deeplabv3_model(backbone_config, pretrained=True, progress=True, num_input_channels=2048, uses_aux=False,
-                    num_aux_channels=1024, return_layer_dict=None, analysis_config=None,
-                    analyzable_layer_key=None, num_classes=21, start_ckpt_file_path=None, **kwargs):
+def deeplabv3_model(backbone_config, pretrained=True, pretrained_backbone_name=None, progress=True,
+                    num_input_channels=2048, uses_aux=False, num_aux_channels=1024, return_layer_dict=None,
+                    analysis_config=None, analyzable_layer_key=None, num_classes=21,
+                    start_ckpt_file_path=None, **kwargs):
     if analysis_config is None:
         analysis_config = dict()
 
-    backbone_name = backbone_config['name']
     if return_layer_dict is None:
         return_layer_dict = {'layer4': 'out'}
         if uses_aux:
@@ -40,10 +40,10 @@ def deeplabv3_model(backbone_config, pretrained=True, progress=True, num_input_c
                                   analyzable_layer_key=analyzable_layer_key)
     model = create_deeplabv3(backbone_model, num_input_channels=num_input_channels,
                              uses_aux=uses_aux, num_aux_channels=num_aux_channels, num_classes=num_classes)
-    if pretrained and (backbone_name.endswith('resnet50') or backbone_name.endswith('resnet101')):
-        resnet_name = 'resnet50' if backbone_name.endswith('resnet50') else 'resnet101'
+    if pretrained and pretrained_backbone_name in ('resnet50', 'resnet101'):
         state_dict = \
-            load_state_dict_from_url(model_urls['deeplabv3_{}_coco'.format(resnet_name)], progress=progress)
+            load_state_dict_from_url(model_urls['deeplabv3_{}_coco'.format(pretrained_backbone_name)],
+                                     progress=progress)
         model.load_state_dict(state_dict, strict=False)
 
     if start_ckpt_file_path is not None:
