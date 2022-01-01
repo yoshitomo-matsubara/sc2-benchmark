@@ -25,9 +25,9 @@ from torchvision.models.detection.mask_rcnn import MaskRCNN
 
 from sc2bench.analysis import check_if_analyzable
 from sc2bench.common.config_util import overwrite_config
+from sc2bench.models.detection.base import check_if_updatable_detection_model
 from sc2bench.models.detection.registry import load_detection_model
 from sc2bench.models.detection.wrapper import get_wrapped_detection_model
-from sc2bench.models.segmentation.base import check_if_updatable_segmentation_model
 
 logger = def_logger.getChild(__name__)
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -275,7 +275,7 @@ def main(args):
         evaluate(teacher_model, test_data_loader, iou_types, device, device_ids, distributed, no_dp_eval=no_dp_eval,
                  log_freq=log_freq, title='[Teacher: {}]'.format(teacher_model_config['name']))
 
-    if check_if_updatable_segmentation_model(student_model):
+    if check_if_updatable_detection_model(student_model):
         student_model.update()
 
     if check_if_analyzable(student_model):
