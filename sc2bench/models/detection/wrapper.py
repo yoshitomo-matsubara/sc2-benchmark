@@ -55,11 +55,6 @@ class InputCompressionDetectionModel(AnalyzableModule):
         """
         return self.detection_model(x)
 
-    def update(self, **kwargs):
-        if not check_if_updatable(self.detection_model.transform.compression_model):
-            raise KeyError(f'`detection_model.transform.compression_model` {type(self)} is not updatable')
-        self.detection_model.transform.compression_model.update()
-
     def activate_analysis(self):
         self.activated_analysis = True
         if check_if_analyzable(self.detection_model.transform):
