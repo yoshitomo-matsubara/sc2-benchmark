@@ -93,6 +93,9 @@ class FeatureExtractionBackbone(UpdatableBackbone):
         return True
 
     def update(self):
+        if self.analyzable_layer_key is None:
+            return
+
         if not self.check_if_updatable():
             raise KeyError(f'`analyzable_layer_key` ({self.analyzable_layer_key}) does not '
                            f'exist in {self}')
@@ -100,6 +103,8 @@ class FeatureExtractionBackbone(UpdatableBackbone):
         self.bottleneck_updated = True
 
     def get_aux_module(self, **kwargs):
+        if self.analyzable_layer_key is None:
+            return None
         return self._modules[self.analyzable_layer_key] if self.check_if_updatable() else None
 
 
