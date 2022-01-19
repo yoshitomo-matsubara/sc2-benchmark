@@ -6,6 +6,7 @@ from PIL.Image import Image
 from torch import nn
 from torch._six import string_classes
 from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_collate_err_msg_format
+from torchdistill.common import tensor_util
 from torchdistill.datasets.collator import register_collate_func
 from torchdistill.datasets.transform import register_transform_class
 from torchvision.transforms import functional as F
@@ -143,7 +144,7 @@ class AdaptivePad(nn.Module):
 
 
 @register_misc_transform_module
-class CustomToTensor(object):
+class CustomToTensor(nn.Module):
     """
     Customized ToTensor module that can be applied to sample and target selectively.
     Args:
@@ -151,6 +152,7 @@ class CustomToTensor(object):
         converts_target (bool): apply torch.as_tensor to target if True.
     """
     def __init__(self, converts_sample=True, converts_target=True):
+        super().__init__()
         self.converts_sample = converts_sample
         self.converts_target = converts_target
 
@@ -161,3 +163,23 @@ class CustomToTensor(object):
         if self.converts_target:
             target = torch.as_tensor(np.array(target), dtype=torch.int64)
         return image, target
+
+
+@register_misc_transform_module
+class SimpleQuantizer(nn.Module):
+    def __init__(self, num_bits):
+        super().__init__()
+        self.num_bits = num_bits
+
+    def forward(self, z):
+        return z.half() if self.num_bits == 16 else tensor_util.quantize_tensor(z, self.num_bits)
+
+
+@register_misc_transform_module
+class SimpleDequantizer(nn.Module):
+    def __init__(self, num_bits):
+        super().__init__()
+        self.num_bits = num_bits
+
+    def forward(self, z):
+        return z.float() if self.num_bits == 16 else tensor_util.dequantize_tensor(z)
