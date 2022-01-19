@@ -5,8 +5,12 @@ from compressai.models import CompressionModel
 from compressai.models.google import get_scale_table
 from compressai.models.utils import update_registered_buffers
 from torch import nn
+from torchdistill.common.constant import def_logger
+from torchdistill.datasets.util import build_transform
 
+logger = def_logger.getChild(__name__)
 LAYER_CLASS_DICT = dict()
+LAYER_FUNC_DICT = dict()
 
 
 def register_layer_class(cls):
@@ -19,6 +23,92 @@ def register_layer_class(cls):
     """
     LAYER_CLASS_DICT[cls.__name__] = cls
     return cls
+
+
+def register_layer_func(func):
+    """
+    Args:
+        func (function): layer module to be registered.
+
+    Returns:
+        func (function): registered layer module.
+    """
+    LAYER_FUNC_DICT[func.__name__] = func
+    return func
+
+
+class SimpleBottleneck(nn.Module):
+    """
+    Simple encoder-decoder layer to treat encoder's output as bottleneck
+    """
+    def __init__(self, encoder, decoder, compressor=None, decompressor=None):
+        super().__init__()
+        self.encoder = encoder
+        self.decoder = decoder
+        self.compressor = compressor
+        self.decompressor = decompressor
+
+    def encode(self, x):
+        z = self.encoder(x)
+        if self.compressor is not None:
+            z = self.compressor(z)
+        return {'z': z}
+
+    def decode(self, z):
+        if self.decompressor is not None:
+            z = self.decompressor(z)
+        return self.decoder(z)
+
+    def forward(self, x):
+        if not self.training:
+            encoded_obj = self.encode(x)
+            decoded_obj = self.decode(**encoded_obj)
+            return decoded_obj
+
+        z = self.encoder(x)
+        return self.decoder(z)
+
+    def update(self):
+        logger.info('This module has no updatable parameters for entropy coding')
+
+
+@register_layer_func
+def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=12, output_channel=256,
+                             compressor_transform_params=None, decompressor_transform_params=None):
+    """
+    "Head Network Distillation: Splitting Distilled Deep Neural Networks for Resource-constrained Edge Computing Systems"
+    """
+    modules = [
+        nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False),
+        nn.BatchNorm2d(64),
+        nn.ReLU(inplace=True),
+        nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
+        nn.Conv2d(64, 64, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, 256, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(256),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(256, 64, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, bottleneck_channel, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(bottleneck_channel),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(bottleneck_channel, 64, kernel_size=2, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, 128, kernel_size=2, bias=False),
+        nn.BatchNorm2d(128),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(128, output_channel, kernel_size=2, bias=False),
+        nn.BatchNorm2d(output_channel),
+        nn.Conv2d(output_channel, output_channel, kernel_size=2, bias=False),
+        nn.BatchNorm2d(output_channel),
+        nn.ReLU(inplace=True)
+    ]
+    encoder = nn.Sequential(*modules[:bottleneck_idx])
+    decoder = nn.Sequential(*modules[bottleneck_idx:])
+    compressor_transform = build_transform(compressor_transform_params)
+    decompressor_transform = build_transform(decompressor_transform_params)
+    return SimpleBottleneck(encoder, decoder, compressor_transform, decompressor_transform)
 
 
 class EntropyBottleneckLayer(CompressionModel):
@@ -357,15 +447,17 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
         return self.forward2train(x)
 
 
-def get_layer(cls_name, **kwargs):
+def get_layer(cls_or_func_name, **kwargs):
     """
     Args:
-        cls_name (str): layer class name.
+        cls_or_func_name (str): layer class name.
         kwargs (dict): keyword arguments.
 
     Returns:
-        BaseBottleneck or None: layer module that is instance of `BaseBottleneck` if found. None otherwise.
+        nn.Module or None: layer module that is instance of `nn.Module` if found. None otherwise.
     """
-    if cls_name not in LAYER_CLASS_DICT:
-        return None
-    return LAYER_CLASS_DICT[cls_name](**kwargs)
+    if cls_or_func_name in LAYER_CLASS_DICT:
+        return LAYER_CLASS_DICT[cls_or_func_name](**kwargs)
+    elif cls_or_func_name in LAYER_FUNC_DICT:
+        return LAYER_FUNC_DICT[cls_or_func_name](**kwargs)
+    return None
