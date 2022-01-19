@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 import torch
+from compressai.models import CompressionModel
 from timm.models import resnest, regnet, vision_transformer_hybrid
 from torchdistill.datasets.util import build_transform
 from torchdistill.models.registry import register_model_class, register_model_func
@@ -87,8 +88,9 @@ class FeatureExtractionBackbone(UpdatableBackbone):
                 out[out_name] = x
         return out
 
-    def check_if_updatable(self):
-        if self.analyzable_layer_key is None or self.analyzable_layer_key not in self._modules:
+    def check_if_updatable(self, strict=True):
+        if self.analyzable_layer_key is None or self.analyzable_layer_key not in self._modules \
+                or not isinstance(self._modules[self.analyzable_layer_key], CompressionModel):
             return False
         return True
 
@@ -96,10 +98,11 @@ class FeatureExtractionBackbone(UpdatableBackbone):
         if self.analyzable_layer_key is None:
             return
 
-        if not self.check_if_updatable():
+        if not self.check_if_updatable() and isinstance(self._modules[self.analyzable_layer_key], CompressionModel):
             raise KeyError(f'`analyzable_layer_key` ({self.analyzable_layer_key}) does not '
                            f'exist in {self}')
-        self._modules[self.analyzable_layer_key].update()
+        else:
+            self._modules[self.analyzable_layer_key].update()
         self.bottleneck_updated = True
 
     def get_aux_module(self, **kwargs):
@@ -166,7 +169,7 @@ class SplittableResNet(UpdatableBackbone):
         self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)
 
     def get_aux_module(self, **kwargs):
-        return self.bottleneck_layer
+        return self.bottleneck_layer if isinstance(self.bottleneck_layer, CompressionModel) else None
 
 
 class SplittableRegNet(UpdatableBackbone):
@@ -219,7 +222,7 @@ class SplittableRegNet(UpdatableBackbone):
         self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)
 
     def get_aux_module(self, **kwargs):
-        return self.bottleneck_layer
+        return self.bottleneck_layer if isinstance(self.bottleneck_layer, CompressionModel) else None
 
 
 class SplittableHybridViT(UpdatableBackbone):
@@ -286,7 +289,7 @@ class SplittableHybridViT(UpdatableBackbone):
         self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)
 
     def get_aux_module(self, **kwargs):
-        return self.bottleneck_layer
+        return self.bottleneck_layer if isinstance(self.bottleneck_layer, CompressionModel) else None
 
 
 @register_backbone_func
