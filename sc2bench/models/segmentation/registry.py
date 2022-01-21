@@ -3,6 +3,8 @@ from torchdistill.models.official import get_semantic_segmentation_model
 from torchdistill.models.registry import get_model
 from torchdistill.models.registry import register_model_class, register_model_func
 
+from sc2bench.models.segmentation.base import check_if_updatable_segmentation_model
+
 SEGMENTATION_MODEL_CLASS_DICT = dict()
 SEGMENTATION_MODEL_FUNC_DICT = dict()
 
@@ -27,7 +29,7 @@ def get_segmentation_model(cls_or_func_name, **kwargs):
     return None
 
 
-def load_segmentation_model(model_config, device):
+def load_segmentation_model(model_config, device, strict=True):
     model = get_semantic_segmentation_model(model_config)
     model_name = model_config['name']
     if model is None:
@@ -37,6 +39,9 @@ def load_segmentation_model(model_config, device):
         repo_or_dir = model_config.get('repo_or_dir', None)
         model = get_model(model_name, repo_or_dir, **model_config['params'])
 
+    if model_config.get('update_before_ckpt', False) and check_if_updatable_segmentation_model(model):
+        model.update()
+
     ckpt_file_path = model_config['ckpt']
-    load_ckpt(ckpt_file_path, model=model, strict=True)
+    load_ckpt(ckpt_file_path, model=model, strict=strict)
     return model.to(device)
