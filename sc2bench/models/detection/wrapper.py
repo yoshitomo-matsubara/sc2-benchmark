@@ -3,7 +3,6 @@ from torchdistill.common.main_util import load_ckpt
 
 from .registry import load_detection_model
 from .transform import RCNNTransformWithCompression
-from ..backbone import check_if_updatable
 from ..registry import get_compression_model
 from ..wrapper import register_wrapper_class, WRAPPER_CLASS_DICT
 from ...analysis import AnalyzableModule, check_if_analyzable
