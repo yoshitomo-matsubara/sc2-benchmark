@@ -245,6 +245,61 @@ class EntropicClassifier(UpdatableBackbone):
         return self.entropy_bottleneck
 
 
+@register_wrapper_class
+class SplitClassifier(UpdatableBackbone):
+    """
+    Wrapper module for naively splitting a classifier.
+    Args:
+        classification_model (nn.Module): classification model
+        encoder_config (dict): keyword configurations to design an encoder from modules in classification_model
+        decoder_config (dict): keyword configurations to design a decoder from modules in classification_model
+        classifier_config (dict): keyword configurations to design a classifier from modules in classification_model
+        compressor_transform_params (dict): keyword configurations to build transform for compression
+        decompressor_transform_params (dict): keyword configurations to build transform for decompression
+        analysis_config (dict): configuration for analysis
+    """
+    def __init__(self, classification_model, encoder_config, decoder_config,
+                 classifier_config, compressor_transform_params=None, decompressor_transform_params=None,
+                 analysis_config=None, **kwargs):
+        if analysis_config is None:
+            analysis_config = dict()
+
+        super().__init__(analysis_config.get('analyzer_configs', list()))
+        self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
+        self.compressor = build_transform(compressor_transform_params)
+        self.decompressor = build_transform(decompressor_transform_params)
+        self.encoder = nn.Identity() if encoder_config.get('ignored', False) \
+            else redesign_model(classification_model, encoder_config, model_label='encoder')
+        self.decoder = nn.Identity() if decoder_config.get('ignored', False) \
+            else redesign_model(classification_model, decoder_config, model_label='decoder')
+        self.classifier = redesign_model(classification_model, classifier_config, model_label='classification')
+
+    def forward(self, x):
+        """
+        Args:
+            x (Tensor): input sample.
+
+        Returns:
+            Tensor: output tensor from self.classifier.
+        """
+        x = self.encoder(x)
+        if self.bottleneck_updated and not self.training:
+            x = self.compressor(x)
+            if self.analyzes_after_compress:
+                self.analyze(x)
+            x = self.decompressor(x)
+
+        x = self.decoder(x)
+        x = torch.flatten(x, 1)
+        return self.classifier(x)
+
+    def update(self):
+        self.bottleneck_updated = True
+
+    def get_aux_module(self, **kwargs):
+        return None
+
+
 def wrap_model(wrapper_model_name, model, compression_model, **kwargs):
     """
     Args:
