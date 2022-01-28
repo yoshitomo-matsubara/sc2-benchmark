@@ -150,8 +150,11 @@ class CodecFeatureCompressionClassifier(AnalyzableModule):
         super().__init__(analysis_config.get('analyzer_configs', list()))
         self.codec_encoder_decoder = build_transform(codec_params)
         self.device = device
-        self.encoder = redesign_model(classification_model, encoder_config, model_label='encoder')
-        self.decoder = redesign_model(classification_model, decoder_config, model_label='decoder')
+
+        self.encoder = nn.Identity() if encoder_config.get('ignored', False) \
+            else redesign_model(classification_model, encoder_config, model_label='encoder')
+        self.decoder = nn.Identity() if decoder_config.get('ignored', False) \
+            else redesign_model(classification_model, decoder_config, model_label='decoder')
         self.classifier = redesign_model(classification_model, classifier_config, model_label='classification')
         self.post_transform = build_transform(post_transform_params)
 
