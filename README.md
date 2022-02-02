@@ -2,6 +2,7 @@
 
 ## Setup
 
+### Virtual environments & Software
 For pipenv users,
 ```shell
 pipenv install --python 3.8
@@ -22,6 +23,9 @@ bash script/software/install_bpg.sh
 ```
 
 the encoder and decoder will be installed under `~/software/`
+
+### Datasets
+See instructions [here](script#datasets)
 
 
 ## Codec-based feature compression
