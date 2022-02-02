@@ -1,4 +1,5 @@
 # SC2 Benchmark: Supervised Compression for Split Computing
+This is the official repository of `sc2bench` package and ["SC2 Benchmark: Supervised Compression for Split Computing"](#Citation).
 
 ## Installation
 ```shell
@@ -28,9 +29,14 @@ bash script/software/install_bpg.sh
 
 The script will place the encoder and decoder in `~/software/`
 
+
 ## Datasets
 See instructions [here](script#datasets)
 
+## Citation
+[[Preprint]()]
+```bibtex
+```
 
 ## Codec-based feature compression
 ```shell
