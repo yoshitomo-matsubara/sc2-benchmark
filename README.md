@@ -15,6 +15,15 @@ conda activate sc2-benchmark
 pip install -e "."
 ```
 
+
+If you want to use BPG, 
+```shell
+bash script/software/install_bpg.sh
+```
+
+the encoder and decoder will be installed under `~/software/`
+
+
 ## Codec-based feature compression
 ```shell
 # JPEG
