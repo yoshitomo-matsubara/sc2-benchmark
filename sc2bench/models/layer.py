@@ -76,7 +76,7 @@ class SimpleBottleneck(nn.Module):
 def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=12, output_channel=256,
                              compressor_transform_params=None, decompressor_transform_params=None):
     """
-    "Head Network Distillation: Splitting Distilled Deep Neural Networks for Resource-constrained Edge Computing Systems"
+    "Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks"
     """
     modules = [
         nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False),
