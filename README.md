@@ -1,8 +1,11 @@
 # SC2 Benchmark: Supervised Compression for Split Computing
 
-## Setup
+## Installation
+```shell
+pip install sc2bench
+```
 
-### Virtual environments & Software
+### Virtual environments
 For pipenv users,
 ```shell
 pipenv install --python 3.8
@@ -17,14 +20,15 @@ pip install -e "."
 ```
 
 
+### Optional Software
 If you want to use BPG, 
 ```shell
 bash script/software/install_bpg.sh
 ```
 
-the encoder and decoder will be installed under `~/software/`
+The script will place the encoder and decoder in `~/software/`
 
-### Datasets
+## Datasets
 See instructions [here](script#datasets)
 
 
