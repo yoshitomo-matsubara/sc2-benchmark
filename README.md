@@ -36,6 +36,19 @@ See instructions [here](script#datasets)
 ## Citation
 [[Preprint]()]
 ```bibtex
+
+```
+
+## Note
+For measuring data size per sample precisely, it is important to keep test batch size of 1 when testing.  
+E.g., some baseline modules may expect larger batch size if you have multiple GPUs.  
+Then, add `CUDA_VISIBLE_DEVICES=0` before your execution command (e.g., `sh`, `bash`, `python`) 
+so that you can force the script to use one GPU (use GPU: 0 in this case).
+
+For instance, an input compression experiment using factorized prior (pretrained input compression model) 
+and ResNet-50 (pretrained classifier)
+```shell
+CUDA_VISIBLE_DEVICES=0 sh script/neural_input_compression/ilsvrc2012-image_classification.sh factorized_prior-resnet50 8
 ```
 
 ## Codec-based feature compression
