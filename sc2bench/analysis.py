@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 from torch import nn
 from torchdistill.common.constant import def_logger
 from torchdistill.common.file_util import get_binary_object_size
@@ -142,3 +143,58 @@ def check_if_analyzable(module):
         bool: True if model is instance of `AnalyzableModule`. False otherwise.
     """
     return isinstance(module, AnalyzableModule)
+
+
+def analyze_model_size(model, encoder_paths=None, additional_rest_paths=None, ignores_dtype_error=True):
+    """
+    Args:
+        model (torch.nn.Module): PyTorch module.
+        encoder_paths (list or tuple of strings): collection of encoder module paths.
+        additional_rest_paths (list or tuple of strings): collection of additional rest module paths
+            to be shared with encoder.
+        ignores_dtype_error (bool): If False, raise an error when any unexpected dtypes are found
+
+    Returns:
+        dict: model size (sum of param x num_bits) with three keys: model (whole model), encoder, and the rest
+    """
+    model_size = 0
+    encoder_size = 0
+    rest_size = 0
+    encoder_path_set = set(encoder_paths)
+    additional_rest_path_set = set(additional_rest_paths)
+    for k, v in model.state_dict().items():
+        dim = v.dim()
+        param_count = 1 if dim == 0 else np.prod(v.size())
+        v_dtype = v.dtype
+        if v_dtype in (torch.int64, torch.float64):
+            num_bits = 64
+        elif v_dtype in (torch.int32, torch.float32):
+            num_bits = 32
+        elif v_dtype in (torch.int16, torch.float16, torch.bfloat16):
+            num_bits = 16
+        elif v_dtype in (torch.int8, torch.uint8, torch.qint8, torch.quint8):
+            num_bits = 8
+        elif v_dtype == torch.bool:
+            num_bits = 2
+        else:
+            error_message = f'For {k}, dtype `{v_dtype}` is not expected'
+            if ignores_dtype_error:
+                print(error_message)
+                continue
+            else:
+                raise TypeError(error_message)
+
+        param_size = num_bits * param_count
+        model_size += param_size
+        match_flag = False
+        for encoder_path in encoder_path_set:
+            if k.startswith(encoder_path):
+                encoder_size += param_size
+                if k in additional_rest_path_set:
+                    rest_size += param_size
+                match_flag = True
+                break
+
+        if not match_flag:
+            rest_size += param_size
+    return {'model': model_size, 'encoder': encoder_size, 'rest': rest_size}
