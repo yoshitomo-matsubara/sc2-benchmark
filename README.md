@@ -1,5 +1,5 @@
-# SC2 Benchmark: Supervised Compression for Split Computing
-This is the official repository of `sc2bench` package and ["SC2 Benchmark: Supervised Compression for Split Computing"](#Citation).
+# SC2: Supervised Compression for Split Computing
+This is the official repository of `sc2bench` package and ["SC2: Supervised Compression for Split Computing"](#Citation).
 
 ## Installation
 ```shell
