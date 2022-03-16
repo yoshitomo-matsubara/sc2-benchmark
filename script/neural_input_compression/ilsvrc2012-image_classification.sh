@@ -11,7 +11,7 @@ do
   json_str='{"models": {"model": {"compression_model": {"params": {"quality": '
   json_str+=${quality}
   json_str+='}}}}}'
-  pipenv run python script/task/image_classification.py \
+  python script/task/image_classification.py \
   --config configs/ilsvrc2012/input_compression/${BASE_NAME}.yaml \
   --log log/input_compression/${BASE_NAME}-quality${quality}.txt \
   --json "${json_str}" -student_only -test_only -no_dp_eval
