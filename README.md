@@ -1,9 +1,9 @@
 # SC2: Supervised Compression for Split Computing
 This is the official repository of `sc2bench` package and ["SC2: Supervised Compression for Split Computing"](#Citation).
 
-| ![R-D (rate-distortion), ExR-D, and Three-way tradeoffs](imgs/ilsvrc2012-overview.png) |
-|:--:|
-| R-D (rate-distortion), ExR-D, and three-way tradeoffs for input compression and supervised compression with ResNet-50 as a reference model |
+![R-D (rate-distortion), ExR-D, and Three-way tradeoffs](imgs/ilsvrc2012-overview.png)
+:--:
+R-D (rate-distortion), ExR-D, and three-way tradeoffs for input compression and supervised compression with ResNet-50 as a reference model
 
 ![Input compression vs. Supervised compression](imgs/input_vs_supervised_compression.png)
 
