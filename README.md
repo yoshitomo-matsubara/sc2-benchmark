@@ -25,8 +25,8 @@ pip install -e "."
 See instructions [here](script#datasets)
 
 ## Checkpoints
-You can download our checkpoints including trained model weights [here](https://drive.google.com/file/d/1bIfKm_3X_imiWXHkqxy0rFZfafxBRaB4/view?usp=sharing).  
-Unzip the downloaded zip file under ./, then there will be ./resource/ckpt/.
+You can download our checkpoints including trained model weights [here](https://drive.google.com/file/d/1geENsiJJw3TXl4hhMEwUc4PL7V-YCwko/view?usp=sharing).  
+Unzip the downloaded zip file under `./`, then there will be `./resource/ckpt/`.
 
 ## Citation
 [[Preprint]()]
@@ -60,3 +60,14 @@ python script/task/image_classification.py -test_only --config configs/ilsvrc201
 # WebP
 python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/webp-resnet50.yaml
 ```
+
+## References
+- [PyTorch (torchvision)](https://github.com/pytorch/vision)
+- [PyTorch Image Models (timm)](https://github.com/rwightman/pytorch-image-models)
+- [CompressAI](https://github.com/InterDigitalInc/CompressAI)
+- [torchdistill](https://github.com/yoshitomo-matsubara/torchdistill) 
+- Johannes Ballé, David Minnen, Saurabh Singh, Sung Jin Hwang and Nick Johnston. ["Variational image compression with a scale hyperprior"](https://openreview.net/forum?id=rkcQFMZRb) (ICLR 2018)
+- David Minnen, Johannes Ballé and George D. Toderici. ["Joint Autoregressive and Hierarchical Priors for Learned Image Compression"](https://proceedings.neurips.cc/paper/2018/hash/53edebc543333dfbf7c5933af792c9c4-Abstract.html) (NeurIPS 2018)
+- Yoshitomo Matsubara and Marco Levorato. ["Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks"](https://arxiv.org/abs/2007.15818) (ICPR 2020)
+- Saurabh Singh, Sami Abu-El-Haija, Nick Johnston, Johannes Ballé, Abhinav Shrivastava and George Toderici. ["End-to-end Learning of Compressible Features"](https://arxiv.org/abs/2007.11797) (ICIP 2020) 
+- Yoshitomo Matsubara, Ruihan Yang, Marco Levorato and Stephan Mandt. ["Supervised Compression for Resource-Constrained Edge Computing Systems"](https://openaccess.thecvf.com/content/WACV2022/html/Matsubara_Supervised_Compression_for_Resource-Constrained_Edge_Computing_Systems_WACV_2022_paper.html) (WACV 2022)
