@@ -15,10 +15,10 @@ python script/task/image_classification.py -test_only -student_only \
   --config configs/ilsvrc2012/supervised_compression/ghnd-bq/resnet50-bq12ch_from_resnet50.yaml
 ```
 
-## ImageNet (ILSVRC 2012): Image Classification
+## 1. ImageNet (ILSVRC 2012): Image Classification
 The following examples use ResNet-50 as a reference model. More examples are available in [configs/](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/configs).
 
-### CR + BQ
+### 1.1 CR + BQ
 ```shell
 for bch in 1 2 3 6 9 12; do
   python script/task/image_classification.py -student_only \
@@ -27,7 +27,7 @@ for bch in 1 2 3 6 9 12; do
 done
 ```
 
-### End-to-End
+### 1.2 End-to-End
 ```shell
 for beta in 1.28e-8 1.024e-7 2.048e-7 8.192e-7 3.2768e-6; do 
   python script/task/image_classification.py \
@@ -36,7 +36,7 @@ for beta in 1.28e-8 1.024e-7 2.048e-7 8.192e-7 3.2768e-6; do
 done
 ```
 
-### Entropic Student
+### 1.3 Entropic Student
 ```shell
 for beta in 0.08 0.16 0.32 0.64 1.28 2.56 5.12; do 
   python script/task/image_classification.py -student_only \
@@ -47,10 +47,10 @@ done
 
 ---
 
-## COCO 2017: Object Detection
+## 2. COCO 2017: Object Detection
 The following examples use Faster R-CNN with ResNet-50 and FPN as a reference model.
 
-### CR + BQ
+### 2.1 CR + BQ
 
 ```shell
 for bch in 1 2 3 6 9 12; do
@@ -60,7 +60,7 @@ for bch in 1 2 3 6 9 12; do
 done
 ```
 
-### End-to-End
+### 2.2 End-to-End
 ```shell
 for beta in 1.28e-8 1.024e-7 2.048e-7 8.192e-7 3.2768e-6; do 
   python script/task/object_detection.py \
@@ -69,7 +69,7 @@ for beta in 1.28e-8 1.024e-7 2.048e-7 8.192e-7 3.2768e-6; do
 done
 ```
 
-### Entropic Student
+### 2.3 Entropic Student
 ```shell
 for beta in 0.08 0.16 0.32 0.64 1.28 2.56 5.12; do 
   python script/task/object_detection.py -student_only \
@@ -80,10 +80,10 @@ done
 
 ---
 
-## PASCAL VOC 2012: Semantic Segmentation
+## 3. PASCAL VOC 2012: Semantic Segmentation
 The following examples use DeepLabv3 with ResNet-50 as a reference model.
 
-### CR + BQ
+### 3.1 CR + BQ
 
 ```shell
 for bch in 1 2 3 6 9 12; do
@@ -93,7 +93,7 @@ for bch in 1 2 3 6 9 12; do
 done
 ```
 
-### End-to-End
+### 3.2 End-to-End
 ```shell
 for beta in 1.28e-8 1.024e-7 2.048e-7 8.192e-7 3.2768e-6; do 
   python script/task/semantic_segmentation.py \
@@ -102,7 +102,7 @@ for beta in 1.28e-8 1.024e-7 2.048e-7 8.192e-7 3.2768e-6; do
 done
 ```
 
-### Entropic Student
+### 3.3 Entropic Student
 ```shell
 for beta in 0.16 0.32 0.64 1.28 2.56 5.12; do 
   python script/task/semantic_segmentation.py -student_only \
