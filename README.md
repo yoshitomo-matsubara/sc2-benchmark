@@ -20,13 +20,12 @@ conda activate sc2-benchmark
 pip install -e "."
 ```
 
-
 ## Datasets
 See instructions [here](script#datasets)
 
 ## Checkpoints
-You can download our checkpoints including trained model weights [here](https://drive.google.com/file/d/1bIfKm_3X_imiWXHkqxy0rFZfafxBRaB4/view?usp=sharing).  
-Unzip the downloaded zip file under ./, then there will be ./resource/ckpt/.
+You can download our checkpoints including trained model weights [here](https://drive.google.com/file/d/1geENsiJJw3TXl4hhMEwUc4PL7V-YCwko/view?usp=sharing).  
+Unzip the downloaded zip file under `./`, then there will be `./resource/ckpt/`.
 
 ## Citation
 [[Preprint]()]
@@ -46,6 +45,9 @@ and ResNet-50 (pretrained classifier)
 CUDA_VISIBLE_DEVICES=0 sh script/neural_input_compression/ilsvrc2012-image_classification.sh factorized_prior-resnet50 8
 ```
 
+## SC2: Supervised Compression for Split Computing
+[README.md](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/task) explains how to train/test implemented supervised compression methods.
+
 ## Baselines: Input Compression
 - [Codec-based input compression](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/codec_input_compression): JPEG, WebP, BPG
 - [Neural input compression](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/neural_input_compression): Factorized Prior, Scale Hyperprior, Mean-scale Hyperprior, and Joint Autoregressive Hierarchical Prior
@@ -60,3 +62,18 @@ python script/task/image_classification.py -test_only --config configs/ilsvrc201
 # WebP
 python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/webp-resnet50.yaml
 ```
+
+## Issues / Questions / Requests
+The documentation is work-in-progress. In the meantime, feel free to create an issue if you find a bug.  
+If you have either a question or feature request, start a new discussion [here](https://github.com/yoshitomo-matsubara/sc2-benchmark/discussions).
+
+## References
+- [PyTorch (torchvision)](https://github.com/pytorch/vision)
+- [PyTorch Image Models (timm)](https://github.com/rwightman/pytorch-image-models)
+- [CompressAI](https://github.com/InterDigitalInc/CompressAI)
+- [torchdistill](https://github.com/yoshitomo-matsubara/torchdistill) 
+- Johannes Ballé, David Minnen, Saurabh Singh, Sung Jin Hwang and Nick Johnston. ["Variational image compression with a scale hyperprior"](https://openreview.net/forum?id=rkcQFMZRb) (ICLR 2018)
+- David Minnen, Johannes Ballé and George D. Toderici. ["Joint Autoregressive and Hierarchical Priors for Learned Image Compression"](https://proceedings.neurips.cc/paper/2018/hash/53edebc543333dfbf7c5933af792c9c4-Abstract.html) (NeurIPS 2018)
+- Yoshitomo Matsubara and Marco Levorato. ["Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks"](https://arxiv.org/abs/2007.15818) (ICPR 2020)
+- Saurabh Singh, Sami Abu-El-Haija, Nick Johnston, Johannes Ballé, Abhinav Shrivastava and George Toderici. ["End-to-end Learning of Compressible Features"](https://arxiv.org/abs/2007.11797) (ICIP 2020) 
+- Yoshitomo Matsubara, Ruihan Yang, Marco Levorato and Stephan Mandt. ["Supervised Compression for Resource-Constrained Edge Computing Systems"](https://openaccess.thecvf.com/content/WACV2022/html/Matsubara_Supervised_Compression_for_Resource-Constrained_Edge_Computing_Systems_WACV_2022_paper.html) (WACV 2022)
