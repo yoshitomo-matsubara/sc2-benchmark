@@ -5,7 +5,7 @@ We considered the following codec-based image compression methods:
 - WebP
 - BPG
 
-## Image classification
+## ImageNet (ILSVRC 2012): Image Classification
 Codec-based input compression followed by ResNet-50
 
 ```shell
@@ -14,7 +14,7 @@ bash script/codec_input_compression/ilsvrc2012-image_classification.sh webp-resn
 bash script/codec_input_compression/ilsvrc2012-image_classification.sh bpg-resnet50 bpg 5 5 50
 ```
 
-## Object detection
+## COCO 2017: Object Detection
 Codec-based input compression followed by Faster R-CNN with ResNet-50 and FPN
 
 ```shell
@@ -23,7 +23,7 @@ bash script/codec_input_compression/coco2017-object_detection.sh webp-faster_rcn
 bash script/codec_input_compression/coco2017-object_detection.sh bpg-faster_rcnn_resnet50_fpn bpg 5 5 50
 ```
 
-## Semantic segmentation
+## PASCAL VOC 2012: Semantic Segmentation
 Codec-based input compression followed by DeepLabv3 with ResNet-50
 
 ```shell

@@ -7,7 +7,7 @@ We considered the following neural image compression models:
 - Joint Autoregressive Hierarchical Prior
 
 
-## Image classification
+## ImageNet (ILSVRC 2012): Image Classification
 Neural input compression followed by ResNet-50
 
 ```shell
@@ -17,7 +17,7 @@ bash script/neural_input_compression/ilsvrc2012-image_classification.sh mean_sca
 bash script/neural_input_compression/ilsvrc2012-image_classification.sh joint_autoregressive_hierarchical_prior-resnet50 8
 ```
 
-## Object detection
+## COCO 2017: Object Detection
 Neural input compression followed by Faster R-CNN with ResNet-50 and FPN
 
 ```shell
@@ -27,7 +27,7 @@ bash script/neural_input_compression/coco2017-object_detection.sh mean_scale_hyp
 bash script/neural_input_compression/coco2017-object_detection.sh joint_autoregressive_hierarchical_prior-faster_rcnn_resnet50_fpn 8
 ```
 
-## Semantic segmentation
+## PASCAL VOC 2012: Semantic Segmentation
 Neural input compression followed by DeepLabv3 with ResNet-50
 
 ```shell

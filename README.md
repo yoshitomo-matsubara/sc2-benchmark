@@ -51,21 +51,17 @@ and ResNet-50 (pretrained classifier)
 CUDA_VISIBLE_DEVICES=0 sh script/neural_input_compression/ilsvrc2012-image_classification.sh factorized_prior-resnet50 8
 ```
 
+## Baselines: Input compression
+- [Codec-based input compression](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/codec_input_compression): JPEG, WebP, BPG
+- [Neural input compression](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/neural_input_compression): Factorized Prior, Scale Hyperprior, Mean-scale Hyperprior, and Joint Autoregressive Hierarchical Prior
+
+Each **README.md** gives instructions to run the baseline experiments.
+
+
 ## Codec-based feature compression
 ```shell
 # JPEG
 python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/jpeg-resnet50.yaml
 # WebP
 python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/webp-resnet50.yaml
-```
-
-
-## Analysis
-
-### Trade-off
-
-```shell
-python3 tradeoff_plotter.py --input resource/analysis/offload_cost_vs_model_acc_size.tsv --x param_count --y top1_acc --models mnasnet_100  pnasnet5large mobilenetv3_large_100 inception_v4 inception_v3
-
-python3 tradeoff_plotter.py --input resource/analysis/offload_cost_vs_model_acc_size.tsv --x jpeg_file_size --y top1_acc --models mnasnet_100  pnasnet5large mobilenetv3_large_100 inception_v4 inception_v3
 ```
