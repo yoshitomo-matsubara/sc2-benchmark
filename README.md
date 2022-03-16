@@ -1,6 +1,23 @@
 # SC2: Supervised Compression for Split Computing
 This is the official repository of `sc2bench` package and ["SC2: Supervised Compression for Split Computing"](#Citation).
 
+![Input compression vs. Supervised compression](imgs/input_vs_supervised_compression.png)
+
+## SC2 Metrics
+### 1. Encoder Size (to be minimized)
+Local processing cost should be minimized as local (mobile) devices usually have battery constraints and limited computing power.
+As a simple proxy for the computing costs, we measure the number of encoder parameters and 
+define the encoder size as the total number of bits to represent the parameters of the encoder.
+
+### 2. Data Size (to be minimized)
+We want to penalize large data being transferred from the mobile device to the edge server while the BPP does not 
+penalize it when feeding higher resolution images to downstream models for achieving higher model accuracy.
+
+### 3. Model Accuracy (to be maximized)
+While minimizing the two metrics, we want to maximize model accuracy (minimize supervised distortion).
+Example supervised distortions are accuracy, mean average precision (mAP), and mean intersection over union (mIoU) for 
+image classification, object detection, and semantic segmentation, respectively.
+
 ## Installation
 ```shell
 pip install sc2bench
@@ -27,6 +44,27 @@ See instructions [here](script#datasets)
 You can download our checkpoints including trained model weights [here](https://drive.google.com/file/d/1geENsiJJw3TXl4hhMEwUc4PL7V-YCwko/view?usp=sharing).  
 Unzip the downloaded zip file under `./`, then there will be `./resource/ckpt/`.
 
+## Supervised Compression
+1. CR + BQ: ["Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks"](https://arxiv.org/abs/2007.15818)
+2. End-to-End: ["End-to-end Learning of Compressible Features"](https://arxiv.org/abs/2007.11797) 
+3. Entropic Student: ["Supervised Compression for Resource-Constrained Edge Computing Systems"](https://openaccess.thecvf.com/content/WACV2022/html/Matsubara_Supervised_Compression_for_Resource-Constrained_Edge_Computing_Systems_WACV_2022_paper.html)
+
+[README.md](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/task) explains how to train/test implemented supervised compression methods.
+
+## Baselines: Input Compression
+- [Codec-based input compression](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/codec_input_compression): JPEG, WebP, BPG
+- [Neural input compression](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/neural_input_compression): Factorized Prior, Scale Hyperprior, Mean-scale Hyperprior, and Joint Autoregressive Hierarchical Prior
+
+Each **README.md** gives instructions to run the baseline experiments.
+
+## Codec-based Feature Compression
+```shell
+# JPEG
+python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/jpeg-resnet50.yaml
+# WebP
+python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/webp-resnet50.yaml
+```
+
 ## Citation
 [[Preprint]()]
 ```bibtex
@@ -43,24 +81,6 @@ For instance, an input compression experiment using factorized prior (pretrained
 and ResNet-50 (pretrained classifier)
 ```shell
 CUDA_VISIBLE_DEVICES=0 sh script/neural_input_compression/ilsvrc2012-image_classification.sh factorized_prior-resnet50 8
-```
-
-## SC2: Supervised Compression for Split Computing
-[README.md](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/task) explains how to train/test implemented supervised compression methods.
-
-## Baselines: Input Compression
-- [Codec-based input compression](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/codec_input_compression): JPEG, WebP, BPG
-- [Neural input compression](https://github.com/yoshitomo-matsubara/sc2-benchmark/tree/main/script/neural_input_compression): Factorized Prior, Scale Hyperprior, Mean-scale Hyperprior, and Joint Autoregressive Hierarchical Prior
-
-Each **README.md** gives instructions to run the baseline experiments.
-
-
-## Codec-based Feature Compression
-```shell
-# JPEG
-python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/jpeg-resnet50.yaml
-# WebP
-python script/task/image_classification.py -test_only --config configs/ilsvrc2012/feature_compression/webp-resnet50.yaml
 ```
 
 ## Issues / Questions / Requests
