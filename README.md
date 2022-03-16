@@ -1,6 +1,7 @@
 # SC2: Supervised Compression for Split Computing
 This is the official repository of `sc2bench` package and ["SC2: Supervised Compression for Split Computing"](#Citation).
 
+![R-D (rate-distortion), ExR-D, and Three-way tradeoffs](imgs/ilsvrc2012-overview.png)
 ![Input compression vs. Supervised compression](imgs/input_vs_supervised_compression.png)
 
 ## SC2 Metrics
