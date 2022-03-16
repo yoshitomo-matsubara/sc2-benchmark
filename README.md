@@ -21,17 +21,12 @@ pip install -e "."
 ```
 
 
-### Optional Software
-If you want to use BPG, 
-```shell
-bash script/software/install_bpg.sh
-```
-
-The script will place the encoder and decoder in `~/software/`
-
-
 ## Datasets
 See instructions [here](script#datasets)
+
+## Checkpoints
+You can download our checkpoints including trained model weights [here](https://drive.google.com/file/d/1bIfKm_3X_imiWXHkqxy0rFZfafxBRaB4/view?usp=sharing).  
+Unzip the downloaded zip file under ./, then there will be ./resource/ckpt/.
 
 ## Citation
 [[Preprint]()]

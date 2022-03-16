@@ -5,6 +5,13 @@ We considered the following codec-based image compression methods:
 - WebP
 - BPG
 
+If you want to use BPG, you will need to manually install the software 
+```shell
+bash script/software/install_bpg.sh
+```
+
+The script will place the encoder and decoder in `~/software/`
+
 ## ImageNet (ILSVRC 2012): Image Classification
 Codec-based input compression followed by ResNet-50
 
