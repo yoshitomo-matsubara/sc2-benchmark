@@ -11,7 +11,7 @@ edge server that processes the bulk part of the computation (the second sequence
 
 
 ![R-D (rate-distortion), ExR-D, and Three-way tradeoffs](imgs/ilsvrc2012-overview.png)
-R-D (rate-distortion), ExR-D, and three-way tradeoffs for input compression and supervised compression with ResNet-50 as a reference model
+ImageNet (ILSVRC 2012): R-D (rate-distortion), ExR-D, and three-way tradeoffs for input compression and supervised compression with ResNet-50 as a reference model
 
 ![Input compression vs. Supervised compression](imgs/input_vs_supervised_compression.png)
 
