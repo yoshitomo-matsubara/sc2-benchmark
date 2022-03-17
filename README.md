@@ -1,10 +1,28 @@
 # SC2: Supervised Compression for Split Computing
 This is the official repository of `sc2bench` package and ["SC2: Supervised Compression for Split Computing"](#Citation).
 
+As an intermediate option between local computing and edge computing (full offloading), ***split computing*** has been 
+attracting considerable attention from the research communities.
+
+In split computing, we split a neural network model into two sequences so that some elementary feature transformations
+are applied by the first sequence of the model on a weak mobile (local) device. 
+Then, intermediate, informative features are transmitted through a wireless communication channel to a powerful 
+edge server that processes the bulk part of the computation (the second sequence of the model).  
+
+
 ![R-D (rate-distortion), ExR-D, and Three-way tradeoffs](imgs/ilsvrc2012-overview.png)
 R-D (rate-distortion), ExR-D, and three-way tradeoffs for input compression and supervised compression with ResNet-50 as a reference model
 
 ![Input compression vs. Supervised compression](imgs/input_vs_supervised_compression.png)
+
+Input compression is an approach to save transmitted data, but it leads to transmitting information irrelevant to 
+the supervised task.
+To achieve better supervised rate-distortion tradeoff, we define ***supervised compression*** as 
+learning compressed representations for supervised downstream tasks such as classification, detection, or segmentation.
+Specifically for split computing, we term the problem setting **SC2** (*Supervised Compression for Split Computing*).  
+
+Note that the training process can be done offline (i.e., on a single device without splitting), 
+and it is different from "split learning".
 
 ## SC2 Metrics
 ### 1. Encoder Size (to be minimized)
