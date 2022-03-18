@@ -49,14 +49,16 @@ pip install sc2bench
 For pipenv users,
 ```shell
 pipenv install --python 3.8
-pipenv install -e "."
+# or create your own pipenv environment
+pipenv install sc2bench 
 ```
 
 For conda users,
 ```shell
 conda env create -f environment.yaml
+# or create your own conda environment
 conda activate sc2-benchmark
-pip install -e "."
+pip install sc2bench
 ```
 
 ## Datasets
