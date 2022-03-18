@@ -11,7 +11,7 @@ edge server that processes the bulk part of the computation (the second sequence
 
 
 ![R-D (rate-distortion), ExR-D, and Three-way tradeoffs](imgs/ilsvrc2012-overview.png)
-R-D (rate-distortion), ExR-D, and three-way tradeoffs for input compression and supervised compression with ResNet-50 as a reference model
+ImageNet (ILSVRC 2012): R-D (rate-distortion), ExR-D, and three-way tradeoffs for input compression and supervised compression with ResNet-50 as a reference model
 
 ![Input compression vs. Supervised compression](imgs/input_vs_supervised_compression.png)
 
@@ -87,9 +87,14 @@ python script/task/image_classification.py -test_only --config configs/ilsvrc201
 ```
 
 ## Citation
-[[Preprint]()]
+[[Preprint](https://arxiv.org/abs/2203.08875)]
 ```bibtex
-
+@article{matsubara2022sc2,
+  title={SC2: Supervised Compression for Split Computing},
+  author={Matsubara, Yoshitomo and Yang, Ruihan and Levorato, Marco and Mandt, Stephan},
+  journal={arXiv preprint arXiv:2203.08875},
+  year={2022}
+}
 ```
 
 ## Note
