@@ -6,7 +6,7 @@ with open('README.md', 'r') as f:
 description = 'SC2: Supervised Compression for Split Computing.'
 setup(
     name='sc2bench',
-    version='0.0.1',
+    version='0.0.2',
     author='Yoshitomo Matsubara',
     description=description,
     long_description=long_description,

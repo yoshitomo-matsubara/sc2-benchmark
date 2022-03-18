@@ -1,9 +1,8 @@
 import torch
 from torch.hub import load_state_dict_from_url
 from torchdistill.common.main_util import load_ckpt
-from torchvision.models.segmentation.deeplabv3 import DeepLabHead
+from torchvision.models.segmentation.deeplabv3 import model_urls, DeepLabHead
 from torchvision.models.segmentation.fcn import FCNHead
-from torchvision.models.segmentation.segmentation import model_urls
 
 from .base import BaseSegmentationModel
 from .registry import register_segmentation_model_func
