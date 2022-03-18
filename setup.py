@@ -1,14 +1,12 @@
 from setuptools import setup, find_packages
 
-import sc2bench
-
 with open('README.md', 'r') as f:
     long_description = f.read()
 
 description = 'SC2: Supervised Compression for Split Computing.'
 setup(
     name='sc2bench',
-    version=sc2bench.__version__,
+    version='0.0.1',
     author='Yoshitomo Matsubara',
     description=description,
     long_description=long_description,
