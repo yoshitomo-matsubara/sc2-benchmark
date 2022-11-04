@@ -132,9 +132,6 @@ train:
         output: ['backbone.layer2', 'backbone.layer3', 'backbone.layer4']
       wrapper: 'DistributedDataParallel'
       requires_grad: True
-    apex:
-      requires: False
-      opt_level: '01'
     optimizer:
       type: 'Adam'
       params:
@@ -223,9 +220,6 @@ train:
         output: []
       wrapper: 'DistributedDataParallel'
       requires_grad: True
-    apex:
-      requires: False
-      opt_level: '01'
     optimizer:
       type: 'SGD'
       params:

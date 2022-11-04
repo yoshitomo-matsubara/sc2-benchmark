@@ -103,9 +103,6 @@ train:
         output: ['bottleneck_layer', 's2', 's3', 's4', 'bottleneck_layer.entropy_bottleneck']
       wrapper: 'DistributedDataParallel'
       requires_grad: True
-    apex:
-      requires: False
-      opt_level: '01'
     optimizer:
       type: 'Adam'
       params:
@@ -217,9 +214,6 @@ train:
         output: []
       wrapper: 'DistributedDataParallel'
       requires_grad: True
-    apex:
-      requires: False
-      opt_level: '01'
     optimizer:
       type: 'SGD'
       params:
