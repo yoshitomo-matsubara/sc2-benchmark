@@ -90,9 +90,6 @@ train:
       output: []
     wrapper: 'DistributedDataParallel'
     requires_grad: True
-  apex:
-    requires: False
-    opt_level: '01'
   optimizer:
     type: 'SGD'
     params:

@@ -107,9 +107,6 @@ train:
       output: ['bottleneck_layer', 'layer2', 'layer3', 'layer4']
     wrapper: 'DistributedDataParallel'
     requires_grad: True
-  apex:
-    requires: False
-    opt_level: '01'
   optimizer:
     type: 'Adam'
     params:
