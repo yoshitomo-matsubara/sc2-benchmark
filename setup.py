@@ -15,8 +15,8 @@ setup(
     packages=find_packages(exclude=('configs', 'resources', 'script', 'tests')),
     python_requires='>=3.7',
     install_requires=[
-        'torch>=1.10.0',
-        'torchvision>=0.11.1',
+        'torch>=1.11.0',
+        'torchvision>=0.12.0',
         'numpy',
         'pyyaml>=5.4.1',
         'scipy',
