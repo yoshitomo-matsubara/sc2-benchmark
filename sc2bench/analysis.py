@@ -160,6 +160,12 @@ def analyze_model_size(model, encoder_paths=None, additional_rest_paths=None, ig
     model_size = 0
     encoder_size = 0
     rest_size = 0
+    if encoder_paths is None:
+        encoder_paths = list()
+
+    if additional_rest_paths is None:
+        additional_rest_paths = list()
+
     encoder_path_set = set(encoder_paths)
     additional_rest_path_set = set(additional_rest_paths)
     for k, v in model.state_dict().items():
