@@ -15,15 +15,15 @@ setup(
     packages=find_packages(exclude=('configs', 'resources', 'script', 'tests')),
     python_requires='>=3.7',
     install_requires=[
-        'torch>=1.11.0',
-        'torchvision>=0.12.0',
+        'torch>=1.11.0,<=1.12.1',
+        'torchvision>=0.12.0,<=0.13.1',
         'numpy',
         'pyyaml>=5.4.1',
         'scipy',
         'cython',
         'pycocotools>=2.0.2',
         'torchdistill>=0.2.7',
-        'compressai>=1.1.8',
+        'compressai>=1.1.8,<=1.2.2',
         'timm>=0.4.12'
     ],
     extras_require={
