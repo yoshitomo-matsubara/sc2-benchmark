@@ -8,6 +8,7 @@ from torchdistill.models.registry import register_model_class, register_model_fu
 from torchvision import models
 from torchvision.ops import misc as misc_nn_ops
 
+from torchdistill.common.main_util import load_ckpt
 from .layer import get_layer
 from ..analysis import AnalyzableModule
 
@@ -294,39 +295,51 @@ class SplittableHybridViT(UpdatableBackbone):
 
 @register_backbone_func
 def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, skips_avgpool=True, skips_fc=True,
-                      pre_transform_params=None, analysis_config=None, **resnet_kwargs):
+                      pre_transform_params=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
+                      org_ckpt_strict=True, **resnet_kwargs):
     bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
     if resnet_kwargs.pop('norm_layer', '') == 'FrozenBatchNorm2d':
         resnet_model = models.__dict__[resnet_name](norm_layer=misc_nn_ops.FrozenBatchNorm2d, **resnet_kwargs)
     else:
         resnet_model = models.__dict__[resnet_name](**resnet_kwargs)
+
+    if org_model_ckpt_file_path_or_url is not None:
+        load_ckpt(org_model_ckpt_file_path_or_url, model=resnet_model, strict=org_ckpt_strict)
     return SplittableResNet(bottleneck_layer, resnet_model, inplanes, skips_avgpool, skips_fc,
                             pre_transform_params, analysis_config)
 
 
 @register_backbone_func
 def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=None, skips_avgpool=True, skips_fc=True,
-                       pre_transform_params=None, analysis_config=None, **resnest_kwargs):
+                       pre_transform_params=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
+                       org_ckpt_strict=True, **resnest_kwargs):
     bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
     resnest_model = resnest.__dict__[resnest_name](**resnest_kwargs)
+    if org_model_ckpt_file_path_or_url is not None:
+        load_ckpt(org_model_ckpt_file_path_or_url, model=resnest_model, strict=org_ckpt_strict)
     return SplittableResNet(bottleneck_layer, resnest_model, inplanes, skips_avgpool, skips_fc,
                             pre_transform_params, analysis_config)
 
 
 @register_backbone_func
 def splittable_regnet(bottleneck_config, regnet_name='regnety_064', inplanes=None, skips_head=True,
-                      pre_transform_params=None, analysis_config=None, **regnet_kwargs):
+                      pre_transform_params=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
+                      org_ckpt_strict=True, **regnet_kwargs):
     bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
     regnet_model = regnet.__dict__[regnet_name](**regnet_kwargs)
-    return SplittableRegNet(bottleneck_layer, regnet_model, inplanes, skips_head,
-                            pre_transform_params, analysis_config)
+    if org_model_ckpt_file_path_or_url is not None:
+        load_ckpt(org_model_ckpt_file_path_or_url, model=regnet_model, strict=org_ckpt_strict)
+    return SplittableRegNet(bottleneck_layer, regnet_model, inplanes, skips_head, pre_transform_params, analysis_config)
 
 
 @register_backbone_func
 def splittable_hybrid_vit(bottleneck_config, hybrid_vit_name='vit_small_r26_s32_224', num_pruned_stages=1,
-                          skips_head=True, pre_transform_params=None, analysis_config=None, **hybrid_vit_kwargs):
+                          skips_head=True, pre_transform_params=None, analysis_config=None,
+                          org_model_ckpt_file_path_or_url=None, org_ckpt_strict=True, **hybrid_vit_kwargs):
     bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
     hybrid_vit_model = vision_transformer_hybrid.__dict__[hybrid_vit_name](**hybrid_vit_kwargs)
+    if org_model_ckpt_file_path_or_url is not None:
+        load_ckpt(org_model_ckpt_file_path_or_url, model=hybrid_vit_model, strict=org_ckpt_strict)
     return SplittableHybridViT(bottleneck_layer, hybrid_vit_model, num_pruned_stages, skips_head,
                                pre_transform_params, analysis_config)
 
