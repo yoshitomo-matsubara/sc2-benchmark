@@ -87,7 +87,7 @@ The following examples use DeepLabv3 with ResNet-50 as a reference model.
 
 ```shell
 for bch in 1 2 3 6 9 12; do
-  python script/task/semantic_segmentation.py -student_only \ 
+  python script/task/semantic_segmentation.py -student_only \
     --config configs/pascal_voc2012/supervised_compression/ghnd-bq/deeplabv3_resnet50-bq${bch}ch_from_deeplabv3_resnet50.yaml \
     --log log/pascal_voc2012/supervised_compression/ghnd-bq/deeplabv3_resnet50-bq${bch}ch_from_deeplabv3_resnet50.txt
 done
