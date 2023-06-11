@@ -118,8 +118,8 @@ def faster_rcnn_model(backbone_config, pretrained=True, pretrained_backbone_name
     backbone_config['params']['norm_layer'] = misc_nn_ops.FrozenBatchNorm2d
     backbone = load_classification_model(backbone_config, torch.device('cpu'), False, strict=False)
 
-    faster_rcnn_model = create_faster_rcnn_fpn(backbone, num_classes=num_classes, **backbone_fpn_kwargs, **kwargs)
-    model = BaseRCNN(faster_rcnn_model, analysis_config=analysis_config)
+    rcnn_model = create_faster_rcnn_fpn(backbone, num_classes=num_classes, **backbone_fpn_kwargs, **kwargs)
+    model = BaseRCNN(rcnn_model, analysis_config=analysis_config)
     if pretrained and pretrained_backbone_name in ('resnet50', 'mobilenet_v3_large_320', 'mobilenet_v3_large'):
         _process_torchvision_pretrained_weights(model, pretrained_backbone_name, progress)
 
