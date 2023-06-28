@@ -1,8 +1,8 @@
-# SC2: Supervised Compression for Split Computing
+# SC2 Benchmark: Supervised Compression for Split Computing
 [![PyPI version](https://badge.fury.io/py/sc2bench.svg)](https://badge.fury.io/py/sc2bench)
 [![GitHub Discussions](https://img.shields.io/github/discussions/yoshitomo-matsubara/sc2-benchmark)](https://github.com/yoshitomo-matsubara/sc2-benchmark/discussions)  
 
-This is the official repository of `sc2bench` package and ["SC2: Supervised Compression for Split Computing"](#Citation).
+This is the official repository of `sc2bench` package and ["SC2 Benchmark: Supervised Compression for Split Computing"](#Citation).
 
 As an intermediate option between local computing and edge computing (full offloading), ***split computing*** has been 
 attracting considerable attention from the research communities.
@@ -92,13 +92,15 @@ python script/task/image_classification.py -test_only --config configs/ilsvrc201
 ```
 
 ## Citation
-[[Preprint](https://arxiv.org/abs/2203.08875)]
+[[Paper](https://openreview.net/forum?id=p28wv4G65d)] [[Preprint](https://arxiv.org/abs/2203.08875)]
 ```bibtex
-@article{matsubara2022sc2,
-  title={SC2: Supervised Compression for Split Computing},
+@article{matsubara2023sc2,
+  title={{SC2 Benchmark: Supervised Compression for Split Computing}},
   author={Matsubara, Yoshitomo and Yang, Ruihan and Levorato, Marco and Mandt, Stephan},
-  journal={arXiv preprint arXiv:2203.08875},
-  year={2022}
+  journal={Transactions on Machine Learning Research},
+  issn={2835-8856},
+  year={2023},
+  url={https://openreview.net/forum?id=p28wv4G65d}
 }
 ```
 
