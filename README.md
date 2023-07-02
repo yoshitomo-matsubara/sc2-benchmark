@@ -67,8 +67,8 @@ pip install sc2bench
 See instructions [here](script#datasets)
 
 ## Checkpoints
-You can download our checkpoints including trained model weights [here](https://drive.google.com/file/d/1geENsiJJw3TXl4hhMEwUc4PL7V-YCwko/view?usp=sharing).  
-Unzip the downloaded zip file under `./`, then there will be `./resource/ckpt/`.
+You can download our checkpoints including trained model weights [here](https://github.com/yoshitomo-matsubara/sc2-benchmark/releases/tag/v0.0.3).  
+Unzip the downloaded zip files under `./`, then there will be `./resource/ckpt/`.
 
 ## Supervised Compression
 1. CR + BQ: ["Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks"](https://arxiv.org/abs/2007.15818)
