@@ -11,15 +11,26 @@ from ...analysis import AnalyzableModule, check_if_analyzable
 @register_wrapper_class
 class InputCompressionDetectionModel(AnalyzableModule):
     """
-    Wrapper module for input compression model followed by detection model.
-    Args:
-        detection_model (nn.Module): detection model
-        device (torch.device): torch device
-        codec_params (dict): keyword configurations for transform sequence for codec
-        codec_params (dict): keyword configurations for transform sequence for codec
-        pre_transform_params (dict): keyword configurations for transform sequence before compression
-        post_transform_params (dict): keyword configurations for transform sequence after compression
-        analysis_config (dict): configuration for analysis
+    A wrapper module for input compression model followed by a detection model.
+
+    :param detection_model: object detection model
+    :type detection_model: nn.Module
+    :param device: torch device
+    :type device: torch.device or str
+    :param codec_params: transform sequence configuration for codec
+    :type codec_params: dict or None
+    :param compression_model: compression model
+    :type compression_model: nn.Module or None
+    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `comoression_model`
+    :type uses_cpu4compression_model: bool
+    :param pre_transform_params: pre-transform parameters
+    :type pre_transform_params: dict or None
+    :param post_transform_params: post-transform parameters
+    :type post_transform_params: dict or None
+    :param analysis_config: analysis configuration
+    :type analysis_config: dict or None
+    :param adaptive_pad_kwargs: keyword arguments for AdaptivePad
+    :type adaptive_pad_kwargs: dict or None
     """
     def __init__(self, detection_model, device, codec_params=None, compression_model=None,
                  uses_cpu4compression_model=False, pre_transform_params=None, post_transform_params=None,
@@ -41,17 +52,13 @@ class InputCompressionDetectionModel(AnalyzableModule):
         self.detection_model = detection_model
 
     def use_cpu4compression(self):
+        """
+        Changes the device of the compression model to CPU.
+        """
         if self.uses_cpu4compression_model and self.detection_model.transform.compression_model is not None:
             self.detection_model.transform.compression_model = self.detection_model.transform.compression_model.cpu()
 
     def forward(self, x):
-        """
-        Args:
-            x (ImageList): input sample.
-
-        Returns:
-            Tensor: output tensor from self.detection_model.
-        """
         return self.detection_model(x)
 
     def activate_analysis(self):
@@ -89,12 +96,14 @@ class InputCompressionDetectionModel(AnalyzableModule):
 
 def get_wrapped_detection_model(wrapper_model_config, device):
     """
-    Args:
-        wrapper_model_config (dict): wrapper model configuration.
-        device (device): torch device.
+    Gets a wrapped object detection model
 
-    Returns:
-        nn.Module: a wrapped module.
+    :param wrapper_model_config: wrapper model configuration
+    :type wrapper_model_config: dict
+    :param device: torch device
+    :type device: torch.device
+    :return: model: wrapped object detection model
+    :rtype: model: nn.Module
     """
     wrapper_model_name = wrapper_model_config['name']
     if wrapper_model_name not in WRAPPER_CLASS_DICT:
