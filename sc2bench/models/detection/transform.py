@@ -11,11 +11,34 @@ from ...transforms.misc import AdaptivePad
 
 
 class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
+    """
+    An R-CNN Transform with codec-based or model-based compression
+
+    :param transform: performs the data transformation from the inputs to feed into the model
+    :type transform: nn.Module
+    :param device: torch device
+    :type device: torch.device or str
+    :param codec_params: codec parameters
+    :type codec_params: dict
+    :param analyzer_configs: a list of analysis configurations
+    :type analyzer_configs: list[dict]
+    :param analyzes_after_compress: run analysis with `analyzer_configs` if `True`
+    :type analyzes_after_compress: bool
+    :param compression_model: a compression model
+    :type compression_model: nn.Module or None
+    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `comoression_model`
+    :type uses_cpu4compression_model: bool
+    :param pre_transform_params: pre-transform parameters
+    :type pre_transform_params: dict or None
+    :param post_transform_params: post-transform parameters
+    :type post_transform_params: dict or None
+    :param adaptive_pad_kwargs: keyword arguments for AdaptivePad
+    :type adaptive_pad_kwargs: dict or None
+    """
     # Referred to https://github.com/pytorch/vision/blob/main/torchvision/models/detection/transform.py
     def __init__(self, transform, device, codec_params, analyzer_configs, analyzes_after_compress=False,
                  compression_model=None, uses_cpu4compression_model=False, pre_transform_params=None,
                  post_transform_params=None, adaptive_pad_kwargs=None):
-        # super().__init__(analyzer_configs)
         GeneralizedRCNNTransform.__init__(self, transform.min_size, transform.max_size,
                                           transform.image_mean, transform.image_std)
         AnalyzableModule.__init__(self, analyzer_configs)
@@ -32,6 +55,14 @@ class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
         self.adaptive_pad = AdaptivePad(**adaptive_pad_kwargs) if isinstance(adaptive_pad_kwargs, dict) else None
 
     def compress_by_codec(self, org_img):
+        """
+        Convert a tensor to an image and compress-decompress it by codec.
+
+        :param org_img: an image tensor
+        :type org_img: torch.Tensor
+        :return: a compressed-and-decompressed image tensor
+        :rtype: torch.Tensor
+        """
         pil_img = to_pil_image(org_img, mode='RGB')
         pil_img, file_size = self.codec_encoder_decoder(pil_img)
         if not self.training:
@@ -39,6 +70,14 @@ class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
         return to_tensor(pil_img).to(org_img.device)
 
     def compress_by_model(self, org_img):
+        """
+        Convert a tensor to an image and compress-decompress it by model.
+
+        :param org_img: an image tensor
+        :type org_img: torch.Tensor
+        :return: a compressed-and-decompressed image tensor
+        :rtype: torch.Tensor
+        """
         org_img = org_img.unsqueeze(0)
         org_height, org_width = None, None
         if self.adaptive_pad is not None:
@@ -58,6 +97,15 @@ class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
         return decompressed_obj.squeeze(0)
 
     def compress(self, org_img):
+        """
+        Apply `pre_transform` to an image tensor, compress and decompress it, and apply `post_transform` to
+        the compressed-decompressed image tensor.
+
+        :param org_img: an image tensor
+        :type org_img: torch.Tensor
+        :return: a compressed-and-decompressed image tensor
+        :rtype: torch.Tensor
+        """
         if self.pre_transform is not None:
             org_img = self.pre_transform(org_img)
 
