@@ -13,9 +13,9 @@ def register_detection_model_class(cls):
     """
     Register an object detection model
 
-    :param cls: an object detection model to be registered
+    :param cls: object detection model to be registered
     :type cls: class
-    :return: cls: an object detection model
+    :return: cls: object detection model
     :rtype: cls: class
     """
     DETECTION_MODEL_CLASS_DICT[cls.__name__] = cls
@@ -27,9 +27,9 @@ def register_detection_model_func(func):
     """
     Register a function to build an object detection
 
-    :param func: a function to build an object detection to be registered
+    :param func: function to build an object detection to be registered
     :type func: typing.Callable
-    :return: func: a function to build an object detection
+    :return: func: function to build an object detection
     :rtype: func: typing.Callable
     """
     DETECTION_MODEL_FUNC_DICT[func.__name__] = func
@@ -43,7 +43,7 @@ def get_detection_model(cls_or_func_name, **kwargs):
 
     :param cls_or_func_name: model class or function name
     :type cls_or_func_name: str
-    :return: model: an object detection model
+    :return: model: object detection model
     :rtype: model: nn.Module or None
     """
     if cls_or_func_name in DETECTION_MODEL_CLASS_DICT:
@@ -57,14 +57,14 @@ def load_detection_model(model_config, device, strict=True):
     """
     Load an object detection model
 
-    :param model_config: a model configuration
+    :param model_config: model configuration
     :type model_config: dict
     :param device: device
     :type device: torch.device or str
     :param strict: whether to strictly enforce that the keys in state_dict match
             the keys returned by this module's `state_dict()` function.
     :type strict: bool
-    :return: model: an object detection model
+    :return: model: object detection model
     :rtype: model: nn.Module
     """
     model = get_object_detection_model(model_config)

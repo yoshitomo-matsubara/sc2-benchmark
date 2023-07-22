@@ -14,7 +14,7 @@ class UpdatableDetectionModel(AnalyzableModule):
     """
     An abstract class for updatable object detection model.
 
-    :param analyzer_configs: a list of analysis configurations
+    :param analyzer_configs: list of analysis configurations
     :type analyzer_configs: list[dict]
     """
     def __init__(self, analyzer_configs=None):
@@ -45,9 +45,9 @@ class UpdatableBackboneWithFPN(UpdatableDetectionModel):
     """
     An updatable backbone model with feature pyramid network (FPN).
 
-    :param backbone: a backbone model (usually a classification model)
+    :param backbone: backbone model (usually a classification model)
     :type backbone: nn.Module
-    :param return_layer_dict: a mapping from name of module to return its output to a specified key
+    :param return_layer_dict: mapping from name of module to return its output to a specified key
     :type return_layer_dict: dict
     :param in_channels_list: number of channels for each feature map that is passed to the module for FPN
     :type in_channels_list: list[int]
@@ -58,7 +58,7 @@ class UpdatableBackboneWithFPN(UpdatableDetectionModel):
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names
     :type extra_blocks: ExtraFPNBlock or None
-    :param analyzer_configs: a list of analysis configurations
+    :param analyzer_configs: list of analysis configurations
     :type analyzer_configs: list[dict]
     :param analyzes_after_compress: run analysis with `analyzer_configs` if True
     :type analyzes_after_compress: bool
@@ -123,7 +123,7 @@ class UpdatableBackboneWithFPN(UpdatableDetectionModel):
         """
         Returns an auxiliary module to compute auxiliary loss if necessary like `CompressAI models do <https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.aux_loss>`_.
 
-        :return: an auxiliary module
+        :return: auxiliary module
         :rtype: nn.Module
         """
         return self.body.get_aux_module()
@@ -133,7 +133,7 @@ def check_if_updatable_detection_model(model):
     """
     Checks if the given object detection model is updatable.
 
-    :param model: an object detection model
+    :param model: object detection model
     :type model: nn.Module
     :return: True if the model is updatable, False otherwise
     :rtype: bool

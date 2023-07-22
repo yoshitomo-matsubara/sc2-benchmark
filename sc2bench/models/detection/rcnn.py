@@ -18,9 +18,9 @@ class BaseRCNN(GeneralizedRCNN, UpdatableDetectionModel):
     """
     A base, updatable R-CNN model.
 
-    :param rcnn_model: a backbone model (usually a classification model)
+    :param rcnn_model: backbone model (usually a classification model)
     :type rcnn_model: nn.Module
-    :param analysis_config: an analysis configuration
+    :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
     # Referred to https://github.com/pytorch/vision/blob/main/torchvision/models/detection/generalized_rcnn.py
@@ -44,7 +44,7 @@ class BaseRCNN(GeneralizedRCNN, UpdatableDetectionModel):
         """
         Returns an auxiliary module to compute auxiliary loss if necessary like `CompressAI models do <https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.aux_loss>`_.
 
-        :return: an auxiliary module
+        :return: auxiliary module
         :rtype: nn.Module
         """
         return self.backbone.body.get_aux_module()
@@ -72,7 +72,7 @@ class BaseRCNN(GeneralizedRCNN, UpdatableDetectionModel):
         """
         Analyzes a given compressed object (e.g., file size of the compressed object).
 
-        :param compressed_obj: a compressed object to be analyzed
+        :param compressed_obj: compressed object to be analyzed
         :type compressed_obj: Any
         """
         if not self.activated_analysis:
@@ -108,14 +108,14 @@ def create_faster_rcnn_fpn(backbone, extra_blocks=None, return_layer_dict=None, 
     """
     Builds Faster R-CNN model using a given updatable backbone model.
 
-    :param backbone: a backbone model (usually a classification model)
+    :param backbone: backbone model (usually a classification model)
     :type backbone: nn.Module
     :param extra_blocks: if provided, extra operations will
             be performed. It is expected to take the fpn features, the original
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names
     :type extra_blocks: ExtraFPNBlock or None
-    :param return_layer_dict: a mapping from name of module to return its output to a specified key
+    :param return_layer_dict: mapping from name of module to return its output to a specified key
     :type return_layer_dict: dict
     :param in_channels_list: number of channels for each feature map that is passed to the module for FPN
     :type in_channels_list: list[int] or None
@@ -127,7 +127,7 @@ def create_faster_rcnn_fpn(backbone, extra_blocks=None, return_layer_dict=None, 
     :type returned_layers: list[int] or None
     :param num_classes: number of output classes of the model (including the background)
     :type num_classes: int
-    :param analysis_config: an analysis configuration
+    :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     :param analyzable_layer_key: key of analyzable layer
     :type analyzable_layer_key: str
@@ -177,7 +177,7 @@ def faster_rcnn_model(backbone_config, pretrained=True, pretrained_backbone_name
     """
     Builds Faster R-CNN model.
 
-    :param backbone_config: a backbone configuration
+    :param backbone_config: backbone configuration
     :type backbone_config: dict
     :param pretrained: if True, returns a model pre-trained on COCO train2017 (torchvision)
     :type pretrained: bool
@@ -190,9 +190,9 @@ def faster_rcnn_model(backbone_config, pretrained=True, pretrained_backbone_name
     :type backbone_fpn_kwargs: dict
     :param num_classes: number of output classes of the model (including the background)
     :type num_classes: int
-    :param analysis_config: an analysis configuration
+    :param analysis_config: analysis configuration
     :type analysis_config: dict or None
-    :param start_ckpt_file_path: a checkpoint file path to be loaded for the built Faster R-CNN model
+    :param start_ckpt_file_path: checkpoint file path to be loaded for the built Faster R-CNN model
     :type start_ckpt_file_path: str or None
     """
     if backbone_fpn_kwargs is None:

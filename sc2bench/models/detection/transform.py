@@ -20,11 +20,11 @@ class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
     :type device: torch.device or str
     :param codec_params: codec parameters
     :type codec_params: dict
-    :param analyzer_configs: a list of analysis configurations
+    :param analyzer_configs: list of analysis configurations
     :type analyzer_configs: list[dict]
     :param analyzes_after_compress: run analysis with `analyzer_configs` if True
     :type analyzes_after_compress: bool
-    :param compression_model: a compression model
+    :param compression_model: compression model
     :type compression_model: nn.Module or None
     :param uses_cpu4compression_model: whether to use CPU instead of GPU for `comoression_model`
     :type uses_cpu4compression_model: bool
@@ -58,9 +58,9 @@ class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
         """
         Convert a tensor to an image and compress-decompress it by codec.
 
-        :param org_img: an image tensor
+        :param org_img: image tensor
         :type org_img: torch.Tensor
-        :return: a compressed-and-decompressed image tensor
+        :return: compressed-and-decompressed image tensor
         :rtype: torch.Tensor
         """
         pil_img = to_pil_image(org_img, mode='RGB')
@@ -73,9 +73,9 @@ class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
         """
         Convert a tensor to an image and compress-decompress it by model.
 
-        :param org_img: an image tensor
+        :param org_img: image tensor
         :type org_img: torch.Tensor
-        :return: a compressed-and-decompressed image tensor
+        :return: compressed-and-decompressed image tensor
         :rtype: torch.Tensor
         """
         org_img = org_img.unsqueeze(0)
@@ -101,9 +101,9 @@ class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
         Apply `pre_transform` to an image tensor, compress and decompress it, and apply `post_transform` to
         the compressed-decompressed image tensor.
 
-        :param org_img: an image tensor
+        :param org_img: image tensor
         :type org_img: torch.Tensor
-        :return: a compressed-and-decompressed image tensor
+        :return: compressed-and-decompressed image tensor
         :rtype: torch.Tensor
         """
         if self.pre_transform is not None:

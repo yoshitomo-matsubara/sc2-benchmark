@@ -13,13 +13,13 @@ class InputCompressionDetectionModel(AnalyzableModule):
     """
     Wrapper module for input compression model followed by detection model.
 
-    :param detection_model: an object detection model
+    :param detection_model: object detection model
     :type detection_model: nn.Module
     :param device: torch device
     :type device: torch.device or str
-    :param codec_params: a transform sequence configuration for codec
+    :param codec_params: transform sequence configuration for codec
     :type codec_params: dict or None
-    :param compression_model: a compression model
+    :param compression_model: compression model
     :type compression_model: nn.Module or None
     :param uses_cpu4compression_model: whether to use CPU instead of GPU for `comoression_model`
     :type uses_cpu4compression_model: bool
@@ -103,11 +103,11 @@ def get_wrapped_detection_model(wrapper_model_config, device):
     """
     Get a wrapped object detection model
 
-    :param wrapper_model_config: a wrapper model configuration
+    :param wrapper_model_config: wrapper model configuration
     :type wrapper_model_config: dict
     :param device: torch device
     :type device: torch.device
-    :return: model: a wrapped object detection model
+    :return: model: wrapped object detection model
     :rtype: model: nn.Module
     """
     wrapper_model_name = wrapper_model_config['name']
