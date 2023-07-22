@@ -12,12 +12,18 @@ from ...analysis import AnalyzableModule
 @register_wrapper_class
 class CodecInputCompressionSegmentationModel(AnalyzableModule):
     """
-    Wrapper module for codec input compression model followed by segmentation model.
-    Args:
-        segmentation_model (nn.Module): segmentation model
-        codec_params (dict): keyword configurations for transform sequence for codec
-        post_transform_params (dict): keyword configurations for transform sequence after compression model
-        analysis_config (dict): configuration for analysis
+    A wrapper module for codec input compression model followed by a segmentation model.
+
+    :param segmentation_model: semantic segmentation model
+    :type segmentation_model: nn.Module
+    :param device: torch device
+    :type device: torch.device or str
+    :param codec_params: transform sequence configuration for codec
+    :type codec_params: dict or None
+    :param post_transform_params: post-transform parameters
+    :type post_transform_params: dict or None
+    :param analysis_config: analysis configuration
+    :type analysis_config: dict or None
     """
     def __init__(self, segmentation_model, device, codec_params=None,
                  post_transform_params=None, analysis_config=None, **kwargs):
@@ -31,13 +37,6 @@ class CodecInputCompressionSegmentationModel(AnalyzableModule):
         self.post_transform = build_transform(post_transform_params)
 
     def forward(self, x):
-        """
-        Args:
-            x (list of PIL Images): input sample.
-
-        Returns:
-            Tensor: output tensor from self.segmentation_model.
-        """
         tmp_list = list()
         for sub_x in x:
             if self.codec_encoder_decoder is not None:
@@ -56,13 +55,20 @@ class CodecInputCompressionSegmentationModel(AnalyzableModule):
 @register_wrapper_class
 class NeuralInputCompressionSegmentationModel(AnalyzableModule):
     """
-    Wrapper module for neural input compression model followed by segmentation model.
-    Args:
-        segmentation_model (nn.Module): segmentation model
-        pre_transform_params (dict): keyword configurations for transform sequence for input data
-        compression_model (nn.Module): neural input compression model
-        post_transform_params (dict): keyword configurations for transform sequence after compression model
-        analysis_config (dict): configuration for analysis
+    A wrapper module for neural input compression model followed by a segmentation model.
+
+    :param segmentation_model: semantic segmentation model
+    :type segmentation_model: nn.Module
+    :param pre_transform_params: pre-transform parameters
+    :type pre_transform_params: dict or None
+    :param compression_model: compression model
+    :type compression_model: nn.Module or None
+    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `comoression_model`
+    :type uses_cpu4compression_model: bool
+    :param post_transform_params: post-transform parameters
+    :type post_transform_params: dict or None
+    :param analysis_config: analysis configuration
+    :type analysis_config: dict or None
     """
     def __init__(self, segmentation_model, pre_transform_params=None, compression_model=None,
                  uses_cpu4compression_model=False, post_transform_params=None, analysis_config=None, **kwargs):
@@ -79,17 +85,13 @@ class NeuralInputCompressionSegmentationModel(AnalyzableModule):
         self.post_transform = build_transform(post_transform_params)
 
     def use_cpu4compression(self):
+        """
+        Changes the device of the compression model to CPU.
+        """
         if self.uses_cpu4compression_model and self.compression_model is not None:
             self.compression_model = self.compression_model.cpu()
 
     def forward(self, x):
-        """
-        Args:
-            x (list of PIL Images or Tensor): input sample.
-
-        Returns:
-            Tensor: output tensor from self.classification_model.
-        """
         org_patch_size = None
         if self.pre_transform is not None:
             x = self.pre_transform(x)
@@ -118,12 +120,14 @@ class NeuralInputCompressionSegmentationModel(AnalyzableModule):
 
 def get_wrapped_segmentation_model(wrapper_model_config, device):
     """
-    Args:
-        wrapper_model_config (dict): wrapper model configuration.
-        device (device): torch device.
+    Gets a wrapped semantic segmentation model
 
-    Returns:
-        nn.Module: a wrapped module.
+    :param wrapper_model_config: wrapper model configuration
+    :type wrapper_model_config: dict
+    :param device: torch device
+    :type device: torch.device
+    :return: model: wrapped semantic segmentation model
+    :rtype: model: nn.Module
     """
     wrapper_model_name = wrapper_model_config['name']
     if wrapper_model_name not in WRAPPER_CLASS_DICT:
