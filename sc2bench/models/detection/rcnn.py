@@ -179,12 +179,12 @@ def faster_rcnn_model(backbone_config, pretrained=True, pretrained_backbone_name
 
     :param backbone_config: a backbone configuration
     :type backbone_config: dict
-    :param pretrained: if `True`, returns a model pre-trained on COCO train2017 (torchvision)
+    :param pretrained: if True, returns a model pre-trained on COCO train2017 (torchvision)
     :type pretrained: bool
     :param pretrained_backbone_name: pretrained backbone name such as
             `'resnet50'`, `'mobilenet_v3_large_320'`, and `'mobilenet_v3_large'`
     :type pretrained_backbone_name: str
-    :param progress: if `True`, displays a progress bar of the download to stderr
+    :param progress: if True, displays a progress bar of the download to stderr
     :type progress: bool
     :param backbone_fpn_kwargs: keyword arguments for `create_faster_rcnn_fpn`
     :type backbone_fpn_kwargs: dict

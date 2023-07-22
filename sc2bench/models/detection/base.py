@@ -60,7 +60,7 @@ class UpdatableBackboneWithFPN(UpdatableDetectionModel):
     :type extra_blocks: ExtraFPNBlock or None
     :param analyzer_configs: a list of analysis configurations
     :type analyzer_configs: list[dict]
-    :param analyzes_after_compress: run analysis with `analyzer_configs` if `True`
+    :param analyzes_after_compress: run analysis with `analyzer_configs` if True
     :type analyzes_after_compress: bool
     :param analyzable_layer_key: key of analyzable layer
     :type analyzable_layer_key: str
@@ -104,7 +104,7 @@ class UpdatableBackboneWithFPN(UpdatableDetectionModel):
         """
         Checks if this module is updatable with respect to CompressAI modules.
 
-        :return: `True` if the model is updatable, `False` otherwise
+        :return: True if the model is updatable, False otherwise
         :rtype: bool
         """
         if self.analyzable_layer_key is None or self.analyzable_layer_key not in self._modules:
@@ -135,7 +135,7 @@ def check_if_updatable_detection_model(model):
 
     :param model: an object detection model
     :type model: nn.Module
-    :return: `True` if the model is updatable, `False` otherwise
+    :return: True if the model is updatable, False otherwise
     :rtype: bool
     """
     return isinstance(model, UpdatableDetectionModel)

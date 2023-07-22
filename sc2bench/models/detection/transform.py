@@ -22,7 +22,7 @@ class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
     :type codec_params: dict
     :param analyzer_configs: a list of analysis configurations
     :type analyzer_configs: list[dict]
-    :param analyzes_after_compress: run analysis with `analyzer_configs` if `True`
+    :param analyzes_after_compress: run analysis with `analyzer_configs` if True
     :type analyzes_after_compress: bool
     :param compression_model: a compression model
     :type compression_model: nn.Module or None
