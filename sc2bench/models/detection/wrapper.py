@@ -11,7 +11,7 @@ from ...analysis import AnalyzableModule, check_if_analyzable
 @register_wrapper_class
 class InputCompressionDetectionModel(AnalyzableModule):
     """
-    Wrapper module for input compression model followed by detection model.
+    A wrapper module for input compression model followed by a detection model.
 
     :param detection_model: object detection model
     :type detection_model: nn.Module
@@ -27,6 +27,8 @@ class InputCompressionDetectionModel(AnalyzableModule):
     :type pre_transform_params: dict or None
     :param post_transform_params: post-transform parameters
     :type post_transform_params: dict or None
+    :param analysis_config: analysis configuration
+    :type analysis_config: dict or None
     :param adaptive_pad_kwargs: keyword arguments for AdaptivePad
     :type adaptive_pad_kwargs: dict or None
     """
@@ -57,13 +59,6 @@ class InputCompressionDetectionModel(AnalyzableModule):
             self.detection_model.transform.compression_model = self.detection_model.transform.compression_model.cpu()
 
     def forward(self, x):
-        """
-        Args:
-            x (ImageList): input sample.
-
-        Returns:
-            Tensor: output tensor from self.detection_model.
-        """
         return self.detection_model(x)
 
     def activate_analysis(self):
