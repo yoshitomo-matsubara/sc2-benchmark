@@ -11,7 +11,7 @@ DETECTION_MODEL_FUNC_DICT = dict()
 
 def register_detection_model_class(cls):
     """
-    Register an object detection model
+    Registers an object detection model
 
     :param cls: object detection model to be registered
     :type cls: class
@@ -25,7 +25,7 @@ def register_detection_model_class(cls):
 
 def register_detection_model_func(func):
     """
-    Register a function to build an object detection
+    Registers a function to build an object detection
 
     :param func: function to build an object detection to be registered
     :type func: typing.Callable
@@ -39,7 +39,7 @@ def register_detection_model_func(func):
 
 def get_detection_model(cls_or_func_name, **kwargs):
     """
-    Get an object detection model
+    Gets an object detection model
 
     :param cls_or_func_name: model class or function name
     :type cls_or_func_name: str
@@ -55,7 +55,7 @@ def get_detection_model(cls_or_func_name, **kwargs):
 
 def load_detection_model(model_config, device, strict=True):
     """
-    Load an object detection model
+    Loads an object detection model
 
     :param model_config: model configuration
     :type model_config: dict

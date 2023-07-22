@@ -101,7 +101,7 @@ class InputCompressionDetectionModel(AnalyzableModule):
 
 def get_wrapped_detection_model(wrapper_model_config, device):
     """
-    Get a wrapped object detection model
+    Gets a wrapped object detection model
 
     :param wrapper_model_config: wrapper model configuration
     :type wrapper_model_config: dict
