@@ -126,9 +126,7 @@ def get_wrapped_segmentation_model(wrapper_model_config, device):
     :type wrapper_model_config: dict
     :param device: torch device
     :type device: torch.device
-    :return: model: wrapped semantic segmentation model
-    :rtype: model: nn.Module
-    :return: semantic segmentation model
+    :return: wrapped semantic segmentation model
     :rtype: nn.Module
     """
     wrapper_model_name = wrapper_model_config['name']
