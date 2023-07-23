@@ -1,6 +1,6 @@
 def overwrite_config(org_config, sub_config):
     """
-    Overwrites a configuration (dict).
+    Overwrites a configuration.
 
     :param org_config: (nested) dictionary of configuration to be updated.
     :type org_config: dict
