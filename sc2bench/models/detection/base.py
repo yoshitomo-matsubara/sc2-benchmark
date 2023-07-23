@@ -63,7 +63,7 @@ class UpdatableBackboneWithFPN(UpdatableDetectionModel):
     :param analyzes_after_compress: run analysis with `analyzer_configs` if True
     :type analyzes_after_compress: bool
     :param analyzable_layer_key: key of analyzable layer
-    :type analyzable_layer_key: str
+    :type analyzable_layer_key: str or None
     """
     # Referred to https://github.com/pytorch/vision/blob/main/torchvision/models/detection/backbone_utils.py
     def __init__(

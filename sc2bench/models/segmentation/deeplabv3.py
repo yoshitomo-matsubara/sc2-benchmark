@@ -24,6 +24,8 @@ def create_deeplabv3(backbone, num_input_channels=2048, uses_aux=False, num_aux_
     :type num_aux_channels: int
     :param num_classes: number of output classes of the model (including the background)
     :type num_classes: int
+    :return: DeepLabv3 model
+    :rtype: BaseSegmentationModel
     """
     aux_classifier = None
     if uses_aux:
@@ -64,9 +66,11 @@ def deeplabv3_model(backbone_config, pretrained=True, pretrained_backbone_name=N
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     :param analyzable_layer_key: key of analyzable layer
-    :type analyzable_layer_key: str
+    :type analyzable_layer_key: str or None
     :param start_ckpt_file_path: checkpoint file path to be loaded for the built DeepLabv3 model
     :type start_ckpt_file_path: str or None
+    :return: DeepLabv3 model with splittable backbone model
+    :rtype: BaseSegmentationModel
     """
     if analysis_config is None:
         analysis_config = dict()

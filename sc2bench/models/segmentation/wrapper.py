@@ -128,6 +128,8 @@ def get_wrapped_segmentation_model(wrapper_model_config, device):
     :type device: torch.device
     :return: model: wrapped semantic segmentation model
     :rtype: model: nn.Module
+    :return: semantic segmentation model
+    :rtype: nn.Module
     """
     wrapper_model_name = wrapper_model_config['name']
     if wrapper_model_name not in WRAPPER_CLASS_DICT:
