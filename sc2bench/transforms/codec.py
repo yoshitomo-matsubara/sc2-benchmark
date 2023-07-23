@@ -26,11 +26,12 @@ INTERPOLATION_MODE_DICT = {
 
 def register_codec_transform_module(cls):
     """
-    Args:
-        cls (class): codec transform module to be registered.
+    Registers a codec transform class.
 
-    Returns:
-        cls (class): registered codec transform module.
+    :param cls: codec transform class to be registered
+    :type cls: class
+    :return: registered codec transform class
+    :rtype: class
     """
     CODEC_TRANSFORM_MODULE_DICT[cls.__name__] = cls
     register_transform_class(cls)
@@ -40,10 +41,12 @@ def register_codec_transform_module(cls):
 @register_codec_transform_module
 class WrappedRandomResizedCrop(RandomResizedCrop):
     """
-    `RandomResizedCrop` in torchvision wrapped to be defined by `interpolation` as a str object
-    Args:
-        interpolation (str or None): Desired interpolation mode (`nearest`, `bicubic`, `bilinear`, `box`, `hamming`, `lanczos`)
-        kwargs (dict): kwargs for `RandomResizedCrop` in torchvision
+    `RandomResizedCrop` in torchvision wrapped to be defined by `interpolation` as a str object.
+
+    :param interpolation: desired interpolation mode ('nearest', 'bicubic', 'bilinear', 'box', 'hamming', 'lanczos')
+    :type interpolation: str or None
+    :param kwargs: kwargs for `RandomResizedCrop` in torchvision
+    :type kwargs: dict
     """
     def __init__(self, interpolation=None, **kwargs):
         if interpolation is not None:
@@ -54,10 +57,12 @@ class WrappedRandomResizedCrop(RandomResizedCrop):
 @register_codec_transform_module
 class WrappedResize(Resize):
     """
-    `Resize` in torchvision wrapped to be defined by `interpolation` as a str object
-    Args:
-        interpolation (str or None): Desired interpolation mode (`nearest`, `bicubic`, `bilinear`, `box`, `hamming`, `lanczos`)
-        kwargs (dict): kwargs for `Resize` in torchvision
+    `Resize` in torchvision wrapped to be defined by `interpolation` as a str object.
+
+    :param interpolation: desired interpolation mode ('nearest', 'bicubic', 'bilinear', 'box', 'hamming', 'lanczos')
+    :type interpolation: str or None
+    :param kwargs: kwargs for `Resize` in torchvision
+    :type kwargs: dict
     """
     def __init__(self, interpolation=None, **kwargs):
         if interpolation is not None:
@@ -66,13 +71,16 @@ class WrappedResize(Resize):
 
 
 @register_codec_transform_module
-class PillowImageModule(nn.Module):
+class PILImageModule(nn.Module):
     """
-    Generalized Pillow module to compress (decompress) images e.g., as part of transform pipeline.
-    Args:
-        returns_file_size (bool): return file size of compressed object in addition to PIL image if true.
-        open_kwargs (dict or None): kwargs to be used as part of Image.open(img_buffer, **open_kwargs).
-        save_kwargs (dict or None): kwargs to be used as part of Image.save(img_buffer, **save_kwargs).
+    A generalized PIL module to compress (decompress) images e.g., as part of transform pipeline.
+
+    :param returns_file_size: returns file size of compressed object in addition to PIL image if True
+    :type returns_file_size: bool
+    :param open_kwargs: kwargs to be used as part of Image.open(img_buffer, **open_kwargs)
+    :type open_kwargs: dict or None
+    :param save_kwargs: kwargs to be used as part of Image.save(img_buffer, **save_kwargs)
+    :type save_kwargs: dict or None
     """
     def __init__(self, returns_file_size=False, open_kwargs=None, **save_kwargs):
         super().__init__()
@@ -82,11 +90,12 @@ class PillowImageModule(nn.Module):
 
     def forward(self, pil_img, *args):
         """
-        Args:
-            pil_img (PIL Image): Image to be transformed.
+        Saves PIL Image to BytesIO and reopens the image saved in the buffer.
 
-        Returns:
-            PIL Image or a tuple of PIL Image and int: Affine transformed image or with its file size if returns_file_size=True.
+        :param pil_img: image to be transformed.
+        :type pil_img: PIL.Image.Image
+        :return: Affine transformed image or with its file size if returns_file_size=True
+        :rtype: PIL.Image.Image or (PIL.Image.Image, int)
         """
         img_buffer = BytesIO()
         pil_img.save(img_buffer, **self.save_kwargs)
@@ -103,13 +112,16 @@ class PillowImageModule(nn.Module):
 
 
 @register_codec_transform_module
-class PillowTensorModule(nn.Module):
+class PILTensorModule(nn.Module):
     """
-    Generalized Pillow module to compress (decompress) tensors e.g., as part of transform pipeline.
-    Args:
-        returns_file_size (bool): return file size of compressed object in addition to PIL image if true.
-        open_kwargs (dict or None): kwargs to be used as part of Image.open(img_buffer, **open_kwargs).
-        save_kwargs (dict or None): kwargs to be used as part of Image.save(img_buffer, **save_kwargs).
+    A generalized PIL module to compress (decompress) tensors e.g., as part of transform pipeline.
+
+    :param returns_file_size: returns file size of compressed object in addition to PIL image if True
+    :type returns_file_size: bool
+    :param open_kwargs: kwargs to be used as part of Image.open(img_buffer, **open_kwargs)
+    :type open_kwargs: dict or None
+    :param save_kwargs: kwargs to be used as part of Image.save(img_buffer, **save_kwargs)
+    :type save_kwargs: dict or None
     """
     def __init__(self, returns_file_size=False, open_kwargs=None, **save_kwargs):
         super().__init__()
@@ -119,11 +131,14 @@ class PillowTensorModule(nn.Module):
 
     def forward(self, x, *args):
         """
-        Args:
-            x (torch.Tensor): Tensor (C, H, W) to be transformed
+        Splits tensor's channels into sub-tensors (3 or fewer channels each),
+        normalizes each using its min and max values, saves the normalized sub-tensor to BytesIO,
+        and reopens the sub-tensor saved in the buffer to reconstruct the input tensor.
 
-        Returns:
-            torch.Tensor or a tuple of torch.Tensor and int: Affine transformed image or with its file size if returns_file_size=True.
+        :param x: image tensor (C, H, W) to be transformed.
+        :type x: torch.Tensor
+        :return: Affine transformed image tensor or with its file size if returns_file_size=True
+        :rtype: torch.Tensor or (torch.Tensor, int)
         """
         device = x.device
         split_features = x.split(3, dim=0)
@@ -174,17 +189,32 @@ class PillowTensorModule(nn.Module):
 @register_codec_transform_module
 class BPGModule(nn.Module):
     """
-    BPG module to compress (decompress) images e.g., as part of transform pipeline.
+    A BPG module to compress (decompress) images e.g., as part of transform pipeline.
+
     Modified https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py
-    Args:
-        encoder_path (str): file path of BPG encoder you manually installed.
-        decoder_path (str): file path of BPG decoder you manually installed.
-        color_mode (str): color mode ("ycbcr" or "rgb").
-        encoder (str): encoder type ("x265" or "jctvc").
-        subsampling_mode (str or int): subsampling mode (420 or 444).
-        bit_depth (str or int): bit depth (8 or 10).
-        quality (int): quality value in range [0, 51].
-        returns_file_size (bool): flag to return file size.
+
+    Fabrice Bellard: `"BPG Image format" <https://bellard.org/bpg/>`_
+
+    .. warning::
+        You need to manually install BPG software beforehand and confirm the encoder and decoder paths.
+        For Debian machines (e.g., Ubuntu), you can use `this script <https://github.com/yoshitomo-matsubara/sc2-benchmark/blob/main/script/software/install_bpg.sh>`_.
+
+    :param encoder_path: file path of BPG encoder you manually installed
+    :type encoder_path: str
+    :param decoder_path: file path of BPG decoder you manually installed
+    :type decoder_path: str
+    :param color_mode: color mode ('ycbcr' or 'rgb')
+    :type color_mode: str
+    :param encoder: encoder type ('x265' or 'jctvc')
+    :type encoder: str
+    :param subsampling_mode: subsampling mode ('420' or '444')
+    :type subsampling_mode: str or int
+    :param bit_depth: bit depth (8 or 10)
+    :type bit_depth: str or int
+    :param quality: quality value in range [0, 51]
+    :type quality: int
+    :param returns_file_size: returns file size of compressed object in addition to PIL image if True
+    :type returns_file_size: bool
     """
 
     fmt = '.bpg'
@@ -247,11 +277,12 @@ class BPGModule(nn.Module):
 
     def forward(self, pil_img):
         """
-        Args:
-            pil_img (PIL Image): Image to be transformed.
+        Compresses and decompresses PIL Image using BPG software.
 
-        Returns:
-            PIL Image or a tuple of PIL Image and float: Affine transformed image or with its file size of BPG compressed data if returns_file_size=True.
+        :param pil_img: image to be transformed.
+        :type pil_img: PIL.Image.Image
+        :return: Affine transformed image or with its file size if returns_file_size=True
+        :rtype: PIL.Image.Image or (PIL.Image.Image, int)
         """
         fd_i, resized_input_filepath = mkstemp(suffix='.jpg')
         fd_r, reconst_file_path = mkstemp(suffix='.jpg')
@@ -289,15 +320,28 @@ class BPGModule(nn.Module):
 @register_codec_transform_module
 class VTMModule(nn.Module):
     """
-    VTM module to compress (decompress) images e.g., as part of transform pipeline.
+    A VTM module to compress (decompress) images e.g., as part of transform pipeline.
+
     Modified https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py
-    Args:
-        encoder_path (str): file path of BPG encoder you manually installed.
-        decoder_path (str): file path of BPG decoder you manually installed.
-        config_path (str): VTM configuration file path.
-        color_mode (str): color mode ("ycbcr" or "rgb").
-        quality (int): quality value in range [0, 63].
-        returns_file_size (bool): flag to return file size.
+
+    The Joint Video Exploration Team: `"VTM reference software for VVC" <https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM>`_
+
+    .. warning::
+        You need to manually install VTM software beforehand and confirm the encoder and decoder paths.
+        For Debian machines (e.g., Ubuntu), you can use `this script <https://github.com/yoshitomo-matsubara/sc2-benchmark/blob/main/script/software/install_vtm.sh>`_.
+
+    :param encoder_path: file path of VTM encoder you manually installed
+    :type encoder_path: str
+    :param decoder_path: file path of VTM decoder you manually installed
+    :type decoder_path: str
+    :param config_path: VTM configuration file path
+    :type config_path: str
+    :param color_mode: color mode ('ycbcr' or 'rgb')
+    :type color_mode: str
+    :param quality: quality value in range [0, 63]
+    :type quality: int
+    :param returns_file_size: returns file size of compressed object in addition to PIL image if True
+    :type returns_file_size: bool
     """
 
     fmt = '.bin'
@@ -322,11 +366,12 @@ class VTMModule(nn.Module):
 
     def forward(self, pil_img):
         """
-        Args:
-            pil_img (PIL Image): Image to be transformed.
+        Compresses and decompresses PIL Image using VTM software.
 
-        Returns:
-            PIL Image or a tuple of PIL Image and float: Affine transformed image or with its file size of VTM compressed data if returns_file_size=True.
+        :param pil_img: image to be transformed.
+        :type pil_img: PIL.Image.Image
+        :return: Affine transformed image or with its file size if returns_file_size=True
+        :rtype: PIL.Image.Image or (PIL.Image.Image, int)
         """
 
         # Taking 8bit input for now
