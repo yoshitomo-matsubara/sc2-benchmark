@@ -15,11 +15,12 @@ LAYER_FUNC_DICT = dict()
 
 def register_layer_class(cls):
     """
-    Args:
-        cls (class): layer module to be registered.
+    Registers a layer class.
 
-    Returns:
-        cls (class): registered layer module.
+    :param cls: layer class to be registered
+    :type cls: class
+    :return: registered layer class
+    :rtype: class
     """
     LAYER_CLASS_DICT[cls.__name__] = cls
     return cls
@@ -27,11 +28,12 @@ def register_layer_class(cls):
 
 def register_layer_func(func):
     """
-    Args:
-        func (function): layer module to be registered.
+    Registers a function to build a layer module.
 
-    Returns:
-        func (function): registered layer module.
+    :param func: function to build a layer module
+    :type func: typing.Callable
+    :return: registered function
+    :rtype: typing.Callable
     """
     LAYER_FUNC_DICT[func.__name__] = func
     return func
@@ -39,7 +41,18 @@ def register_layer_func(func):
 
 class SimpleBottleneck(nn.Module):
     """
-    Simple encoder-decoder layer to treat encoder's output as bottleneck
+    Simple neural encoder-decoder that treats encoder's output as bottleneck.
+
+    The forward path is encoder -> compressor (if provided) -> decompressor (if provided) -> decoder.
+
+    :param encoder: encoder
+    :type encoder: nn.Module
+    :param decoder: decoder
+    :type decoder: nn.Module
+    :param encoder: module to compress the encoded data
+    :type encoder: nn.Module or None
+    :param decoder: module to decompresse the compressed data
+    :type decoder: nn.Module or None
     """
     def __init__(self, encoder, decoder, compressor=None, decompressor=None):
         super().__init__()
@@ -49,12 +62,28 @@ class SimpleBottleneck(nn.Module):
         self.decompressor = decompressor
 
     def encode(self, x):
+        """
+        Encode the input data.
+
+        :param x: input batch
+        :type x: torch.Tensor
+        :return: dict of encoded (and compressed if `compressor` is provided)
+        :rtype: dict
+        """
         z = self.encoder(x)
         if self.compressor is not None:
             z = self.compressor(z)
         return {'z': z}
 
     def decode(self, z):
+        """
+        Decode the encoded data.
+
+        :param z: encoded data
+        :type z: torch.Tensor
+        :return: decoded data
+        :rtype: torch.Tensor
+        """
         if self.decompressor is not None:
             z = self.decompressor(z)
         return self.decoder(z)
@@ -69,6 +98,11 @@ class SimpleBottleneck(nn.Module):
         return self.decoder(z)
 
     def update(self):
+        """
+        Shows a message that this module has no updatable parameters for entropy coding.
+
+        Dummy function to be compatible with other layers.
+        """
         logger.info('This module has no updatable parameters for entropy coding')
 
 
@@ -76,7 +110,24 @@ class SimpleBottleneck(nn.Module):
 def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=12, output_channel=256,
                              compressor_transform_params=None, decompressor_transform_params=None):
     """
-    "Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks"
+    Builds a bottleneck layer ResNet-based encoder and decoder (24 layers in total).
+
+    Compatible with ResNet-50, -101, and -152.
+
+    Yoshitomo Matsubara, Marco Levorato: `"Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks" <https://arxiv.org/abs/2007.15818>`_ @ ICPR 2020 (2021)
+
+    :param bottleneck_channel: number of channels for the bottleneck point
+    :type bottleneck_idx: int
+    :param bottleneck_idx: number of the first layers to be used as an encoder (the remaining layers are for decoder)
+    :type bottleneck_idx: int
+    :param output_channel: number of output channels for decoder's output
+    :type output_channel: int
+    :param compressor_transform_params: transform parameters for compressor
+    :type compressor_transform_params: dict or None
+    :param decompressor_transform_params: transform parameters for decompressor
+    :type decompressor_transform_params: dict or None
+    :return: bottleneck layer consisting of encoder and decoder
+    :rtype: SimpleBottleneck
     """
     modules = [
         nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False),
@@ -113,9 +164,12 @@ def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=12, output_ch
 
 class EntropyBottleneckLayer(CompressionModel):
     """
-    Entropy bottleneck layer as a simple CompressionModel in compressai
-    The entropy bottleneck layer is proposed in "Variational Image Compression with a Scale Hyperprior" by
-    J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
+    An entropy bottleneck layer as a simple `CompressionModel` in `compressai`.
+
+    Johannes Ballé, David Minnen, Saurabh Singh, Sung Jin Hwang, Nick Johnston: `"Variational Image Compression with a Scale Hyperprior" <https://openreview.net/forum?id=rkcQFMZRb>`_ @ ICLR 2018 (2018)
+
+    :param kwargs: kwargs for `CompressionModel` in `compressai`
+    :type kwargs: dict
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -125,33 +179,83 @@ class EntropyBottleneckLayer(CompressionModel):
         return self.entropy_bottleneck(x)
 
     def compress(self, x):
+        """
+        Compresses input data.
+
+        :param x: input data
+        :type x: torch.Tensor
+        :return: entropy-coded compressed data ('strings' as key) and shape of the input data ('shape' as key)
+        :rtype: dict
+        """
         strings = self.entropy_bottleneck.compress(x)
         return {'strings': [strings], 'shape': x.size()[-2:]}
 
     def decompress(self, strings, shape):
+        """
+        Dempresses compressed data.
+
+        :param strings: entropy-coded compressed data
+        :type strings: list[str]
+        :param shape: shape of the input data
+        :type shape: list[int]
+        :return: decompressed data
+        :rtype: torch.Tensor
+        """
         assert isinstance(strings, list) and len(strings) == 1
         return self.entropy_bottleneck.decompress(strings[0], shape)
 
     def update(self, force=False):
+        """
+        Updates compression-specific parameters like `CompressAI models do <https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.update>`_.
+
+        :param force: if True, overwrites previous values
+        :type force: bool
+        :return: True if one of the EntropyBottlenecks was updated
+        :rtype: bool
+        """
         self.updated = True
         return super().update(force=force)
 
 
 class BaseBottleneck(CompressionModel):
+    """
+    An abstract class for entropy bottleneck-based layer.
+
+    :param entropy_bottleneck_channels: number of entropy bottleneck channels
+    :type entropy_bottleneck_channels: int
+    """
     def __init__(self, entropy_bottleneck_channels):
         super().__init__(entropy_bottleneck_channels=entropy_bottleneck_channels)
         self.updated = False
 
     def encode(self, *args, **kwargs):
+        """
+        Encodes data.
+
+        This should be overridden by all subclasses.
+        """
         raise NotImplementedError()
 
     def decode(self, *args, **kwargs):
+        """
+        Decodes encoded data.
+
+        This should be overridden by all subclasses.
+        """
         raise NotImplementedError()
 
     def forward(self, *args):
         raise NotImplementedError()
 
     def update(self, force=False):
+        """
+        Updates compression-specific parameters like `CompressAI models do <https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.update>`_.
+
+        :param force: if True, overwrites previous values
+        :type force: bool
+        :return: True if one of the EntropyBottlenecks was updated
+        :rtype: bool
+        """
         self.updated = True
         return super().update(force=force)
 
@@ -159,11 +263,22 @@ class BaseBottleneck(CompressionModel):
 @register_layer_class
 class FPBasedResNetBottleneck(BaseBottleneck):
     """
-    Factorized Prior(FP)-based bottleneck for ResNet proposed in
-    "Supervised Compression for Resource-Constrained Edge Computing Systems"
-    by Y. Matsubara, R. Yang, M. Levorato, S. Mandt.
-    Factorized Prior is proposed in "Variational Image Compression with a Scale Hyperprior" by
-    J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
+    Factorized Prior(FP)-based encoder-decoder designed to create bottleneck for ResNet and variants.
+
+    - Johannes Ballé, David Minnen, Saurabh Singh, Sung Jin Hwang, Nick Johnston: `"Variational Image Compression with a Scale Hyperprior" <https://openreview.net/forum?id=rkcQFMZRb>`_ @ ICLR 2018 (2018)
+    - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `"Supervised Compression for Resource-Constrained Edge Computing Systems" <https://openaccess.thecvf.com/content/WACV2022/html/Matsubara_Supervised_Compression_for_Resource-Constrained_Edge_Computing_Systems_WACV_2022_paper.html>`_ @ WACV 2022 (2022)
+    - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `"SC2 Benchmark: Supervised Compression for Split Computing" <https://openreview.net/forum?id=p28wv4G65d>`_ @ TMLR (2023)
+
+    :param num_input_channels: number of input channels
+    :type num_input_channels: int
+    :param num_bottleneck_channels: number of bottleneck channels
+    :type num_bottleneck_channels: int
+    :param num_target_channels: number of output channels for decoder's output
+    :type num_target_channels: int
+    :param encoder_channel_sizes: list of 4 numbers of channels for encoder
+    :type encoder_channel_sizes: list[int] or None
+    :param decoder_channel_sizes: list of 4 numbers of channels for decoder
+    :type decoder_channel_sizes: list[int] or None
     """
     def __init__(self, num_input_channels=3, num_bottleneck_channels=24, num_target_channels=256,
                  encoder_channel_sizes=None, decoder_channel_sizes=None):
@@ -198,21 +313,39 @@ class FPBasedResNetBottleneck(BaseBottleneck):
         )
 
     def encode(self, x, **kwargs):
+        """
+        Encodes input data.
+
+        :param x: input data
+        :type x: torch.Tensor
+        :return: entropy-coded compressed data ('strings' as key) and shape of the input data ('shape' as key)
+        :rtype: dict
+        """
         latent = self.encoder(x)
         latent_strings = self.entropy_bottleneck.compress(latent)
         return {'strings': [latent_strings], 'shape': latent.size()[-2:]}
 
     def decode(self, strings, shape):
+        """
+        Decodes encoded data.
+
+        :param strings: entropy-coded compressed data
+        :type strings: list[str]
+        :param shape: shape of the input data
+        :type shape: list[int]
+        :return: decompressed data
+        :rtype: torch.Tensor
+        """
         latent_hat = self.entropy_bottleneck.decompress(strings[0], shape)
         return self.decoder(latent_hat)
 
-    def get_means(self, x):
+    def _get_means(self, x):
         medians = self.entropy_bottleneck._get_medians().detach()
         spatial_dims = len(x.size()) - 2
         medians = self.entropy_bottleneck._extend_ndims(medians, spatial_dims)
         return medians.expand(x.size(0), *([-1] * (spatial_dims + 1)))
 
-    def forward2train(self, x):
+    def _forward2train(self, x):
         encoded_obj = self.encoder(x)
         y_hat, y_likelihoods = self.entropy_bottleneck(encoded_obj)
         decoded_obj = self.decoder(y_hat)
@@ -229,19 +362,37 @@ class FPBasedResNetBottleneck(BaseBottleneck):
             encoded_output = self.encoder(x)
             decoder_input =\
                 self.entropy_bottleneck.dequantize(
-                    self.entropy_bottleneck.quantize(encoded_output, 'dequantize', self.get_means(encoded_output))
+                    self.entropy_bottleneck.quantize(encoded_output, 'dequantize', self._get_means(encoded_output))
                 )
             decoder_input = decoder_input.detach()
             return self.decoder(decoder_input)
-        return self.forward2train(x)
+        return self._forward2train(x)
 
 
 @register_layer_class
 class SHPBasedResNetBottleneck(BaseBottleneck):
     """
-    Scale Hyperprior(SHP)-based bottleneck for ResNet.
-    Scale Hyperprior is proposed in "Variational Image Compression with a Scale Hyperprior" by
-    J. Balle, D. Minnen, S. Singh, S.J. Hwang, N. Johnston.
+    Scale Hyperprior(SHP)-based bottleneck for ResNet and variants.
+
+    - Johannes Ballé, David Minnen, Saurabh Singh, Sung Jin Hwang, Nick Johnston: `"Variational Image Compression with a Scale Hyperprior" <https://openreview.net/forum?id=rkcQFMZRb>`_ @ ICLR 2018 (2018)
+    - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `"SC2 Benchmark: Supervised Compression for Split Computing" <https://openreview.net/forum?id=p28wv4G65d>`_ @ TMLR (2023)
+
+    :param num_input_channels: number of input channels
+    :type num_input_channels: int
+    :param num_latent_channels: number of latent channels
+    :type num_latent_channels: int
+    :param num_bottleneck_channels: number of bottleneck channels
+    :type num_bottleneck_channels: int
+    :param num_target_channels: number of output channels for decoder's output
+    :type num_target_channels: int
+    :param h_a: parametric transform :math:`h_a`
+    :type h_a: nn.Module or None
+    :param h_s: parametric transform :math:`h_s`
+    :type h_s: nn.Module or None
+    :param g_a_channel_sizes: list of 4 numbers of channels for parametric transform :math:`g_a`
+    :type g_a_channel_sizes: list[int] or None
+    :param g_s_channel_sizes: list of 4 numbers of channels for parametric transform :math:`g_s`
+    :type g_s_channel_sizes: list[int] or None
     """
     def __init__(self, num_input_channels=3, num_latent_channels=16,
                  num_bottleneck_channels=24, num_target_channels=256, h_a=None, h_s=None,
@@ -297,6 +448,14 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
         self.num_bottleneck_channels = num_bottleneck_channels
 
     def encode(self, x, **kwargs):
+        """
+        Encodes input data.
+
+        :param x: input data
+        :type x: torch.Tensor
+        :return: entropy-coded compressed data ('strings' as key) and shape of the input data ('shape' as key)
+        :rtype: dict
+        """
         y = self.g_a(x)
         z = self.h_a(torch.abs(y))
         z_shape = z.size()[-2:]
@@ -308,6 +467,16 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
         return {'strings': [y_strings, z_strings], 'shape': z_shape}
 
     def decode(self, strings, shape):
+        """
+        Decodes encoded data.
+
+        :param strings: entropy-coded compressed data
+        :type strings: list[str]
+        :param shape: shape of the input data
+        :type shape: list[int]
+        :return: decompressed data
+        :rtype: torch.Tensor
+        """
         assert isinstance(strings, list) and len(strings) == 2
         z_hat = self.entropy_bottleneck.decompress(strings[1], shape)
         scales_hat = self.h_s(z_hat)
@@ -315,13 +484,13 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
         y_hat = self.gaussian_conditional.decompress(strings[0], indices, z_hat.dtype)
         return self.g_s(y_hat)
 
-    def get_means(self, x):
+    def _get_means(self, x):
         medians = self.entropy_bottleneck._get_medians().detach()
         spatial_dims = len(x.size()) - 2
         medians = self.entropy_bottleneck._extend_ndims(medians, spatial_dims)
         return medians.expand(x.size(0), *([-1] * (spatial_dims + 1)))
 
-    def forward2train(self, x):
+    def _forward2train(self, x):
         y = self.g_a(x)
         z = self.h_a(torch.abs(y))
         z_hat, z_likelihoods = self.entropy_bottleneck(z)
@@ -339,11 +508,11 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
 
             y = self.g_a(x)
             y_hat = self.gaussian_conditional.dequantize(
-                self.gaussian_conditional.quantize(y, 'dequantize', self.get_means(y))
+                self.gaussian_conditional.quantize(y, 'dequantize', self._get_means(y))
             )
             y_hat = y_hat.detach()
             return self.g_s(y_hat)
-        return self.forward2train(x)
+        return self._forward2train(x)
 
     def update(self, scale_table=None, force=False):
         if scale_table is None:
@@ -355,6 +524,12 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
         return updated
 
     def load_state_dict(self, state_dict, **kwargs):
+        """
+        Updates registered buffers and loads parameters.
+
+        :param state_dict: dict containing parameters and persistent buffers
+        :type state_dict: dict
+        """
         update_registered_buffers(
             self.gaussian_conditional,
             'gaussian_conditional',
@@ -367,9 +542,23 @@ class SHPBasedResNetBottleneck(BaseBottleneck):
 @register_layer_class
 class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
     """
-    Mean-Scale Hyperprior(MSHP)-based bottleneck for ResNet.
-    Mean-Scale Hyperprior is proposed in "Joint Autoregressive and Hierarchical Priors for Learned Image Compression" by
-    D. Minnen, J. Balle, G.D. Toderici.
+    Mean-Scale Hyperprior(MSHP)-based bottleneck for ResNet and variants.
+
+    - David Minnen, Johannes Ballé, George Toderici: `"Joint Autoregressive and Hierarchical Priors for Learned Image Compression" <https://proceedings.neurips.cc/paper/2018/hash/53edebc543333dfbf7c5933af792c9c4-Abstract.html>`_ @ NeurIPS 2018 (2018)
+    - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `"SC2 Benchmark: Supervised Compression for Split Computing" <https://openreview.net/forum?id=p28wv4G65d>`_ @ TMLR (2023)
+
+    :param num_input_channels: number of input channels
+    :type num_input_channels: int
+    :param num_latent_channels: number of latent channels
+    :type num_latent_channels: int
+    :param num_bottleneck_channels: number of bottleneck channels
+    :type num_bottleneck_channels: int
+    :param num_target_channels: number of output channels for decoder's output
+    :type num_target_channels: int
+    :param g_a_channel_sizes: list of 4 numbers of channels for parametric transform :math:`g_a`
+    :type g_a_channel_sizes: list[int] or None
+    :param g_s_channel_sizes: list of 4 numbers of channels for parametric transform :math:`g_s`
+    :type g_s_channel_sizes: list[int] or None
     """
     def __init__(self, num_input_channels=3, num_latent_channels=16,
                  num_bottleneck_channels=24, num_target_channels=256,
@@ -415,7 +604,7 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
         y_hat = self.gaussian_conditional.decompress(strings[0], indices, means=means_hat)
         return self.g_s(y_hat)
 
-    def forward2train(self, x):
+    def _forward2train(self, x):
         y = self.g_a(x)
         z = self.h_a(y)
         z_hat, z_likelihoods = self.entropy_bottleneck(z)
@@ -435,7 +624,7 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
             y = self.g_a(x)
             z = self.h_a(y)
             z_hat = self.entropy_bottleneck.dequantize(
-                self.entropy_bottleneck.quantize(z, 'dequantize', self.get_means(z))
+                self.entropy_bottleneck.quantize(z, 'dequantize', self._get_means(z))
             )
             gaussian_params = self.h_s(z_hat)
             scales_hat, means_hat = gaussian_params.chunk(2, 1)
@@ -444,17 +633,19 @@ class MSHPBasedResNetBottleneck(SHPBasedResNetBottleneck):
             )
             y_hat = y_hat.detach()
             return self.g_s(y_hat)
-        return self.forward2train(x)
+        return self._forward2train(x)
 
 
 def get_layer(cls_or_func_name, **kwargs):
     """
-    Args:
-        cls_or_func_name (str): layer class name.
-        kwargs (dict): keyword arguments.
+    Gets a layer module.
 
-    Returns:
-        nn.Module or None: layer module that is instance of `nn.Module` if found. None otherwise.
+    :param cls_or_func_name: layer class or function name
+    :type cls_or_func_name: str
+    :param kwargs: kwargs for the layer class or function to build a layer
+    :type kwargs: dict
+    :return: layer module
+    :rtype: nn.Module or None
     """
     if cls_or_func_name in LAYER_CLASS_DICT:
         return LAYER_CLASS_DICT[cls_or_func_name](**kwargs)
