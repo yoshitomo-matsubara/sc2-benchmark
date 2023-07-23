@@ -12,7 +12,7 @@ from ...transforms.misc import AdaptivePad
 
 class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
     """
-    An R-CNN Transform with codec-based or model-based compression
+    An R-CNN Transform with codec-based or model-based compression.
 
     :param transform: performs the data transformation from the inputs to feed into the model
     :type transform: nn.Module

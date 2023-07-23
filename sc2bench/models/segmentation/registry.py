@@ -11,11 +11,11 @@ SEGMENTATION_MODEL_FUNC_DICT = dict()
 
 def register_segmentation_model_class(cls):
     """
-    Registers a semantic segmentation model
+    Registers a semantic segmentation model class.
 
     :param cls: semantic segmentation model to be registered
     :type cls: class
-    :return: semantic segmentation model
+    :return: registered semantic segmentation model class
     :rtype: class
     """
     SEGMENTATION_MODEL_CLASS_DICT[cls.__name__] = cls
@@ -25,11 +25,11 @@ def register_segmentation_model_class(cls):
 
 def register_segmentation_model_func(func):
     """
-    Registers a function to build a semantic segmentation model
+    Registers a function to build a semantic segmentation model.
 
     :param func: function to build a semantic segmentation model to be registered
     :type func: typing.Callable
-    :return: function to build a semantic segmentation model
+    :return: registered function
     :rtype: typing.Callable
     """
     SEGMENTATION_MODEL_FUNC_DICT[func.__name__] = func
@@ -39,7 +39,7 @@ def register_segmentation_model_func(func):
 
 def get_segmentation_model(cls_or_func_name, **kwargs):
     """
-    Gets a semantic segmentation model
+    Gets a semantic segmentation model.
 
     :param cls_or_func_name: model class or function name
     :type cls_or_func_name: str
@@ -55,7 +55,7 @@ def get_segmentation_model(cls_or_func_name, **kwargs):
 
 def load_segmentation_model(model_config, device, strict=True):
     """
-    Loads a semantic segmentation model
+    Loads a semantic segmentation model.
 
     :param model_config: model configuration
     :type model_config: dict

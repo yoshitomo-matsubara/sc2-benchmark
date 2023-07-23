@@ -120,7 +120,7 @@ class NeuralInputCompressionSegmentationModel(AnalyzableModule):
 
 def get_wrapped_segmentation_model(wrapper_model_config, device):
     """
-    Gets a wrapped semantic segmentation model
+    Gets a wrapped semantic segmentation model.
 
     :param wrapper_model_config: wrapper model configuration
     :type wrapper_model_config: dict
