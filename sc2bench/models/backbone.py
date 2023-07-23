@@ -565,7 +565,8 @@ def splittable_hybrid_vit(bottleneck_config, hybrid_vit_name='vit_small_r26_s32_
     :type analysis_config: dict or None
     :param org_model_ckpt_file_path_or_url: original Hybrid ViT model checkpoint file path or URL
     :type org_model_ckpt_file_path_or_url: str or None
-    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original Hybrid ViT model’s `state_dict()` function
+    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by
+                                original Hybrid ViT model’s `state_dict()` function
     :type org_ckpt_strict: bool
     :return: splittable Hybrid ViT model
     :rtype: SplittableHybridViT
