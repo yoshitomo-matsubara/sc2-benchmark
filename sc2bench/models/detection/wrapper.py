@@ -102,8 +102,8 @@ def get_wrapped_detection_model(wrapper_model_config, device):
     :type wrapper_model_config: dict
     :param device: torch device
     :type device: torch.device
-    :return: model: wrapped object detection model
-    :rtype: model: nn.Module
+    :return: wrapped object detection model
+    :rtype: nn.Module
     """
     wrapper_model_name = wrapper_model_config['name']
     if wrapper_model_name not in WRAPPER_CLASS_DICT:

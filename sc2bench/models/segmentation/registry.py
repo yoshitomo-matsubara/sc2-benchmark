@@ -15,8 +15,8 @@ def register_segmentation_model_class(cls):
 
     :param cls: semantic segmentation model to be registered
     :type cls: class
-    :return: cls: semantic segmentation model
-    :rtype: cls: class
+    :return: semantic segmentation model
+    :rtype: class
     """
     SEGMENTATION_MODEL_CLASS_DICT[cls.__name__] = cls
     register_model_class(cls)
@@ -25,12 +25,12 @@ def register_segmentation_model_class(cls):
 
 def register_segmentation_model_func(func):
     """
-    Registers a function to build a semantic segmentation
+    Registers a function to build a semantic segmentation model
 
-    :param func: function to build a semantic segmentation to be registered
+    :param func: function to build a semantic segmentation model to be registered
     :type func: typing.Callable
-    :return: func: function to build a semantic segmentation
-    :rtype: func: typing.Callable
+    :return: function to build a semantic segmentation model
+    :rtype: typing.Callable
     """
     SEGMENTATION_MODEL_FUNC_DICT[func.__name__] = func
     register_model_func(func)
@@ -43,8 +43,8 @@ def get_segmentation_model(cls_or_func_name, **kwargs):
 
     :param cls_or_func_name: model class or function name
     :type cls_or_func_name: str
-    :return: model: semantic segmentation model
-    :rtype: model: nn.Module or None
+    :return: semantic segmentation model
+    :rtype: nn.Module or None
     """
     if cls_or_func_name in SEGMENTATION_MODEL_CLASS_DICT:
         return SEGMENTATION_MODEL_CLASS_DICT[cls_or_func_name](**kwargs)
@@ -64,8 +64,8 @@ def load_segmentation_model(model_config, device, strict=True):
     :param strict: whether to strictly enforce that the keys in state_dict match
             the keys returned by this module's `state_dict()` function.
     :type strict: bool
-    :return: model: semantic segmentation model
-    :rtype: model: nn.Module
+    :return: semantic segmentation model
+    :rtype: nn.Module
     """
     model = get_semantic_segmentation_model(model_config)
     model_name = model_config['name']

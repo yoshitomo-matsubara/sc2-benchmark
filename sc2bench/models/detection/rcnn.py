@@ -130,7 +130,9 @@ def create_faster_rcnn_fpn(backbone, extra_blocks=None, return_layer_dict=None, 
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     :param analyzable_layer_key: key of analyzable layer
-    :type analyzable_layer_key: str
+    :type analyzable_layer_key: str or None
+    :return: Faster R-CNN model with backbone model with FPN
+    :rtype: torchvision.models.detection.faster_rcnn.FasterRCNN
     """
     if analysis_config is None:
         analysis_config = dict()
@@ -194,6 +196,8 @@ def faster_rcnn_model(backbone_config, pretrained=True, pretrained_backbone_name
     :type analysis_config: dict or None
     :param start_ckpt_file_path: checkpoint file path to be loaded for the built Faster R-CNN model
     :type start_ckpt_file_path: str or None
+    :return: Faster R-CNN model with splittable backbone model and FPN
+    :rtype: BaseRCNN
     """
     if backbone_fpn_kwargs is None:
         backbone_fpn_kwargs = dict()

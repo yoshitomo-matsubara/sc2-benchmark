@@ -15,8 +15,8 @@ def register_detection_model_class(cls):
 
     :param cls: object detection model to be registered
     :type cls: class
-    :return: cls: object detection model
-    :rtype: cls: class
+    :return: object detection model
+    :rtype: class
     """
     DETECTION_MODEL_CLASS_DICT[cls.__name__] = cls
     register_model_class(cls)
@@ -25,12 +25,12 @@ def register_detection_model_class(cls):
 
 def register_detection_model_func(func):
     """
-    Registers a function to build an object detection
+    Registers a function to build an object detection model
 
-    :param func: function to build an object detection to be registered
+    :param func: function to build an object detection model to be registered
     :type func: typing.Callable
-    :return: func: function to build an object detection
-    :rtype: func: typing.Callable
+    :return: function to build an object detection model
+    :rtype: typing.Callable
     """
     DETECTION_MODEL_FUNC_DICT[func.__name__] = func
     register_model_func(func)
@@ -43,8 +43,8 @@ def get_detection_model(cls_or_func_name, **kwargs):
 
     :param cls_or_func_name: model class or function name
     :type cls_or_func_name: str
-    :return: model: object detection model
-    :rtype: model: nn.Module or None
+    :return: object detection model
+    :rtype: nn.Module or None
     """
     if cls_or_func_name in DETECTION_MODEL_CLASS_DICT:
         return DETECTION_MODEL_CLASS_DICT[cls_or_func_name](**kwargs)
@@ -64,8 +64,8 @@ def load_detection_model(model_config, device, strict=True):
     :param strict: whether to strictly enforce that the keys in state_dict match
             the keys returned by this module's `state_dict()` function.
     :type strict: bool
-    :return: model: object detection model
-    :rtype: model: nn.Module
+    :return: object detection model
+    :rtype: nn.Module
     """
     model = get_object_detection_model(model_config)
     model_name = model_config['name']
