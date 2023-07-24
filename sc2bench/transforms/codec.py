@@ -77,9 +77,9 @@ class PILImageModule(nn.Module):
 
     :param returns_file_size: returns file size of compressed object in addition to PIL image if True
     :type returns_file_size: bool
-    :param open_kwargs: kwargs to be used as part of Image.open(img_buffer, **open_kwargs)
+    :param open_kwargs: kwargs to be used as part of `Image.open(img_buffer, **open_kwargs)`
     :type open_kwargs: dict or None
-    :param save_kwargs: kwargs to be used as part of Image.save(img_buffer, **save_kwargs)
+    :param save_kwargs: kwargs to be used as part of `Image.save(img_buffer, **save_kwargs)`
     :type save_kwargs: dict or None
     """
     def __init__(self, returns_file_size=False, open_kwargs=None, **save_kwargs):
@@ -118,9 +118,9 @@ class PILTensorModule(nn.Module):
 
     :param returns_file_size: returns file size of compressed object in addition to PIL image if True
     :type returns_file_size: bool
-    :param open_kwargs: kwargs to be used as part of Image.open(img_buffer, **open_kwargs)
+    :param open_kwargs: kwargs to be used as part of `Image.open(img_buffer, **open_kwargs)`
     :type open_kwargs: dict or None
-    :param save_kwargs: kwargs to be used as part of Image.save(img_buffer, **save_kwargs)
+    :param save_kwargs: kwargs to be used as part of `Image.save(img_buffer, **save_kwargs)`
     :type save_kwargs: dict or None
     """
     def __init__(self, returns_file_size=False, open_kwargs=None, **save_kwargs):
