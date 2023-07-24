@@ -10,11 +10,12 @@ ANALYZER_CLASS_DICT = dict()
 
 def register_analysis_class(cls):
     """
-    Args:
-        cls (class): analyzer module to be registered.
+    Registers an analyzer class.
 
-    Returns:
-        cls (class): registered analyzer module.
+    :param cls: analyzer class to be registered
+    :type cls: class
+    :return: cls: registered analyzer class
+    :rtype: cls: class
     """
     ANALYZER_CLASS_DICT[cls.__name__] = cls
     return cls
@@ -22,9 +23,10 @@ def register_analysis_class(cls):
 
 class AnalyzableModule(nn.Module):
     """
-    Base module to analyze and summarize the wrapped modules and intermediate representations.
-    Args:
-        analyzer_configs (list of dicts): list of configurations to instantiate analyzers
+    A base module to analyze and summarize the wrapped modules and intermediate representations.
+
+    :param analyzer_configs: list of analysis configurations
+    :type analyzer_configs: list[dict] or None
     """
     def __init__(self, analyzer_configs=None):
         if analyzer_configs is None:
@@ -39,12 +41,24 @@ class AnalyzableModule(nn.Module):
         raise NotImplementedError()
 
     def activate_analysis(self):
+        """
+        Makes internal analyzers ready to run.
+        """
         self.activated_analysis = True
 
     def deactivate_analysis(self):
+        """
+        Turns internal analyzers off.
+        """
         self.activated_analysis = False
 
     def analyze(self, compressed_obj):
+        """
+        Analyzes a compressed object using internal analyzers.
+
+        :param compressed_obj: compressed object
+        :type compressed_obj: Any
+        """
         if not self.activated_analysis:
             return
 
@@ -52,35 +66,54 @@ class AnalyzableModule(nn.Module):
             analyzer.analyze(compressed_obj)
 
     def summarize(self):
+        """
+        Shows each of internal analyzers' summary of results.
+        """
         for analyzer in self.analyzers:
             analyzer.summarize()
 
     def clear_analysis(self):
+        """
+        Clears each of internal analyzers' results.
+        """
         for analyzer in self.analyzers:
             analyzer.clear()
 
 
 class BaseAnalyzer(object):
     """
-    Base analyzer to analyze and summarize the wrapped modules and intermediate representations.
+    A base analyzer to analyze and summarize the wrapped modules and intermediate representations.
     """
     def analyze(self, *args, **kwargs):
+        """
+        Analyzes a compressed object.
+        """
         raise NotImplementedError()
 
     def summarize(self):
+        """
+        Shows the summary of results.
+
+        This should be overridden by all subclasses.
+        """
         raise NotImplementedError()
 
     def clear(self):
+        """
+        Clears the results.
+
+        This should be overridden by all subclasses.
+        """
         raise NotImplementedError()
 
 
 @register_analysis_class
 class FileSizeAnalyzer(BaseAnalyzer):
     """
-    Analyzer to measure file size of compressed object in the designated unit
-    Args:
-        unit (str): unit of data size in bytes (`B`, `KB`, `MB`)
-        kwargs (dict): keyword arguments
+    An analyzer to measure file size of compressed object in the designated unit.
+
+    :param unit: unit of data size in bytes ('B', 'KB', 'MB')
+    :type unit: str
     """
     UNIT_DICT = {'B': 1, 'KB': 1024, 'MB': 1024 * 1024}
 
@@ -91,25 +124,37 @@ class FileSizeAnalyzer(BaseAnalyzer):
         self.file_size_list = list()
 
     def analyze(self, compressed_obj):
+        """
+        Computes and appends binary object size of the compressed object.
+
+        :param compressed_obj: compressed object
+        :type compressed_obj: Any
+        """
         file_size = get_binary_object_size(compressed_obj, unit_size=self.unit_size)
         self.file_size_list.append(file_size)
 
     def summarize(self):
+        """
+        Computes and shows mean and std of the stored file sizes and the number of samples .
+        """
         file_sizes = np.array(self.file_size_list)
         logger.info('Bottleneck size [{}]: mean {} std {} for {} samples'.format(self.unit, file_sizes.mean(),
                                                                                  file_sizes.std(), len(file_sizes)))
 
     def clear(self):
+        """
+        Clears the file size list.
+        """
         self.file_size_list.clear()
 
 
 @register_analysis_class
 class FileSizeAccumulator(FileSizeAnalyzer):
     """
-    Accumulator to store pre-computed file size in the designated unit
-    Args:
-        unit (str): unit of data size in bytes (`B`, `KB`, `MB`)
-        kwargs (dict): keyword arguments
+    An accumulator to store pre-computed file size in the designated unit.
+
+    :param unit: unit of data size in bytes ('B', 'KB', 'MB')
+    :type unit: str
     """
     UNIT_DICT = {'B': 1, 'KB': 1024, 'MB': 1024 * 1024}
 
@@ -117,17 +162,25 @@ class FileSizeAccumulator(FileSizeAnalyzer):
         super().__init__(unit=unit, **kwargs)
 
     def analyze(self, file_size):
+        """
+        Appends a file size.
+
+        :param file_size: pre-computed file size
+        :type file_size: int or float
+        """
         self.file_size_list.append(file_size / self.unit_size)
 
 
 def get_analyzer(cls_name, **kwargs):
     """
-    Args:
-        cls_name (str): module class name.
-        kwargs (dict): keyword arguments.
+    Gets an analyzer module.
 
-    Returns:
-        BaseAnalyzer or None: analyzer module that is instance of `BaseAnalyzer` if found. None otherwise.
+    :param cls_name: analyzer class name
+    :type cls_name: str
+    :param kwargs: kwargs for the analyzer class
+    :type kwargs: dict
+    :return: analyzer module
+    :rtype: BaseAnalyzer or None
     """
     if cls_name not in ANALYZER_CLASS_DICT:
         return None
@@ -136,26 +189,31 @@ def get_analyzer(cls_name, **kwargs):
 
 def check_if_analyzable(module):
     """
-    Args:
-        module (torch.nn.Module): PyTorch module to be checked.
+    Checks if a module is an instance of `AnalyzableModule`.
 
-    Returns:
-        bool: True if model is instance of `AnalyzableModule`. False otherwise.
+    :param module: module
+    :type module: Any
+    :return: True if the module is an instance of `AnalyzableModule`. False otherwise
+    :rtype: bool
     """
     return isinstance(module, AnalyzableModule)
 
 
 def analyze_model_size(model, encoder_paths=None, additional_rest_paths=None, ignores_dtype_error=True):
     """
-    Args:
-        model (torch.nn.Module): PyTorch module.
-        encoder_paths (list or tuple of strings): collection of encoder module paths.
-        additional_rest_paths (list or tuple of strings): collection of additional rest module paths
-            to be shared with encoder.
-        ignores_dtype_error (bool): If False, raise an error when any unexpected dtypes are found
+    Approximates numbers of bits used for parameters of the whole model, encoder, and the rest of the model.
 
-    Returns:
-        dict: model size (sum of param x num_bits) with three keys: model (whole model), encoder, and the rest
+    :param model: model
+    :type model: nn.Module
+    :param encoder_paths: list of module paths for the model to be considered as part of encoder's parameters
+    :type encoder_paths: list[str] or None
+    :param additional_rest_paths: list of additional rest module paths whose parameters should be shared with encoder
+                            e.g., module path of entropy bottleneck in the model if applied
+    :type additional_rest_paths: list[str] or None
+    :param ignores_dtype_error: if False, raise an error when any unexpected dtypes are found
+    :type ignores_dtype_error: bool
+    :return: model size (sum of param x num_bits) with three keys: model (whole model), encoder, and the rest
+    :rtype: dict
     """
     model_size = 0
     encoder_size = 0
