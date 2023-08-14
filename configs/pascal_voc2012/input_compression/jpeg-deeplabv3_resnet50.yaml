@@ -27,7 +27,7 @@ models:
     name: 'CodecInputCompressionSegmentationModel'
     params:
       codec_params:
-        - type: 'PillowImageModule'
+        - type: 'PILImageModule'
           params:
             format: 'JPEG'
             quality: 90
