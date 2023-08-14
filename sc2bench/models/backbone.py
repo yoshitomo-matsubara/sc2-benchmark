@@ -499,7 +499,7 @@ def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=No
     :type org_model_ckpt_file_path_or_url: str or None
     :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original ResNeSt model’s `state_dict()` function
     :type org_ckpt_strict: bool
-    :return: splittable ResNeSt model
+    :return: splittable ResNet model
     :rtype: SplittableResNet
     """
     bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
