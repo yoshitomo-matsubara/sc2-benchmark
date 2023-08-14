@@ -18,7 +18,7 @@ Check out the :doc:`usage` section for further information.
    usage
    package
    api
-   :maxdepth: 3
+   :maxdepth: 2
    :caption: Overview
 
 
