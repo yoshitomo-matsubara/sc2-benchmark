@@ -10,7 +10,7 @@ jobs:
       - uses: actions/setup-python@v3
       - name: Install dependencies
         run: |
-          pip install sphinx sphinx_rtd_theme torch==1.12.1 torchvision==0.13.1 torchdistill==0.3.3  compressai==1.2.2 timm
+          pip install sphinx sphinx_rtd_theme torch==1.13.0 torchvision==0.13.1 torchdistill==0.3.3  compressai==1.2.2 timm
 #      - name: Install sc2bench
 #        run: |
 #          pip install -e .
