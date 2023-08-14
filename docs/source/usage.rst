@@ -9,7 +9,7 @@ Usage
 Installation
 ------------
 
-To use `sc2bench`, first install it using pip:
+To use `sc2bench <https://pypi.org/project/sc2bench/>`_, first install it using pip:
 
 .. code-block:: console
 
