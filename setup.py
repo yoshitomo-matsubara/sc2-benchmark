@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 with open('README.md', 'r') as f:
     long_description = f.read()
 
-description = 'SC2: Supervised Compression for Split Computing.'
+description = 'SC2 Benchmark: Supervised Compression for Split Computing.'
 setup(
     name='sc2bench',
     version='0.0.3',
@@ -27,6 +27,7 @@ setup(
         'timm>=0.4.12'
     ],
     extras_require={
-        'test': ['pytest']
+        'test': ['pytest'],
+        'docs': ['sphinx', 'sphinx_rtd_theme']
     }
 )
