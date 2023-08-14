@@ -16,7 +16,7 @@ datasets:
             - type: 'CenterCrop'
               params:
                 size: [475, 475]
-            - type: 'PillowImageModule'
+            - type: 'PILImageModule'
               params:
                 format: 'JPEG'
                 quality: 90
