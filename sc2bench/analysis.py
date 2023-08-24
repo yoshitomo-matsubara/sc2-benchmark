@@ -14,8 +14,8 @@ def register_analysis_class(cls):
 
     :param cls: analyzer class to be registered
     :type cls: class
-    :return: cls: registered analyzer class
-    :rtype: cls: class
+    :return: registered analyzer class
+    :rtype: class
     """
     ANALYZER_CLASS_DICT[cls.__name__] = cls
     return cls
