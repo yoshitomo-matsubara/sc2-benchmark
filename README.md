@@ -13,10 +13,10 @@ Then, intermediate, informative features are transmitted through a wireless comm
 edge server that processes the bulk part of the computation (the second sequence of the model).  
 
 
-![R-D (rate-distortion), ExR-D, and Three-way tradeoffs](imgs/ilsvrc2012-overview.png)
+![R-D (rate-distortion), ExR-D, and Three-way tradeoffs](https://raw.githubusercontent.com/yoshitomo-matsubara/sc2-benchmark/main/imgs/ilsvrc2012-overview.png)
 ImageNet (ILSVRC 2012): R-D (rate-distortion), ExR-D, and three-way tradeoffs for input compression and supervised compression with ResNet-50 as a reference model
 
-![Input compression vs. Supervised compression](imgs/input_vs_supervised_compression.png)
+![Input compression vs. Supervised compression](https://raw.githubusercontent.com/yoshitomo-matsubara/sc2-benchmark/main/imgs/input_vs_supervised_compression.png)
 
 Input compression is an approach to save transmitted data, but it leads to transmitting information irrelevant to 
 the supervised task.
