@@ -1,0 +1,40 @@
+sc2bench.transforms.misc
+========================
+
+.. automodule:: sc2bench.transforms.misc
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      default_collate_w_pil
+      register_misc_transform_module
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      AdaptivePad
+      ClearTargetTransform
+      CustomToTensor
+      SimpleDequantizer
+      SimpleQuantizer
+   
+   
+
+   
+   
+   
+
+
+

@@ -1,0 +1,41 @@
+﻿sc2bench.analysis
+=================
+
+.. automodule:: sc2bench.analysis
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      analyze_model_size
+      check_if_analyzable
+      get_analyzer
+      register_analysis_class
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      AnalyzableModule
+      BaseAnalyzer
+      FileSizeAccumulator
+      FileSizeAnalyzer
+   
+   
+
+   
+   
+   
+
+
+

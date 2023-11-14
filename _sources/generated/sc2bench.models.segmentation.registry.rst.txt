@@ -1,0 +1,32 @@
+sc2bench.models.segmentation.registry
+=====================================
+
+.. automodule:: sc2bench.models.segmentation.registry
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      get_segmentation_model
+      load_segmentation_model
+      register_segmentation_model_class
+      register_segmentation_model_func
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

@@ -1,0 +1,33 @@
+﻿sc2bench.transforms
+===================
+
+.. automodule:: sc2bench.transforms
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   sc2bench.transforms.codec
+   sc2bench.transforms.collator
+   sc2bench.transforms.misc
+

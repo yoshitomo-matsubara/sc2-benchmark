@@ -1,0 +1,35 @@
+sc2bench.models.detection
+=========================
+
+.. automodule:: sc2bench.models.detection
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   sc2bench.models.detection.base
+   sc2bench.models.detection.rcnn
+   sc2bench.models.detection.registry
+   sc2bench.models.detection.transform
+   sc2bench.models.detection.wrapper
+

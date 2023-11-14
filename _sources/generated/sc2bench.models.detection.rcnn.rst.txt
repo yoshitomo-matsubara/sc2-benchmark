@@ -1,0 +1,36 @@
+sc2bench.models.detection.rcnn
+==============================
+
+.. automodule:: sc2bench.models.detection.rcnn
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      create_faster_rcnn_fpn
+      faster_rcnn_model
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BaseRCNN
+   
+   
+
+   
+   
+   
+
+
+

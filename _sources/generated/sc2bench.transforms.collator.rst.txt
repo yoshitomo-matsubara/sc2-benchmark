@@ -1,0 +1,31 @@
+sc2bench.transforms.collator
+============================
+
+.. automodule:: sc2bench.transforms.collator
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      cat_list
+      pascal_seg_collate_fn
+      pascal_seg_eval_collate_fn
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

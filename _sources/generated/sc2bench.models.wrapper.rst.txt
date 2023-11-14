@@ -1,0 +1,41 @@
+sc2bench.models.wrapper
+=======================
+
+.. automodule:: sc2bench.models.wrapper
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      get_wrapped_classification_model
+      register_wrapper_class
+      wrap_model
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      CodecFeatureCompressionClassifier
+      CodecInputCompressionClassifier
+      EntropicClassifier
+      NeuralInputCompressionClassifier
+      SplitClassifier
+   
+   
+
+   
+   
+   
+
+
+

@@ -1,0 +1,29 @@
+sc2bench.models.detection.transform
+===================================
+
+.. automodule:: sc2bench.models.detection.transform
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      RCNNTransformWithCompression
+   
+   
+
+   
+   
+   
+
+
+

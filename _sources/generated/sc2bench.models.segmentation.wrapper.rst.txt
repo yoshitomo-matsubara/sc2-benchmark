@@ -1,0 +1,36 @@
+sc2bench.models.segmentation.wrapper
+====================================
+
+.. automodule:: sc2bench.models.segmentation.wrapper
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      get_wrapped_segmentation_model
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      CodecInputCompressionSegmentationModel
+      NeuralInputCompressionSegmentationModel
+   
+   
+
+   
+   
+   
+
+
+

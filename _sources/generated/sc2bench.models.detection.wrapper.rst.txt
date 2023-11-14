@@ -1,0 +1,35 @@
+sc2bench.models.detection.wrapper
+=================================
+
+.. automodule:: sc2bench.models.detection.wrapper
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      get_wrapped_detection_model
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      InputCompressionDetectionModel
+   
+   
+
+   
+   
+   
+
+
+

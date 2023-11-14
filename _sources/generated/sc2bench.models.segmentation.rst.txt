@@ -1,0 +1,34 @@
+sc2bench.models.segmentation
+============================
+
+.. automodule:: sc2bench.models.segmentation
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   sc2bench.models.segmentation.base
+   sc2bench.models.segmentation.deeplabv3
+   sc2bench.models.segmentation.registry
+   sc2bench.models.segmentation.wrapper
+

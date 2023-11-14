@@ -1,0 +1,30 @@
+sc2bench.models.segmentation.deeplabv3
+======================================
+
+.. automodule:: sc2bench.models.segmentation.deeplabv3
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      create_deeplabv3
+      deeplabv3_model
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

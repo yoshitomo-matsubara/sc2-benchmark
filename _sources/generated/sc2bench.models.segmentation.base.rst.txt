@@ -1,0 +1,36 @@
+sc2bench.models.segmentation.base
+=================================
+
+.. automodule:: sc2bench.models.segmentation.base
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      check_if_updatable_segmentation_model
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BaseSegmentationModel
+      UpdatableSegmentationModel
+   
+   
+
+   
+   
+   
+
+
+

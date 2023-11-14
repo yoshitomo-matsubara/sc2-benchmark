@@ -1,0 +1,40 @@
+sc2bench.transforms.codec
+=========================
+
+.. automodule:: sc2bench.transforms.codec
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      register_codec_transform_module
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BPGModule
+      PILImageModule
+      PILTensorModule
+      VTMModule
+      WrappedRandomResizedCrop
+      WrappedResize
+   
+   
+
+   
+   
+   
+
+
+

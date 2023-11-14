@@ -1,0 +1,36 @@
+sc2bench.models.detection.base
+==============================
+
+.. automodule:: sc2bench.models.detection.base
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      check_if_updatable_detection_model
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      UpdatableBackboneWithFPN
+      UpdatableDetectionModel
+   
+   
+
+   
+   
+   
+
+
+

@@ -1,0 +1,32 @@
+sc2bench.models.detection.registry
+==================================
+
+.. automodule:: sc2bench.models.detection.registry
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      get_detection_model
+      load_detection_model
+      register_detection_model_class
+      register_detection_model_func
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

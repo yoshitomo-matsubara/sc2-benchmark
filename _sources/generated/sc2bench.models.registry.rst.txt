@@ -1,0 +1,34 @@
+sc2bench.models.registry
+========================
+
+.. automodule:: sc2bench.models.registry
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      get_compressai_model
+      get_compression_model
+      load_classification_model
+      register_compressai_model
+      register_compression_model_class
+      register_compression_model_func
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+

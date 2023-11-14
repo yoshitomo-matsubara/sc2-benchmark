@@ -1,0 +1,43 @@
+sc2bench.models.layer
+=====================
+
+.. automodule:: sc2bench.models.layer
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      get_layer
+      larger_resnet_bottleneck
+      register_layer_class
+      register_layer_func
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BaseBottleneck
+      EntropyBottleneckLayer
+      FPBasedResNetBottleneck
+      MSHPBasedResNetBottleneck
+      SHPBasedResNetBottleneck
+      SimpleBottleneck
+   
+   
+
+   
+   
+   
+
+
+

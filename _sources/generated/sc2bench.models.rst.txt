@@ -1,0 +1,36 @@
+﻿sc2bench.models
+===============
+
+.. automodule:: sc2bench.models
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   sc2bench.models.backbone
+   sc2bench.models.detection
+   sc2bench.models.layer
+   sc2bench.models.registry
+   sc2bench.models.segmentation
+   sc2bench.models.wrapper
+

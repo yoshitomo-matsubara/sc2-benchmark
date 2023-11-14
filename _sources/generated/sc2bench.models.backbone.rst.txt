@@ -1,0 +1,46 @@
+sc2bench.models.backbone
+========================
+
+.. automodule:: sc2bench.models.backbone
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      check_if_updatable
+      get_backbone
+      register_backbone_class
+      register_backbone_func
+      splittable_hybrid_vit
+      splittable_regnet
+      splittable_resnest
+      splittable_resnet
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      FeatureExtractionBackbone
+      SplittableHybridViT
+      SplittableRegNet
+      SplittableResNet
+      UpdatableBackbone
+   
+   
+
+   
+   
+   
+
+
+
