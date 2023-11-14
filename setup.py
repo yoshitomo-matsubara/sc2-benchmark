@@ -6,7 +6,7 @@ with open('README.md', 'r') as f:
 description = 'SC2 Benchmark: Supervised Compression for Split Computing.'
 setup(
     name='sc2bench',
-    version='0.0.3',
+    version='0.0.4',
     author='Yoshitomo Matsubara',
     description=description,
     long_description=long_description,
@@ -22,7 +22,7 @@ setup(
         'scipy',
         'cython',
         'pycocotools>=2.0.2',
-        'torchdistill>=0.2.7',
+        'torchdistill<=0.3.3',
         'compressai>=1.1.8,<=1.2.2',
         'timm>=0.4.12'
     ],
