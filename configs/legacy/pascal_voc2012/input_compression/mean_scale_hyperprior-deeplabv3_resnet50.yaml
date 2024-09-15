@@ -1,0 +1,69 @@
+datasets:
+  pascal_voc:
+    name: &dataset_name 'pascal_voc2012'
+    type: 'VOCSegmentation'
+    root: &root_dir '~/dataset'
+    splits:
+      val:
+        dataset_id: &pascal_val !join [*dataset_name, '/val']
+        params:
+          root: *root_dir
+          image_set: 'val'
+          year: '2012'
+          download: False
+          transforms_compose_cls: 'CustomCompose'
+          transforms_params: &val_transform
+            - type: 'CustomRandomResize'
+              params:
+                min_size: 513
+                max_size: 513
+            - type: 'CustomToTensor'
+              params:
+                converts_sample: True
+                converts_target: True
+
+models:
+  model:
+    name: 'NeuralInputCompressionSegmentationModel'
+    params:
+      pre_transform_params:
+        - type: 'AdaptivePad'
+          params:
+            padding_position: 'right_bottom'
+            returns_org_patch_size: True
+            fill: 0
+            factor: 64
+      analysis_config:
+        analyzes_after_compress: True
+        analyzer_configs:
+          - type: 'FileSizeAnalyzer'
+            params:
+              unit: 'KB'
+      post_transform_params:
+        - type: 'Normalize'
+          params:
+            mean: [0.485, 0.456, 0.406]
+            std: [0.229, 0.224, 0.225]
+    compression_model:
+      name: 'mbt2018_mean'
+      params:
+        pretrained: True
+        quality: 8
+        metric: 'mse'
+      ckpt: './resource/ckpt/input_compression/mean_scale_hyperprior.pt'
+    segmentation_model:
+      name: 'deeplabv3_resnet50'
+      params:
+        pretrained: True
+        pretrained_backbone: True
+        num_classes: 21
+        aux_loss: True
+      ckpt: 'https://github.com/yoshitomo-matsubara/torchdistill/releases/download/v0.2.8/pascal_voc2012-deeplabv3_resnet50.pt'
+
+test:
+  test_data_loader:
+    dataset_id: *pascal_val
+    random_sample: False
+    batch_size: 1
+    num_workers: 16
+    collate_fn: 'pascal_seg_eval_collate_fn'

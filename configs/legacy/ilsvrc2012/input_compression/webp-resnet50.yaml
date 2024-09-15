@@ -1,0 +1,55 @@
+datasets:
+  ilsvrc2012:
+    name: &dataset_name 'ilsvrc2012'
+    type: 'ImageFolder'
+    root: &root_dir !join ['~/dataset/', *dataset_name]
+    splits:
+      val:
+        dataset_id: &imagenet_val !join [*dataset_name, '/val']
+        params:
+          root: !join [*root_dir, '/val']
+          transform_params:
+            - type: 'Resize'
+              params:
+                size: 256
+            - type: 'CenterCrop'
+              params:
+                size: [224, 224]
+
+models:
+  model:
+    name: 'CodecInputCompressionClassifier'
+    params:
+      codec_params:
+        - type: 'PILImageModule'
+          params:
+            format: 'WEBP'
+            quality: 90
+            returns_file_size: True
+      post_transform_params:
+        - type: 'ToTensor'
+          params:
+        - type: 'Normalize'
+          params:
+            mean: [0.485, 0.456, 0.406]
+            std: [0.229, 0.224, 0.225]
+      analysis_config:
+        analyzer_configs:
+          - type: 'FileSizeAccumulator'
+            params:
+              unit: 'KB'
+    classification_model:
+      name: &model_name 'resnet50'
+      params:
+        num_classes: 1000
+        pretrained: True
+      experiment: &experiment !join [*dataset_name, '-', *model_name]
+      ckpt: !join ['./resource/ckpt/', *experiment, '.pt']
+
+test:
+  test_data_loader:
+    dataset_id: *imagenet_val
+    random_sample: False
+    batch_size: 1
+    num_workers: 16
+    collate_fn: 'default_collate_w_pil'
