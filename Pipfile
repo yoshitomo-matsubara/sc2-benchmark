@@ -6,18 +6,18 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-torch = ">=1.11.0,<=1.12.1"
-torchvision = ">=0.12.0,<=0.13.1"
+torch = ">=2.0.0"
+torchvision = ">=0.15.1"
 numpy = "*"
 scipy = "*"
 cython = "*"
 pycocotools = ">=2.0.2"
 matplotlib = "*"
 seaborn = "*"
-torchdistill = ">=0.3.1"
-compressai = ">=1.1.8,<=1.2.2"
+torchdistill = ">=1.0.0"
+compressai = ">=1.2.3"
 timm = "*"
 sc2bench = {editable = true, path = "."}
 
 [requires]
-python_version = "3.8"
+python_version = "3.12"
