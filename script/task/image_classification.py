@@ -11,11 +11,11 @@ from torch.nn import DataParallel
 from torch.nn.parallel import DistributedDataParallel
 from torchdistill.common import file_util, yaml_util, module_util
 from torchdistill.common.constant import def_logger
-from torchdistill.common.main_util import is_main_process, init_distributed_mode, load_ckpt, save_ckpt, set_seed
+from torchdistill.common.main_util import is_main_process, init_distributed_mode, load_ckpt, save_ckpt, set_seed, \
+    import_dependencies
 from torchdistill.core.distillation import get_distillation_box
 from torchdistill.core.training import get_training_box
-from torchdistill.datasets import util
-from torchdistill.eval.classification import compute_accuracy
+from torchdistill.datasets.util import build_data_loader
 from torchdistill.misc.log import setup_log_file, SmoothedValue, MetricLogger
 
 from sc2bench.analysis import check_if_analyzable
@@ -88,6 +88,21 @@ def train_one_epoch(training_box, aux_module, bottleneck_updated, device, epoch,
             raise ValueError('The training loop was broken due to loss = {}'.format(loss))
 
 
+def compute_accuracy(outputs, targets, topk=(1,)):
+    """Computes the accuracy over the k top predictions for the specified values of k"""
+    with torch.no_grad():
+        maxk = max(topk)
+        batch_size = targets.size(0)
+        _, preds = outputs.topk(maxk, 1, True, True)
+        preds = preds.t()
+        corrects = preds.eq(targets[None])
+        result_list = []
+        for k in topk:
+            correct_k = corrects[:k].flatten().sum(dtype=torch.float32)
+            result_list.append(correct_k * (100.0 / batch_size))
+        return result_list
+
+
 @torch.inference_mode()
 def evaluate(model_wo_ddp, data_loader, device, device_ids, distributed, no_dp_eval=False,
              log_freq=1000, title=None, header='Test:'):
@@ -141,7 +156,7 @@ def train(teacher_model, student_model, dataset_dict, ckpt_file_path, device, de
     best_val_top1_accuracy = 0.0
     optimizer, lr_scheduler = training_box.optimizer, training_box.lr_scheduler
     if file_util.check_if_exists(ckpt_file_path):
-        best_val_top1_accuracy, _, _ = load_ckpt(ckpt_file_path, optimizer=optimizer, lr_scheduler=lr_scheduler)
+        best_val_top1_accuracy, _ = load_ckpt(ckpt_file_path, optimizer=optimizer, lr_scheduler=lr_scheduler)
 
     log_freq = train_config['log_freq']
     student_model_without_ddp = student_model.module if module_util.check_if_wrapped(student_model) else student_model
@@ -151,7 +166,7 @@ def train(teacher_model, student_model, dataset_dict, ckpt_file_path, device, de
     no_dp_eval = args.no_dp_eval
     start_time = time.time()
     for epoch in range(args.start_epoch, training_box.num_epochs):
-        training_box.pre_process(epoch=epoch)
+        training_box.pre_epoch_process(epoch=epoch)
         if epoch_to_update is not None and epoch_to_update <= epoch and not bottleneck_updated:
             logger.info('Updating entropy bottleneck')
             student_model_without_ddp.update()
@@ -165,8 +180,8 @@ def train(teacher_model, student_model, dataset_dict, ckpt_file_path, device, de
             logger.info('Updating ckpt at {}'.format(ckpt_file_path))
             best_val_top1_accuracy = val_top1_accuracy
             save_ckpt(student_model_without_ddp, optimizer, lr_scheduler,
-                      best_val_top1_accuracy, config, args, ckpt_file_path)
-        training_box.post_process()
+                      best_val_top1_accuracy, args, ckpt_file_path)
+        training_box.post_epoch_process()
 
     if distributed:
         dist.barrier()
@@ -182,7 +197,7 @@ def main(args):
     if is_main_process() and log_file_path is not None:
         setup_log_file(os.path.expanduser(log_file_path))
 
-    distributed, device_ids = init_distributed_mode(args.world_size, args.dist_url)
+    distributed, world_size, device_ids = init_distributed_mode(args.world_size, args.dist_url)
     logger.info(args)
     cudnn.benchmark = True
     cudnn.deterministic = True
@@ -192,8 +207,9 @@ def main(args):
         logger.info('Overwriting config')
         overwrite_config(config, json.loads(args.json))
 
+    import_dependencies(config.get('dependencies', None))
     device = torch.device(args.device)
-    dataset_dict = util.get_all_datasets(config['datasets'])
+    dataset_dict = config['datasets']
     models_config = config['models']
     teacher_model_config = models_config.get('teacher_model', None)
     teacher_model =\
@@ -213,8 +229,8 @@ def main(args):
 
     test_config = config['test']
     test_data_loader_config = test_config['test_data_loader']
-    test_data_loader = util.build_data_loader(dataset_dict[test_data_loader_config['dataset_id']],
-                                              test_data_loader_config, distributed)
+    test_data_loader = build_data_loader(dataset_dict[test_data_loader_config['dataset_id']],
+                                         test_data_loader_config, distributed)
     log_freq = test_config.get('log_freq', 1000)
     no_dp_eval = args.no_dp_eval
     if not args.student_only and teacher_model is not None:
