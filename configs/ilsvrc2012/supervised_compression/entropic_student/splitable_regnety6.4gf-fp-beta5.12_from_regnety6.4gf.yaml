@@ -88,7 +88,7 @@ models:
           encoder_channel_sizes: [3, *bch, *bch, *bch]
           decoder_channel_sizes: [*bch, 288, 144, 144]
       regnet_name: *teacher_model_name
-      pre_transform_params:
+      pre_transform:
       skips_head: False
       analysis_config:
         analyzes_after_compress: True

@@ -81,7 +81,7 @@ models:
               num_bottleneck_channels: 24
               num_target_channels: 256
           resnet_name: 'resnet50'
-          pre_transform_params:
+          pre_transform:
           skips_avgpool: True
           skips_fc: True
         ckpt: './resource/ckpt/ilsvrc2012/supervised_compression/end-to-end/ilsvrc2012-splittable_resnet50-fp-beta8.192e-7.pt'

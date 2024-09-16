@@ -14,12 +14,19 @@ models:
   model:
     name: 'InputCompressionDetectionModel'
     params:
-      codec_params:
-        - type: 'PILImageModule'
-          params:
-            format: 'WEBP'
-            quality: 90
-            returns_file_size: True
+      codec_encoder_decoder:
+      	!import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'sc2bench.transforms.codec.PILImageModule'
+                  init:
+                    kwargs:
+                      format: 'WEBP'
+                      quality: 90
+                      returns_file_size: True
       analysis_config:
         analyzer_configs:
           - type: 'FileSizeAccumulator'
@@ -27,8 +34,8 @@ models:
               unit: 'KB'
         analyzes_after_compress: True
       adaptive_pad_config:
-      pre_transform_params:
-      post_transform_params:
+      pre_transform:
+      post_transform:
     detection_model:
       name: 'fasterrcnn_resnet50_fpn'
       params:

@@ -70,7 +70,7 @@ models:
           num_bottleneck_channels: 24
           num_target_channels: 256
       resnet_name: 'resnet50'
-      pre_transform_params:
+      pre_transform:
       skips_avgpool: False
       skips_fc: False
       analysis_config:

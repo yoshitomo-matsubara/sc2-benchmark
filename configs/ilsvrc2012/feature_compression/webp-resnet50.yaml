@@ -35,19 +35,26 @@ models:
   model:
     name: 'CodecFeatureCompressionClassifier'
     params:
-      codec_params:
-        - type: 'PILTensorModule'
-          params:
-            format: 'WEBP'
-            quality: 90
-            returns_file_size: True
+      codec_encoder_decoder:
+      	!import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'sc2bench.transforms.codec.PILTensorModule'
+                  init:
+                    kwargs:
+                      format: 'WEBP'
+                      quality: 90
+                      returns_file_size: True
       encoder_config:
         sequential: ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2']
       decoder_config:
         sequential: ['layer3', 'layer4', 'avgpool']
       classifier_config:
         sequential: ['fc']
-      post_transform_params:
+      post_transform:
       analysis_config:
         analyzer_configs:
           - type: 'FileSizeAccumulator'

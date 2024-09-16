@@ -14,13 +14,6 @@ models:
   model:
     name: 'InputCompressionDetectionModel'
     params:
-      codec_params:
-        - type: 'BPGModule'
-          params:
-            encoder_path: '~/software/libbpg-0.9.8/bpgenc'
-            decoder_path: '~/software/libbpg-0.9.8/bpgdec'
-            quality: 50
-            returns_file_size: True
       analysis_config:
         analyzer_configs:
           - type: 'FileSizeAnalyzer'
@@ -31,8 +24,8 @@ models:
         fill: 0
         padding_mode: 'constant'
         factor: 128
-      pre_transform_params:
-      post_transform_params:
+      pre_transform:
+      post_transform:
       uses_cpu4compression_model: True
     compression_model:
       name: 'mbt2018'

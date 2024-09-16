@@ -77,16 +77,30 @@ models:
           bottleneck_channel: &bch 1
           bottleneck_idx: 12
           output_channel: 256
-          compressor_transform_params:
-            - type: 'SimpleQuantizer'
-              params:
-                num_bits: 8
-          decompressor_transform_params:
-            - type: 'SimpleDequantizer'
-              params:
-                num_bits: 8
+          compressor_transform:
+            !import_call
+            key: 'torchvision.transforms.Compose'
+            init:
+              kwargs:
+                transforms:
+                  - !import_call
+                    key: 'sc2bench.transforms.misc.SimpleQuantizer'
+                    init:
+                      kwargs:
+                        num_bits: 8
+          decompressor_transform:
+            !import_call
+            key: 'torchvision.transforms.Compose'
+            init:
+              kwargs:
+                transforms:
+                  - !import_call
+                    key: 'sc2bench.transforms.misc.SimpleDequantizer'
+                    init:
+                      kwargs:
+                        num_bits: 8
       resnet_name: 'resnet50'
-      pre_transform_params:
+      pre_transform:
       skips_avgpool: False
       skips_fc: False
       analysis_config:

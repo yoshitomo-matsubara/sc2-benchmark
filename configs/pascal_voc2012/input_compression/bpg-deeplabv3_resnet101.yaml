@@ -26,25 +26,40 @@ models:
   model:
     name: 'CodecInputCompressionSegmentationModel'
     params:
-      codec_params:
-        - type: 'BPGModule'
-          params:
-            encoder_path: '~/software/libbpg-0.9.8/bpgenc'
-            decoder_path: '~/software/libbpg-0.9.8/bpgdec'
-            quality: 50
-            returns_file_size: True
+      codec_encoder_decoder:
+      	!import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'sc2bench.transforms.codec.BPGModule'
+                  init:
+                    kwargs:
+                      encoder_path: '~/software/libbpg-0.9.8/bpgenc'
+                      decoder_path: '~/software/libbpg-0.9.8/bpgdec'
+                      quality: 50
+                      returns_file_size: True
       analysis_config:
         analyzer_configs:
           - type: 'FileSizeAccumulator'
             params:
               unit: 'KB'
-      post_transform_params:
-        - type: 'ToTensor'
-          params:
-        - type: 'Normalize'
-          params:
-            mean: [0.485, 0.456, 0.406]
-            std: [0.229, 0.224, 0.225]
+      post_transform:
+        !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'torchvision.transforms.ToTensor'
+                init:
+              - !import_call
+                key: 'torchvision.transforms.Normalize'
+                init:
+                  kwargs:
+                    mean: [0.485, 0.456, 0.406]
+                    std: [0.229, 0.224, 0.225]
     segmentation_model:
       name: 'deeplabv3_resnet101'
       params:

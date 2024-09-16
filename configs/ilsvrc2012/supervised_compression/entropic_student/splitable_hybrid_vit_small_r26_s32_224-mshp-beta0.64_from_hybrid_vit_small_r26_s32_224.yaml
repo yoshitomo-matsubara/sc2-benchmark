@@ -90,7 +90,7 @@ models:
           g_a_channel_sizes: [3, *bch, *bch, *bch]
           g_s_channel_sizes: [*bch, 512, 256, 256]
       hybrid_vit_name: *teacher_model_name
-      pre_transform_params:
+      pre_transform:
       skips_head: False
       analysis_config:
         analyzes_after_compress: True

@@ -26,24 +26,38 @@ models:
   model:
     name: 'NeuralInputCompressionSegmentationModel'
     params:
-      pre_transform_params:
-        - type: 'AdaptivePad'
-          params:
-            padding_position: 'right_bottom'
-            returns_org_patch_size: True
-            fill: 0
-            factor: 64
+      pre_transform:
+        !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'sc2bench.transforms.misc.AdaptivePad'
+                init:
+                  kwargs:
+                    padding_position: 'right_bottom'
+                    returns_org_patch_size: True
+                    fill: 0
+                    factor: 64
       analysis_config:
         analyzes_after_compress: True
         analyzer_configs:
           - type: 'FileSizeAnalyzer'
             params:
               unit: 'KB'
-      post_transform_params:
-        - type: 'Normalize'
-          params:
-            mean: [0.485, 0.456, 0.406]
-            std: [0.229, 0.224, 0.225]
+      post_transform:
+        !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'torchvision.transforms.Normalize'
+                init:
+                  kwargs:
+                    mean: [0.485, 0.456, 0.406]
+                    std: [0.229, 0.224, 0.225]
     compression_model:
       name: 'bmshj2018_factorized'
       params:
