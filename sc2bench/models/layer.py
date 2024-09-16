@@ -6,7 +6,6 @@ from compressai.models.google import get_scale_table
 from compressai.models.utils import update_registered_buffers
 from torch import nn
 from torchdistill.common.constant import def_logger
-from torchdistill.datasets.util import build_transform
 
 logger = def_logger.getChild(__name__)
 LAYER_CLASS_DICT = dict()
@@ -108,7 +107,7 @@ class SimpleBottleneck(nn.Module):
 
 @register_layer_func
 def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=12, output_channel=256,
-                             compressor_transform_params=None, decompressor_transform_params=None):
+                             compressor_transform=None, decompressor_transform=None):
     """
     Builds a bottleneck layer ResNet-based encoder and decoder (24 layers in total).
 
@@ -122,10 +121,10 @@ def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=12, output_ch
     :type bottleneck_idx: int
     :param output_channel: number of output channels for decoder's output
     :type output_channel: int
-    :param compressor_transform_params: transform parameters for compressor
-    :type compressor_transform_params: dict or None
-    :param decompressor_transform_params: transform parameters for decompressor
-    :type decompressor_transform_params: dict or None
+    :param compressor_transform: compressor transform
+    :type compressor_transform: nn.Module or None
+    :param decompressor_transform: decompressor transform
+    :type decompressor_transform: nn.Module or None
     :return: bottleneck layer consisting of encoder and decoder
     :rtype: SimpleBottleneck
     """
@@ -157,8 +156,6 @@ def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=12, output_ch
     ]
     encoder = nn.Sequential(*modules[:bottleneck_idx])
     decoder = nn.Sequential(*modules[bottleneck_idx:])
-    compressor_transform = build_transform(compressor_transform_params)
-    decompressor_transform = build_transform(decompressor_transform_params)
     return SimpleBottleneck(encoder, decoder, compressor_transform, decompressor_transform)
 
 

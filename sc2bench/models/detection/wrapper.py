@@ -17,23 +17,23 @@ class InputCompressionDetectionModel(AnalyzableModule):
     :type detection_model: nn.Module
     :param device: torch device
     :type device: torch.device or str
-    :param codec_params: transform sequence configuration for codec
-    :type codec_params: dict or None
+    :param codec_encoder_decoder: transform sequence configuration for codec
+    :type codec_encoder_decoder: nn.Module or None
     :param compression_model: compression model
     :type compression_model: nn.Module or None
-    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `comoression_model`
+    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `compression_model`
     :type uses_cpu4compression_model: bool
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
-    :param post_transform_params: post-transform parameters
-    :type post_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
+    :param post_transform: post-transform
+    :type post_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     :param adaptive_pad_kwargs: keyword arguments for AdaptivePad
     :type adaptive_pad_kwargs: dict or None
     """
-    def __init__(self, detection_model, device, codec_params=None, compression_model=None,
-                 uses_cpu4compression_model=False, pre_transform_params=None, post_transform_params=None,
+    def __init__(self, detection_model, device, codec_encoder_decoder=None, compression_model=None,
+                 uses_cpu4compression_model=False, pre_transform=None, post_transform=None,
                  analysis_config=None, adaptive_pad_kwargs=None, **kwargs):
         if analysis_config is None:
             analysis_config = dict()
@@ -41,10 +41,11 @@ class InputCompressionDetectionModel(AnalyzableModule):
         super().__init__()
         detection_model.transform = \
             RCNNTransformWithCompression(
-                detection_model.transform, device, codec_params, analysis_config.get('analyzer_configs', list()),
+                detection_model.transform, device, codec_encoder_decoder,
+                analysis_config.get('analyzer_configs', list()),
                 analyzes_after_compress=analysis_config.get('analyzes_after_compress', False),
                 compression_model=compression_model, uses_cpu4compression_model=uses_cpu4compression_model,
-                pre_transform_params=pre_transform_params, post_transform_params=post_transform_params,
+                pre_transform=pre_transform, post_transform=post_transform,
                 adaptive_pad_kwargs=adaptive_pad_kwargs
             )
         self.device = device

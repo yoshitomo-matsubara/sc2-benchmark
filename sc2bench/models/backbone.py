@@ -4,8 +4,7 @@ import torch
 from compressai.models import CompressionModel
 from timm.models import resnest, regnet, vision_transformer_hybrid
 from torchdistill.common.main_util import load_ckpt
-from torchdistill.datasets.util import build_transform
-from torchdistill.models.registry import register_model_class, register_model_func
+from torchdistill.models.registry import register_model
 from torchvision import models
 from torchvision.ops import misc as misc_nn_ops
 
@@ -26,7 +25,7 @@ def register_backbone_class(cls):
     :rtype: class
     """
     BACKBONE_CLASS_DICT[cls.__name__] = cls
-    register_model_class(cls)
+    register_model(cls)
     return cls
 
 
@@ -40,7 +39,7 @@ def register_backbone_func(func):
     :rtype: typing.Callable
     """
     BACKBONE_FUNC_DICT[func.__name__] = func
-    register_model_func(func)
+    register_model(func)
     return func
 
 
@@ -192,19 +191,19 @@ class SplittableResNet(UpdatableBackbone):
     :type skips_avgpool: bool
     :param skips_fc: if True, skips fc (fully-connected layer) after layer4
     :type skips_fc: bool
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
     # Referred to the ResNet implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py
     def __init__(self, bottleneck_layer, resnet_model, inplanes=None, skips_avgpool=True, skips_fc=True,
-                 pre_transform_params=None, analysis_config=None):
+                 pre_transform=None, analysis_config=None):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
-        self.pre_transform = build_transform(pre_transform_params)
+        self.pre_transform = pre_transform
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
         self.bottleneck_layer = bottleneck_layer
         self.layer2 = resnet_model.layer2
@@ -278,19 +277,19 @@ class SplittableRegNet(UpdatableBackbone):
     :type inplanes: int or None
     :param skips_head: if True, skips fc (fully-connected layer) after layer4
     :type skips_head: bool
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
     # Referred to the RegNet implementation at https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/regnet.py
     def __init__(self, bottleneck_layer, regnet_model, inplanes=None, skips_head=True,
-                 pre_transform_params=None, analysis_config=None):
+                 pre_transform=None, analysis_config=None):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
-        self.pre_transform = build_transform(pre_transform_params)
+        self.pre_transform = pre_transform
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
         self.bottleneck_layer = bottleneck_layer
         self.s2 = regnet_model.s2
@@ -356,19 +355,19 @@ class SplittableHybridViT(UpdatableBackbone):
     :type num_pruned_stages: int
     :param skips_head: if True, skips classification head
     :type skips_head: bool
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
     # Referred to Hybrid ViT implementation at https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py
     def __init__(self, bottleneck_layer, hybrid_vit_model, num_pruned_stages=1, skips_head=True,
-                 pre_transform_params=None, analysis_config=None):
+                 pre_transform=None, analysis_config=None):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
-        self.pre_transform = build_transform(pre_transform_params)
+        self.pre_transform = pre_transform
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
         self.bottleneck_layer = bottleneck_layer
         self.patch_embed_pruned_stages = hybrid_vit_model.patch_embed.backbone.stages[num_pruned_stages:]
@@ -435,7 +434,7 @@ class SplittableHybridViT(UpdatableBackbone):
 
 @register_backbone_func
 def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, skips_avgpool=True, skips_fc=True,
-                      pre_transform_params=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
+                      pre_transform=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
                       org_ckpt_strict=True, **resnet_kwargs):
     """
     Builds ResNet-based splittable image classification model containing neural encoder, entropy bottleneck, and decoder.
@@ -450,8 +449,8 @@ def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, 
     :type skips_avgpool: bool
     :param skips_fc: if True, skips fc (fully-connected layer) after layer4
     :type skips_fc: bool
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     :param org_model_ckpt_file_path_or_url: original ResNet model checkpoint file path or URL
@@ -470,12 +469,12 @@ def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, 
     if org_model_ckpt_file_path_or_url is not None:
         load_ckpt(org_model_ckpt_file_path_or_url, model=resnet_model, strict=org_ckpt_strict)
     return SplittableResNet(bottleneck_layer, resnet_model, inplanes, skips_avgpool, skips_fc,
-                            pre_transform_params, analysis_config)
+                            pre_transform, analysis_config)
 
 
 @register_backbone_func
 def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=None, skips_avgpool=True, skips_fc=True,
-                       pre_transform_params=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
+                       pre_transform=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
                        org_ckpt_strict=True, **resnest_kwargs):
     """
     Builds ResNeSt-based splittable image classification model containing neural encoder, entropy bottleneck,
@@ -491,8 +490,8 @@ def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=No
     :type skips_avgpool: bool
     :param skips_fc: if True, skips fc (fully-connected layer) after layer4
     :type skips_fc: bool
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     :param org_model_ckpt_file_path_or_url: original ResNeSt model checkpoint file path or URL
@@ -507,12 +506,12 @@ def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=No
     if org_model_ckpt_file_path_or_url is not None:
         load_ckpt(org_model_ckpt_file_path_or_url, model=resnest_model, strict=org_ckpt_strict)
     return SplittableResNet(bottleneck_layer, resnest_model, inplanes, skips_avgpool, skips_fc,
-                            pre_transform_params, analysis_config)
+                            pre_transform, analysis_config)
 
 
 @register_backbone_func
 def splittable_regnet(bottleneck_config, regnet_name='regnety_064', inplanes=None, skips_head=True,
-                      pre_transform_params=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
+                      pre_transform=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
                       org_ckpt_strict=True, **regnet_kwargs):
     """
     Builds RegNet-based splittable image classification model containing neural encoder, entropy bottleneck, and decoder.
@@ -525,8 +524,8 @@ def splittable_regnet(bottleneck_config, regnet_name='regnety_064', inplanes=Non
     :type inplanes: int or None
     :param skips_head: if True, skips fc (fully-connected layer) after layer4
     :type skips_head: bool
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     :param org_model_ckpt_file_path_or_url: original RegNet model checkpoint file path or URL
@@ -540,12 +539,12 @@ def splittable_regnet(bottleneck_config, regnet_name='regnety_064', inplanes=Non
     regnet_model = regnet.__dict__[regnet_name](**regnet_kwargs)
     if org_model_ckpt_file_path_or_url is not None:
         load_ckpt(org_model_ckpt_file_path_or_url, model=regnet_model, strict=org_ckpt_strict)
-    return SplittableRegNet(bottleneck_layer, regnet_model, inplanes, skips_head, pre_transform_params, analysis_config)
+    return SplittableRegNet(bottleneck_layer, regnet_model, inplanes, skips_head, pre_transform, analysis_config)
 
 
 @register_backbone_func
 def splittable_hybrid_vit(bottleneck_config, hybrid_vit_name='vit_small_r26_s32_224', num_pruned_stages=1,
-                          skips_head=True, pre_transform_params=None, analysis_config=None,
+                          skips_head=True, pre_transform=None, analysis_config=None,
                           org_model_ckpt_file_path_or_url=None, org_ckpt_strict=True, **hybrid_vit_kwargs):
     """
     Builds Hybrid ViT-based splittable image classification model containing neural encoder, entropy bottleneck, and decoder.
@@ -559,8 +558,8 @@ def splittable_hybrid_vit(bottleneck_config, hybrid_vit_name='vit_small_r26_s32_
     :type num_pruned_stages: int
     :param skips_head: if True, skips classification head
     :type skips_head: bool
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     :param org_model_ckpt_file_path_or_url: original Hybrid ViT model checkpoint file path or URL
@@ -576,7 +575,7 @@ def splittable_hybrid_vit(bottleneck_config, hybrid_vit_name='vit_small_r26_s32_
     if org_model_ckpt_file_path_or_url is not None:
         load_ckpt(org_model_ckpt_file_path_or_url, model=hybrid_vit_model, strict=org_ckpt_strict)
     return SplittableHybridViT(bottleneck_layer, hybrid_vit_model, num_pruned_stages, skips_head,
-                               pre_transform_params, analysis_config)
+                               pre_transform, analysis_config)
 
 
 def get_backbone(cls_or_func_name, **kwargs):

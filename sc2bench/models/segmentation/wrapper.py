@@ -1,6 +1,5 @@
 import torch
 from torchdistill.common.main_util import load_ckpt
-from torchdistill.datasets.util import build_transform
 from torchvision.transforms.functional import crop
 
 from .registry import load_segmentation_model
@@ -18,23 +17,23 @@ class CodecInputCompressionSegmentationModel(AnalyzableModule):
     :type segmentation_model: nn.Module
     :param device: torch device
     :type device: torch.device or str
-    :param codec_params: transform sequence configuration for codec
-    :type codec_params: dict or None
-    :param post_transform_params: post-transform parameters
-    :type post_transform_params: dict or None
+    :param codec_encoder_decoder: transform sequence configuration for codec
+    :type codec_encoder_decoder: nn.Module or None
+    :param post_transform: post-transform
+    :type post_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
-    def __init__(self, segmentation_model, device, codec_params=None,
-                 post_transform_params=None, analysis_config=None, **kwargs):
+    def __init__(self, segmentation_model, device, codec_encoder_decoder=None,
+                 post_transform=None, analysis_config=None, **kwargs):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
-        self.codec_encoder_decoder = build_transform(codec_params)
+        self.codec_encoder_decoder = codec_encoder_decoder
         self.device = device
         self.segmentation_model = segmentation_model
-        self.post_transform = build_transform(post_transform_params)
+        self.post_transform = post_transform
 
     def forward(self, x):
         tmp_list = list()
@@ -59,30 +58,30 @@ class NeuralInputCompressionSegmentationModel(AnalyzableModule):
 
     :param segmentation_model: semantic segmentation model
     :type segmentation_model: nn.Module
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
     :param compression_model: compression model
     :type compression_model: nn.Module or None
-    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `comoression_model`
+    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `compression_model`
     :type uses_cpu4compression_model: bool
-    :param post_transform_params: post-transform parameters
-    :type post_transform_params: dict or None
+    :param post_transform: post-transform
+    :type post_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
-    def __init__(self, segmentation_model, pre_transform_params=None, compression_model=None,
-                 uses_cpu4compression_model=False, post_transform_params=None, analysis_config=None, **kwargs):
+    def __init__(self, segmentation_model, pre_transform=None, compression_model=None,
+                 uses_cpu4compression_model=False, post_transform=None, analysis_config=None, **kwargs):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
         self.analyzes_after_pre_transform = analysis_config.get('analyzes_after_pre_transform', False)
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
-        self.pre_transform = build_transform(pre_transform_params)
+        self.pre_transform = pre_transform
         self.compression_model = compression_model
         self.uses_cpu4compression_model = uses_cpu4compression_model
         self.segmentation_model = segmentation_model
-        self.post_transform = build_transform(post_transform_params)
+        self.post_transform = post_transform
 
     def use_cpu4compression(self):
         """

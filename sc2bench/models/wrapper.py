@@ -3,7 +3,6 @@ from collections import OrderedDict
 import torch
 from torch import nn
 from torchdistill.common.main_util import load_ckpt
-from torchdistill.datasets.util import build_transform
 from torchdistill.models.util import redesign_model
 
 from .backbone import UpdatableBackbone
@@ -36,23 +35,23 @@ class CodecInputCompressionClassifier(AnalyzableModule):
     :type classification_model: nn.Module
     :param device: torch device
     :type device: torch.device or str
-    :param codec_params: transform sequence configuration for codec
-    :type codec_params: dict or None
-    :param post_transform_params: post-transform parameters
-    :type post_transform_params: dict or None
+    :param codec_encoder_decoder: transform sequence configuration for codec
+    :type codec_encoder_decoder: nn.Module or None
+    :param post_transform: post-transform
+    :type post_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
-    def __init__(self, classification_model, device, codec_params=None,
-                 post_transform_params=None, analysis_config=None, **kwargs):
+    def __init__(self, classification_model, device, codec_encoder_decoder=None,
+                 post_transform=None, analysis_config=None, **kwargs):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
-        self.codec_encoder_decoder = build_transform(codec_params)
+        self.codec_encoder_decoder = codec_encoder_decoder
         self.device = device
         self.classification_model = classification_model
-        self.post_transform = build_transform(post_transform_params)
+        self.post_transform = post_transform
 
     def forward(self, x):
         """
@@ -85,30 +84,30 @@ class NeuralInputCompressionClassifier(AnalyzableModule):
 
     :param classification_model: image classification model
     :type classification_model: nn.Module
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
     :param compression_model: compression model
     :type compression_model: nn.Module or None
-    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `comoression_model`
+    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `compression_model`
     :type uses_cpu4compression_model: bool
-    :param post_transform_params: post-transform parameters
-    :type post_transform_params: dict or None
+    :param post_transform: post-transform
+    :type post_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
-    def __init__(self, classification_model, pre_transform_params=None, compression_model=None,
-                 uses_cpu4compression_model=False, post_transform_params=None, analysis_config=None, **kwargs):
+    def __init__(self, classification_model, pre_transform=None, compression_model=None,
+                 uses_cpu4compression_model=False, post_transform=None, analysis_config=None, **kwargs):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
         self.analyzes_after_pre_transform = analysis_config.get('analyzes_after_pre_transform', False)
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
-        self.pre_transform = build_transform(pre_transform_params)
+        self.pre_transform = pre_transform
         self.compression_model = compression_model
         self.uses_cpu4compression_model = uses_cpu4compression_model
         self.classification_model = classification_model
-        self.post_transform = build_transform(post_transform_params)
+        self.post_transform = post_transform
 
     def use_cpu4compression(self):
         """
@@ -147,24 +146,25 @@ class CodecFeatureCompressionClassifier(AnalyzableModule):
     :type device: torch.device or str
     :param encoder_config: configuration to design an encoder using modules in classification_model
     :type encoder_config: dict or None
-    :param codec_params: transform sequence configuration for codec
-    :type codec_params: dict or None
+    :param codec_encoder_decoder: transform sequence configuration for codec
+    :type codec_encoder_decoder: nn.Module or None
     :param decoder_config: configuration to design a decoder using modules in classification_model
     :type decoder_config: dict or None
     :param classifier_config: configuration to design a classifier using modules in classification_model
     :type classifier_config: dict or None
-    :param post_transform_params: post-transform parameters
-    :type post_transform_params: dict or None
+    :param post_transform: post-transform
+    :type post_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
-    def __init__(self, classification_model, device, encoder_config=None, codec_params=None, decoder_config=None,
-                 classifier_config=None, post_transform_params=None, analysis_config=None, **kwargs):
+    def __init__(self, classification_model, device, encoder_config=None, codec_encoder_decoder=None,
+                 decoder_config=None, classifier_config=None, post_transform=None, analysis_config=None,
+                 **kwargs):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
-        self.codec_encoder_decoder = build_transform(codec_params)
+        self.codec_encoder_decoder = codec_encoder_decoder
         self.device = device
 
         self.encoder = nn.Identity() if encoder_config.get('ignored', False) \
@@ -172,7 +172,7 @@ class CodecFeatureCompressionClassifier(AnalyzableModule):
         self.decoder = nn.Identity() if decoder_config.get('ignored', False) \
             else redesign_model(classification_model, decoder_config, model_label='decoder')
         self.classifier = redesign_model(classification_model, classifier_config, model_label='classification')
-        self.post_transform = build_transform(post_transform_params)
+        self.post_transform = post_transform
 
     def forward(self, x):
         x = self.encoder(x)
@@ -277,23 +277,23 @@ class SplitClassifier(UpdatableBackbone):
     :type decoder_config: dict or None
     :param classifier_config: configuration to design a classifier using modules in classification_model
     :type classifier_config: dict or None
-    :param compressor_transform_params: transform parameters for compressor
-    :type compressor_transform_params: dict or None
-    :param decompressor_transform_params: transform parameters for decompressor
-    :type decompressor_transform_params: dict or None
+    :param compressor_transform: compressor transform
+    :type compressor_transform: nn.Module or None
+    :param decompressor_transform: decompressor transform
+    :type decompressor_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
     def __init__(self, classification_model, encoder_config, decoder_config,
-                 classifier_config, compressor_transform_params=None, decompressor_transform_params=None,
+                 classifier_config, compressor_transform=None, decompressor_transform=None,
                  analysis_config=None, **kwargs):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
-        self.compressor = build_transform(compressor_transform_params)
-        self.decompressor = build_transform(decompressor_transform_params)
+        self.compressor = compressor_transform
+        self.decompressor = decompressor_transform
         self.encoder = nn.Identity() if encoder_config.get('ignored', False) \
             else redesign_model(classification_model, encoder_config, model_label='encoder')
         self.decoder = nn.Identity() if decoder_config.get('ignored', False) \
