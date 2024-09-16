@@ -1,27 +1,40 @@
 datasets:
-  ilsvrc2012:
-    name: &dataset_name 'ilsvrc2012'
-    type: 'ImageFolder'
-    root: &root_dir !join ['~/dataset/', *dataset_name]
-    splits:
-      val:
-        dataset_id: &imagenet_val !join [*dataset_name, '/val']
-        params:
-          root: !join [*root_dir, '/val']
-          transform_params:
-            - type: 'WrappedResize'
-              params:
-                size: 507
-                interpolation: 'bicubic'
-            - type: 'CenterCrop'
-              params:
-                size: &input_size [475, 475]
-            - type: 'ToTensor'
-              params:
-            - type: 'AdaptivePad'
-              params:
-                fill: 0
-                factor: 64
+  &imagenet_val ilsvrc2012/val: !import_call
+    _name: &dataset_name 'ilsvrc2012'
+    _root: &root_dir !join ['~/datasets/', *dataset_name]
+    key: 'torchvision.datasets.ImageFolder'
+    init:
+      kwargs:
+        root: !join [*root_dir, '/val']
+        transform: !import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'torchvision.transforms.Resize'
+                  init:
+                    kwargs:
+                      size: 507
+                      interpolation:
+                        !getattr
+                        - !import_get
+                          key: 'torchvision.transforms.functional.InterpolationMode'
+                        - 'BICUBIC'
+                - !import_call
+                  key: 'torchvision.transforms.CenterCrop'
+                  init:
+                    kwargs:
+                      size: &input_size [475, 475]
+                - !import_call
+                  key: 'torchvision.transforms.ToTensor'
+                  init:
+                - !import_call
+                  key: 'sc2bench.transforms.misc.AdaptivePad'
+                  init:
+                    kwargs:
+                      fill: 0
+                      factor: 64
 
 models:
   model:

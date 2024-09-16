@@ -1,41 +1,62 @@
 datasets:
-  ilsvrc2012:
-    name: &dataset_name 'ilsvrc2012'
-    type: 'ImageFolder'
-    root: &root_dir !join ['~/dataset/', *dataset_name]
-    splits:
-      train:
-        dataset_id: &imagenet_train !join [*dataset_name, '/train']
-        params:
-          root: !join [*root_dir, '/train']
-          transform_params:
-            - type: 'RandomResizedCrop'
-              params:
-                size: &input_size [224, 224]
-            - type: 'RandomHorizontalFlip'
-              params:
-                p: 0.5
-            - &totensor
-              type: 'ToTensor'
-              params:
-            - &normalize
-              type: 'Normalize'
-              params:
-                mean: [0.485, 0.456, 0.406]
-                std: [0.229, 0.224, 0.225]
-      val:
-        dataset_id: &imagenet_val !join [*dataset_name, '/val']
-        params:
-          root: !join [*root_dir, '/val']
-          transform_params:
-            - type: 'Resize'
-              params:
-                size: 256
-            - type: 'CenterCrop'
-              params:
-                size: *input_size
-            - *totensor
-            - *normalize
+  &imagenet_train ilsvrc2012/train: !import_call
+    _name: &dataset_name 'ilsvrc2012'
+    _root: &root_dir !join ['~/datasets/', *dataset_name]
+    key: 'torchvision.datasets.ImageFolder'
+    init:
+      kwargs:
+        root: !join [*root_dir, '/train']
+        transform: !import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'torchvision.transforms.RandomResizedCrop'
+                  init:
+                    kwargs:
+                      size: &input_size [224, 224]
+                - !import_call
+                  key: 'torchvision.transforms.RandomHorizontalFlip'
+                  init:
+                    kwargs:
+                      p: 0.5
+                - !import_call
+                  key: 'torchvision.transforms.ToTensor'
+                  init:
+                - !import_call
+                  key: 'torchvision.transforms.Normalize'
+                  init:
+                    kwargs: &normalize_kwargs
+                      mean: [0.485, 0.456, 0.406]
+                      std: [0.229, 0.224, 0.225]
+  &imagenet_val ilsvrc2012/val: !import_call
+    key: 'torchvision.datasets.ImageFolder'
+    init:
+      kwargs:
+        root: !join [*root_dir, '/val']
+        transform: !import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'torchvision.transforms.Resize'
+                  init:
+                    kwargs:
+                      size: 256
+                - !import_call
+                  key: 'torchvision.transforms.CenterCrop'
+                  init:
+                    kwargs:
+                      size: *input_size
+                - !import_call
+                  key: 'torchvision.transforms.ToTensor'
+                  init:
+                - !import_call
+                  key: 'torchvision.transforms.Normalize'
+                  init:
+                    kwargs: *normalize_kwargs
 
 models:
   teacher_model:

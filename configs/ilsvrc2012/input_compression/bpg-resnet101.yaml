@@ -1,20 +1,26 @@
 datasets:
-  ilsvrc2012:
-    name: &dataset_name 'ilsvrc2012'
-    type: 'ImageFolder'
-    root: &root_dir !join ['~/dataset/', *dataset_name]
-    splits:
-      val:
-        dataset_id: &imagenet_val !join [*dataset_name, '/val']
-        params:
-          root: !join [*root_dir, '/val']
-          transform_params:
-            - type: 'Resize'
-              params:
-                size: 256
-            - type: 'CenterCrop'
-              params:
-                size: [224, 224]
+  &imagenet_val ilsvrc2012/val: !import_call
+    _name: &dataset_name 'ilsvrc2012'
+    _root: &root_dir !join ['~/datasets/', *dataset_name]
+    key: 'torchvision.datasets.ImageFolder'
+    init:
+      kwargs:
+        root: !join [ *root_dir, '/val' ]
+        transform: !import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'torchvision.transforms.Resize'
+                  init:
+                    kwargs:
+                      size: 256
+                - !import_call
+                  key: 'torchvision.transforms.CenterCrop'
+                  init:
+                    kwargs:
+                      size: [224, 224]
 
 models:
   model:
