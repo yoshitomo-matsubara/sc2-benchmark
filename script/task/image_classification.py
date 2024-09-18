@@ -223,13 +223,13 @@ def main(args):
     if args.log_config:
         logger.info(config)
 
+    student_model_without_ddp =\
+        student_model.module if module_util.check_if_wrapped(student_model) else student_model
     if not args.test_only:
         train(teacher_model, student_model, dataset_dict, src_ckpt_file_path, dst_ckpt_file_path,
               device, device_ids, distributed, config, args)
-        student_model_without_ddp =\
-            student_model.module if module_util.check_if_wrapped(student_model) else student_model
-        load_ckpt(student_model_config['ckpt'], model=student_model_without_ddp, strict=True)
 
+    load_ckpt(dst_ckpt_file_path, model=student_model_without_ddp, strict=True)
     test_config = config['test']
     test_data_loader_config = test_config['test_data_loader']
     test_data_loader = build_data_loader(dataset_dict[test_data_loader_config['dataset_id']],
