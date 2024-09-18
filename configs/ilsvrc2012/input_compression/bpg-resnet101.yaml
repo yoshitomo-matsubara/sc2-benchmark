@@ -65,8 +65,6 @@ models:
       params:
         num_classes: 1000
         pretrained: True
-      experiment: &experiment !join [*dataset_name, '-', *model_name]
-      ckpt: !join ['./resource/ckpt/', *experiment, '.pt']
 
 test:
   test_data_loader:

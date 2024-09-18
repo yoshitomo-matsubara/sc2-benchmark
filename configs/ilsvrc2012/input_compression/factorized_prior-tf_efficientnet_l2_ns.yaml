@@ -69,15 +69,12 @@ models:
         pretrained: True
         quality: 8
         metric: 'mse'
-      ckpt: './resource/ckpt/input_compression/factorized_prior.pt'
     classification_model:
       name: &model_name 'tf_efficientnet_l2_ns'
       repo_or_dir: 'rwightman/pytorch-image-models'
       params:
         num_classes: 1000
         pretrained: True
-      experiment: &experiment !join [*dataset_name, '-', *model_name]
-      ckpt: !join ['./imagenet/vanilla/', *experiment, '.pt']
 
 test:
   test_data_loader:

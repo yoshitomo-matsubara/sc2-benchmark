@@ -65,14 +65,11 @@ models:
         pretrained: True
         quality: 8
         metric: 'mse'
-      ckpt: './resource/ckpt/input_compression/joint_autoregressive_hierarchical_prior.pt'
     classification_model:
       name: &model_name 'resnet50'
       params:
         num_classes: 1000
         pretrained: True
-      experiment: &experiment !join [*dataset_name, '-', *model_name]
-      ckpt: !join ['./resource/ckpt/', *experiment, '.pt']
 
 test:
   test_data_loader:
