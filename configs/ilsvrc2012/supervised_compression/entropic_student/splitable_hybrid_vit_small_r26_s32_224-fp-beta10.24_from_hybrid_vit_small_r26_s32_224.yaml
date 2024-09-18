@@ -74,8 +74,6 @@ models:
     params:
       num_classes: 1000
       pretrained: True
-    experiment: &teacher_experiment !join [*dataset_name, '-', *teacher_model_name]
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/teacher/', *teacher_experiment, '.pt']
   student_model:
     name: &student_model_name 'splittable_hybrid_vit'
     params:
@@ -98,7 +96,7 @@ models:
             params:
               unit: 'KB'
     experiment: &student_experiment !join [*dataset_name, '-', *student_model_name, '_small_r26_s32_224-fp-beta10.24_from_hybrid_vit_small_r26_s32_224']
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/', *student_experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/', *student_experiment, '.pt']
 
 train:
   log_freq: 1000

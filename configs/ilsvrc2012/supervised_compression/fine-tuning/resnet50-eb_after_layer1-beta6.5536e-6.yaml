@@ -81,9 +81,9 @@ models:
       params:
         num_classes: 1000
         pretrained: True
-      ckpt: !join ['./resource/ckpt/', *dataset_name, '-', *model_name, '.pt']
+      src_ckpt: !join ['./resource/ckpt/', *dataset_name, '-', *model_name, '.pt']
     experiment: &experiment !join [*dataset_name, '-', *model_name, '-eb_after_layer1-beta6.5536e-6']
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/fine-tuning/', *experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/ilsvrc2012/fine-tuning/', *experiment, '.pt']
 
 train:
   log_freq: 1000

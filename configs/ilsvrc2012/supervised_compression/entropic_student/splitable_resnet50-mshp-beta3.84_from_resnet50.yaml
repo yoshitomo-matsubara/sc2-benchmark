@@ -64,8 +64,6 @@ models:
     params:
       num_classes: 1000
       pretrained: True
-    experiment: &teacher_experiment !join [*dataset_name, '-', *teacher_model_name]
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/teacher/', *teacher_experiment, '.pt']
   student_model:
     name: &student_model_name 'splittable_resnet'
     params:
@@ -88,7 +86,7 @@ models:
             params:
               unit: 'KB'
     experiment: &student_experiment !join [*dataset_name, '-', *student_model_name, '50-mshp-beta3.84_from_', *teacher_model_name]
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/', *student_experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/', *student_experiment, '.pt']
 
 train:
   log_freq: 1000

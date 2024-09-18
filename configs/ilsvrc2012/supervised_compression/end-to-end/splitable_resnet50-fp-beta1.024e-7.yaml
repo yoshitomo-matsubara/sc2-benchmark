@@ -80,7 +80,7 @@ models:
             params:
               unit: 'KB'
     experiment: &experiment !join [*dataset_name, '-', *model_name, '50-fp-beta1.024e-7']
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/end-to-end/', *experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/end-to-end/', *experiment, '.pt']
 
 train:
   log_freq: 1000
