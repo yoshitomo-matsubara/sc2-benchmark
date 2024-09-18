@@ -116,7 +116,7 @@ def get_wrapped_detection_model(wrapper_model_config, device):
     model = load_detection_model(detection_model_config, device)
     wrapped_model = WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model, device=device,
                                                            **wrapper_model_config['params'])
-    ckpt_file_path = wrapper_model_config.get('ckpt', None)
-    if ckpt_file_path is not None:
-        load_ckpt(ckpt_file_path, model=wrapped_model, strict=False)
+    src_ckpt_file_path = wrapper_model_config.get('src_ckpt', None)
+    if src_ckpt_file_path is not None:
+        load_ckpt(src_ckpt_file_path, model=wrapped_model, strict=False)
     return wrapped_model

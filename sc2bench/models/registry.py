@@ -85,7 +85,7 @@ def get_compression_model(compression_model_config, device):
     Gets a compression model.
 
     :param compression_model_config: compression model configuration
-    :type compression_model_config: dict
+    :type compression_model_config: dict or None
     :param device: torch device
     :type device: str or torch.device
     :return: compression model
@@ -96,7 +96,7 @@ def get_compression_model(compression_model_config, device):
 
     compression_model_name = compression_model_config['name']
     compression_model_kwargs = compression_model_config['params']
-    compression_model_ckpt_file_path = compression_model_config.get('ckpt', None)
+    compression_model_ckpt_file_path = compression_model_config.get('src_ckpt', None)
     if compression_model_name in COMPRESSAI_DICT:
         compression_model_update = compression_model_config.get('update', True)
         compression_model = get_compressai_model(compression_model_name, compression_model_ckpt_file_path,
@@ -133,6 +133,7 @@ def load_classification_model(model_config, device, distributed, strict=True):
         repo_or_dir = model_config.get('repo_or_dir', None)
         model = get_model(model_name, repo_or_dir, **model_config['params'])
 
-    ckpt_file_path = model_config['ckpt']
-    load_ckpt(ckpt_file_path, model=model, strict=strict)
+    src_ckpt_file_path = model_config.get('src_ckpt', None)
+    if src_ckpt_file_path is not None:
+        load_ckpt(src_ckpt_file_path, model=model, strict=strict)
     return model.to(device)

@@ -79,6 +79,7 @@ def load_segmentation_model(model_config, device, strict=True):
     if model_config.get('update_before_ckpt', False) and check_if_updatable_segmentation_model(model):
         model.update()
 
-    ckpt_file_path = model_config['ckpt']
-    load_ckpt(ckpt_file_path, model=model, strict=strict)
+    src_ckpt_file_path = model_config.get('src_ckpt', None)
+    if src_ckpt_file_path is not None:
+        load_ckpt(src_ckpt_file_path, model=model, strict=strict)
     return model.to(device)
