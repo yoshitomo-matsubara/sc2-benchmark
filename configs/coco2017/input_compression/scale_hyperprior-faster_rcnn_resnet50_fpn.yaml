@@ -24,7 +24,7 @@ datasets:
 
 models:
   model:
-    name: 'InputCompressionDetectionModel'
+    key: 'InputCompressionDetectionModel'
     kwargs:
       analysis_config:
         analyzer_configs:
@@ -39,14 +39,14 @@ models:
       pre_transform:
       post_transform:
     compression_model:
-      name: 'bmshj2018_hyperprior'
+      key: 'bmshj2018_hyperprior'
       kwargs:
         pretrained: True
         quality: 8
         metric: 'mse'
       ckpt: './resource/ckpt/input_compression/scale_hyperprior.pt'
     detection_model:
-      name: 'fasterrcnn_resnet50_fpn'
+      key: 'fasterrcnn_resnet50_fpn'
       kwargs:
         pretrained: True
         progress: True

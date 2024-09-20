@@ -38,7 +38,7 @@ datasets:
 
 models:
   model:
-    name: 'NeuralInputCompressionClassifier'
+    key: 'NeuralInputCompressionClassifier'
     kwargs:
       post_transform:
         !import_call
@@ -64,13 +64,13 @@ models:
             kwargs:
               unit: 'KB'
     compression_model:
-      name: 'mbt2018_mean'
+      key: 'mbt2018_mean'
       kwargs:
         pretrained: True
         quality: 8
         metric: 'mse'
     classification_model:
-      name: &model_name 'tf_efficientnet_l2_ns_475'
+      key: &model_name 'tf_efficientnet_l2_ns_475'
       repo_or_dir: 'rwightman/pytorch-image-models'
       kwargs:
         num_classes: 1000

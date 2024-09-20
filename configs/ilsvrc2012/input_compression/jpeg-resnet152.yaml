@@ -24,7 +24,7 @@ datasets:
 
 models:
   model:
-    name: 'CodecInputCompressionClassifier'
+    key: 'CodecInputCompressionClassifier'
     kwargs:
       codec_encoder_decoder:
       	!import_call
@@ -60,7 +60,7 @@ models:
             kwargs:
               unit: 'KB'
     classification_model:
-      name: &model_name 'resnet152'
+      key: &model_name 'resnet152'
       kwargs:
         num_classes: 1000
         pretrained: True

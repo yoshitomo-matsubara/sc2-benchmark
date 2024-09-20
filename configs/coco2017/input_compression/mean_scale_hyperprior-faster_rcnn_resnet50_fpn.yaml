@@ -46,7 +46,7 @@ models:
         metric: 'mse'
       ckpt: './resource/ckpt/input_compression/mean_scale_hyperprior.pt'
     detection_model:
-      name: 'fasterrcnn_resnet50_fpn'
+      key: 'fasterrcnn_resnet50_fpn'
       kwargs:
         pretrained: True
         progress: True

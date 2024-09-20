@@ -45,7 +45,7 @@ models:
           num_classes: 1000
           pretrained: True
           bottleneck_config:
-            name: 'larger_resnet_bottleneck'
+            key: 'larger_resnet_bottleneck'
             kwargs:
               bottleneck_channel: &bch 12
               bottleneck_idx: 12

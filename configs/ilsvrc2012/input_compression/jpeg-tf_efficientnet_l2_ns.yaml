@@ -29,7 +29,7 @@ datasets:
 
 models:
   model:
-    name: 'CodecInputCompressionClassifier'
+    key: 'CodecInputCompressionClassifier'
     kwargs:
       codec_encoder_decoder:
       	!import_call

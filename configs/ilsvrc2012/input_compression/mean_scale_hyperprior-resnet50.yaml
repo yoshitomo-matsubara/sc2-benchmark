@@ -33,7 +33,7 @@ datasets:
 
 models:
   model:
-    name: 'NeuralInputCompressionClassifier'
+    key: 'NeuralInputCompressionClassifier'
     kwargs:
       post_transform:
         !import_call

@@ -33,7 +33,7 @@ datasets:
 
 models:
   model:
-    name: 'CodecFeatureCompressionClassifier'
+    key: 'CodecFeatureCompressionClassifier'
     kwargs:
       codec_encoder_decoder:
       	!import_call
@@ -61,7 +61,7 @@ models:
             kwargs:
               unit: 'KB'
     classification_model:
-      name: &model_name 'resnet50'
+      key: &model_name 'resnet50'
       kwargs:
         num_classes: 1000
         pretrained: True

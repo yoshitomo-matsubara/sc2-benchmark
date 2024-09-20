@@ -60,7 +60,7 @@ datasets:
 
 models:
   teacher_model:
-    name: &teacher_model_name 'resnet50'
+    key: &teacher_model_name 'resnet50'
     kwargs:
       num_classes: 1000
       pretrained: True

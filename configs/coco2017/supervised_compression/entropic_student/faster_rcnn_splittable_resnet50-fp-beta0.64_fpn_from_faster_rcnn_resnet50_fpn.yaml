@@ -40,12 +40,12 @@ models:
       progress: True
       num_classes: 91
       backbone_config:
-        name: 'splittable_resnet'
+        key: 'splittable_resnet'
         kwargs:
           num_classes: 1000
           pretrained: True
           bottleneck_config:
-            name: 'FPBasedResNetBottleneck'
+            key: 'FPBasedResNetBottleneck'
             kwargs:
               num_bottleneck_channels: 24
               num_target_channels: &bch 256

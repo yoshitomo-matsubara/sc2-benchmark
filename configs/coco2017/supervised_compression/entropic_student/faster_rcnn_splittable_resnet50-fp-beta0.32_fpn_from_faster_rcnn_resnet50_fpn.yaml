@@ -24,7 +24,7 @@ datasets:
 
 models:
   teacher_model:
-    name: &teacher_model_name 'fasterrcnn_resnet50_fpn'
+    key: &teacher_model_name 'fasterrcnn_resnet50_fpn'
     kwargs:
       pretrained: True
       progress: True
@@ -33,19 +33,19 @@ models:
     experiment: &teacher_experiment !join [*dataset_name, '-', *teacher_model_name]
     ckpt: !join ['./resource/ckpt/coco2017/teacher/', *teacher_experiment, '.pt']
   student_model:
-    name: 'faster_rcnn_model'
+    key: 'faster_rcnn_model'
     kwargs:
       pretrained: True
       pretrained_backbone_name: 'resnet50'
       progress: True
       num_classes: 91
       backbone_config:
-        name: 'splittable_resnet'
+        key: 'splittable_resnet'
         kwargs:
           num_classes: 1000
           pretrained: True
           bottleneck_config:
-            name: 'FPBasedResNetBottleneck'
+            key: 'FPBasedResNetBottleneck'
             kwargs:
               num_bottleneck_channels: 24
               num_target_channels: &bch 256
