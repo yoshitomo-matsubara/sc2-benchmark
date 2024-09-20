@@ -1,7 +1,7 @@
 datasets:
   coco2017:
     name: &dataset_name 'coco2017'
-    type: 'cocodetect'
+    key: 'cocodetect'
     root: &root_dir !join ['~/dataset/', *dataset_name]
     splits:
       val:
@@ -12,8 +12,8 @@ datasets:
 
 models:
   model:
-    name: 'InputCompressionDetectionModel'
-    params:
+    key: 'InputCompressionDetectionModel'
+    kwargs:
       codec_encoder_decoder:
       	!import_call
           key: 'torchvision.transforms.Compose'
@@ -30,16 +30,16 @@ models:
                       returns_file_size: True
       analysis_config:
         analyzer_configs:
-          - type: 'FileSizeAccumulator'
-            params:
+          - key: 'FileSizeAccumulator'
+            kwargs:
               unit: 'KB'
         analyzes_after_compress: True
       adaptive_pad_config:
       pre_transform:
       post_transform:
     detection_model:
-      name: 'fasterrcnn_resnet50_fpn'
-      params:
+      key: 'fasterrcnn_resnet50_fpn'
+      kwargs:
         pretrained: True
         progress: True
         pretrained_backbone: True

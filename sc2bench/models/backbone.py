@@ -460,7 +460,7 @@ def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, 
     :return: splittable ResNet model
     :rtype: SplittableResNet
     """
-    bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
+    bottleneck_layer = get_layer(bottleneck_config['key'], **bottleneck_config['kwargs'])
     if resnet_kwargs.pop('norm_layer', '') == 'FrozenBatchNorm2d':
         resnet_model = models.__dict__[resnet_name](norm_layer=misc_nn_ops.FrozenBatchNorm2d, **resnet_kwargs)
     else:
@@ -501,7 +501,7 @@ def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=No
     :return: splittable ResNet model
     :rtype: SplittableResNet
     """
-    bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
+    bottleneck_layer = get_layer(bottleneck_config['key'], **bottleneck_config['kwargs'])
     resnest_model = resnest.__dict__[resnest_name](**resnest_kwargs)
     if org_model_ckpt_file_path_or_url is not None:
         load_ckpt(org_model_ckpt_file_path_or_url, model=resnest_model, strict=org_ckpt_strict)
@@ -535,7 +535,7 @@ def splittable_regnet(bottleneck_config, regnet_name='regnety_064', inplanes=Non
     :return: splittable RegNet model
     :rtype: SplittableRegNet
     """
-    bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
+    bottleneck_layer = get_layer(bottleneck_config['key'], **bottleneck_config['kwargs'])
     regnet_model = regnet.__dict__[regnet_name](**regnet_kwargs)
     if org_model_ckpt_file_path_or_url is not None:
         load_ckpt(org_model_ckpt_file_path_or_url, model=regnet_model, strict=org_ckpt_strict)
@@ -570,7 +570,7 @@ def splittable_hybrid_vit(bottleneck_config, hybrid_vit_name='vit_small_r26_s32_
     :return: splittable Hybrid ViT model
     :rtype: SplittableHybridViT
     """
-    bottleneck_layer = get_layer(bottleneck_config['name'], **bottleneck_config['params'])
+    bottleneck_layer = get_layer(bottleneck_config['key'], **bottleneck_config['kwargs'])
     hybrid_vit_model = vision_transformer_hybrid.__dict__[hybrid_vit_name](**hybrid_vit_kwargs)
     if org_model_ckpt_file_path_or_url is not None:
         load_ckpt(org_model_ckpt_file_path_or_url, model=hybrid_vit_model, strict=org_ckpt_strict)

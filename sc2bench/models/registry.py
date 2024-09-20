@@ -94,8 +94,8 @@ def get_compression_model(compression_model_config, device):
     if compression_model_config is None:
         return None
 
-    compression_model_name = compression_model_config['name']
-    compression_model_kwargs = compression_model_config['params']
+    compression_model_name = compression_model_config['key']
+    compression_model_kwargs = compression_model_config['kwargs']
     compression_model_ckpt_file_path = compression_model_config.get('src_ckpt', None)
     if compression_model_name in COMPRESSAI_DICT:
         compression_model_update = compression_model_config.get('update', True)
@@ -122,16 +122,16 @@ def load_classification_model(model_config, device, distributed, strict=True):
     :rtype: nn.Module
     """
     model = get_image_classification_model(model_config, distributed)
-    model_name = model_config['name']
+    model_name = model_config['key']
     if model is None and model_name in timm.models.__dict__:
-        model = timm.models.__dict__[model_name](**model_config['params'])
+        model = timm.models.__dict__[model_name](**model_config['kwargs'])
 
     if model is None:
-        model = get_backbone(model_name, **model_config['params'])
+        model = get_backbone(model_name, **model_config['kwargs'])
 
     if model is None:
         repo_or_dir = model_config.get('repo_or_dir', None)
-        model = get_model(model_name, repo_or_dir, **model_config['params'])
+        model = get_model(model_name, repo_or_dir, **model_config['kwargs'])
 
     src_ckpt_file_path = model_config.get('src_ckpt', None)
     if src_ckpt_file_path is not None:

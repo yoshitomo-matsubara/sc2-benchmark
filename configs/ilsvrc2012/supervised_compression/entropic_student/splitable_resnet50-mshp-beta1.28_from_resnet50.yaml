@@ -61,17 +61,17 @@ datasets:
 models:
   teacher_model:
     name: &teacher_model_name 'resnet50'
-    params:
+    kwargs:
       num_classes: 1000
       pretrained: True
   student_model:
     name: &student_model_name 'splittable_resnet'
-    params:
+    kwargs:
       num_classes: 1000
       pretrained: True
       bottleneck_config:
         name: 'MSHPBasedResNetBottleneck'
-        params:
+        kwargs:
           num_latent_channels: 16
           num_bottleneck_channels: 24
           num_target_channels: 256
@@ -82,8 +82,8 @@ models:
       analysis_config:
         analyzes_after_compress: True
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
     experiment: &student_experiment !join [*dataset_name, '-', *student_model_name, '50-mshp-beta1.28_from_', *teacher_model_name]
     dst_ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/', *student_experiment, '.pt']
@@ -122,25 +122,25 @@ train:
       wrapper: 'DistributedDataParallel'
       requires_grad: True
     optimizer:
-      type: 'Adam'
-      params:
+      key: 'Adam'
+      kwargs:
         lr: 0.001
     scheduler:
-      type: 'MultiStepLR'
-      params:
+      key: 'MultiStepLR'
+      kwargs:
         milestones: [5, 8]
         gamma: 0.1
     criterion:
-      type: 'GeneralizedCustomLoss'
+      key: 'GeneralizedCustomLoss'
       org_term:
         factor: 0.0
       sub_terms:
         layer1:
           criterion:
-            type: 'MSELoss'
-            params:
+            key: 'MSELoss'
+            kwargs:
               reduction: 'sum'
-          params:
+          kwargs:
             input:
               is_from_teacher: False
               module_path: 'bottleneck_layer'
@@ -152,10 +152,10 @@ train:
           factor: 1.0
         layer2:
           criterion:
-            type: 'MSELoss'
-            params:
+            key: 'MSELoss'
+            kwargs:
               reduction: 'sum'
-          params:
+          kwargs:
             input:
               is_from_teacher: False
               module_path: 'layer2'
@@ -167,10 +167,10 @@ train:
           factor: 1.0
         layer3:
           criterion:
-            type: 'MSELoss'
-            params:
+            key: 'MSELoss'
+            kwargs:
               reduction: 'sum'
-          params:
+          kwargs:
             input:
               is_from_teacher: False
               module_path: 'layer3'
@@ -182,10 +182,10 @@ train:
           factor: 1.0
         layer4:
           criterion:
-            type: 'MSELoss'
-            params:
+            key: 'MSELoss'
+            kwargs:
               reduction: 'sum'
-          params:
+          kwargs:
             input:
               is_from_teacher: False
               module_path: 'layer4'
@@ -197,15 +197,15 @@ train:
           factor: 1.0
         bpp_entropy:
           criterion:
-            type: 'BppLoss'
-            params:
+            key: 'BppLoss'
+            kwargs:
               entropy_module_path: 'bottleneck_layer.entropy_bottleneck'
               reduction: 'sum'
           factor: 1.28
         bpp_gaussian:
           criterion:
-            type: 'BppLoss'
-            params:
+            key: 'BppLoss'
+            kwargs:
               entropy_module_path: 'bottleneck_layer.gaussian_conditional'
               reduction: 'sum'
           factor: 1.28
@@ -240,22 +240,22 @@ train:
       wrapper: 'DistributedDataParallel'
       requires_grad: True
     optimizer:
-      type: 'SGD'
-      params:
+      key: 'SGD'
+      kwargs:
         lr: 0.001
         momentum: 0.9
         weight_decay: 0.0005
     scheduler:
-      type: 'MultiStepLR'
-      params:
+      key: 'MultiStepLR'
+      kwargs:
         milestones: [5]
         gamma: 0.1
     criterion:
-      type: 'GeneralizedCustomLoss'
+      key: 'GeneralizedCustomLoss'
       org_term:
         criterion:
-          type: 'KDLoss'
-          params:
+          key: 'KDLoss'
+          kwargs:
             temperature: 1.0
             alpha: 0.5
             reduction: 'batchmean'

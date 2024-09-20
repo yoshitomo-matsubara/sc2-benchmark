@@ -61,10 +61,10 @@ datasets:
 models:
   model:
     name: 'EntropicClassifier'
-    params:
+    kwargs:
       encoder_config:
         sequential: ['conv1', 'bn1', 'relu', 'maxpool', 'layer1']
-      compression_model_params:
+      compression_model_kwargs:
         entropy_bottleneck_channels: 256
       decoder_config:
         sequential: ['layer2', 'layer3', 'layer4', 'avgpool']
@@ -73,12 +73,12 @@ models:
       analysis_config:
         analyzes_after_compress: True
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
     classification_model:
       name: &model_name 'resnet50'
-      params:
+      kwargs:
         num_classes: 1000
         pretrained: True
       src_ckpt: !join ['./resource/ckpt/', *dataset_name, '-', *model_name, '.pt']
@@ -107,28 +107,28 @@ train:
     wrapper: 'DistributedDataParallel'
     requires_grad: True
   optimizer:
-    type: 'Adam'
-    params:
+    key: 'Adam'
+    kwargs:
       lr: 0.001
     grad_accum_step: 2
   scheduler:
-    type: 'MultiStepLR'
-    params:
+    key: 'MultiStepLR'
+    kwargs:
       milestones: [5, 8]
       gamma: 0.1
   criterion:
-    type: 'GeneralizedCustomLoss'
+    key: 'GeneralizedCustomLoss'
     org_term:
       criterion:
-        type: 'CrossEntropyLoss'
-        params:
+        key: 'CrossEntropyLoss'
+        kwargs:
           reduction: 'mean'
       factor: 1.0
     sub_terms:
       bpp:
         criterion:
-          type: 'BppLoss'
-          params:
+          key: 'BppLoss'
+          kwargs:
             entropy_module_path: 'entropy_bottleneck'
             reduction: 'batchmean'
         factor: 5.0e-11

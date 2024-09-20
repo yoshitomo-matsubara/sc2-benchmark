@@ -238,7 +238,7 @@ def main(args):
     no_dp_eval = args.no_dp_eval
     if not args.student_only and teacher_model is not None:
         evaluate(teacher_model, test_data_loader, device, device_ids, distributed, no_dp_eval=no_dp_eval,
-                 log_freq=log_freq, title='[Teacher: {}]'.format(teacher_model_config['name']))
+                 log_freq=log_freq, title='[Teacher: {}]'.format(teacher_model_config['key']))
 
     if check_if_updatable(student_model):
         student_model.update()
@@ -246,7 +246,7 @@ def main(args):
     if check_if_analyzable(student_model):
         student_model.activate_analysis()
     evaluate(student_model, test_data_loader, device, device_ids, distributed, no_dp_eval=no_dp_eval,
-             log_freq=log_freq, title='[Student: {}]'.format(student_model_config['name']))
+             log_freq=log_freq, title='[Student: {}]'.format(student_model_config['key']))
 
 
 if __name__ == '__main__':

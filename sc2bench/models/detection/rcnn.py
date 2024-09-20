@@ -205,7 +205,7 @@ def faster_rcnn_model(backbone_config, pretrained=True, pretrained_backbone_name
     if analysis_config is None:
         analysis_config = dict()
 
-    backbone_config['params']['norm_layer'] = misc_nn_ops.FrozenBatchNorm2d
+    backbone_config['kwargs']['norm_layer'] = misc_nn_ops.FrozenBatchNorm2d
     backbone = load_classification_model(backbone_config, torch.device('cpu'), False, strict=False)
 
     rcnn_model = create_faster_rcnn_fpn(backbone, num_classes=num_classes, **backbone_fpn_kwargs, **kwargs)

@@ -1,31 +1,31 @@
 datasets:
   pascal_voc:
     name: &dataset_name 'pascal_voc2012'
-    type: 'VOCSegmentation'
+    key: 'VOCSegmentation'
     root: &root_dir '~/dataset'
     splits:
       val:
         dataset_id: &pascal_val !join [*dataset_name, '/val']
-        params:
+        kwargs:
           root: *root_dir
           image_set: 'val'
           year: '2012'
           download: False
           transforms_compose_cls: 'CustomCompose'
-          transforms_params: &val_transform
-            - type: 'CustomRandomResize'
-              params:
+          transforms_kwargs: &val_transform
+            - key: 'CustomRandomResize'
+              kwargs:
                 min_size: 513
                 max_size: 513
-            - type: 'CustomToTensor'
-              params:
+            - key: 'CustomToTensor'
+              kwargs:
                 converts_sample: True
                 converts_target: True
 
 models:
   model:
     name: 'NeuralInputCompressionSegmentationModel'
-    params:
+    kwargs:
       pre_transform:
         !import_call
         key: 'torchvision.transforms.Compose'
@@ -43,8 +43,8 @@ models:
       analysis_config:
         analyzes_after_compress: True
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
       post_transform:
         !import_call
@@ -61,14 +61,14 @@ models:
       uses_cpu4compression_model: True
     compression_model:
       name: 'mbt2018'
-      params:
+      kwargs:
         pretrained: True
         quality: 8
         metric: 'mse'
       ckpt: './resource/ckpt/input_compression/joint_autoregressive_hierarchical_prior.pt'
     segmentation_model:
       name: 'deeplabv3_resnet50'
-      params:
+      kwargs:
         pretrained: True
         pretrained_backbone: True
         num_classes: 21

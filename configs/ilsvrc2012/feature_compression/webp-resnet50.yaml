@@ -34,7 +34,7 @@ datasets:
 models:
   model:
     name: 'CodecFeatureCompressionClassifier'
-    params:
+    kwargs:
       codec_encoder_decoder:
       	!import_call
           key: 'torchvision.transforms.Compose'
@@ -57,12 +57,12 @@ models:
       post_transform:
       analysis_config:
         analyzer_configs:
-          - type: 'FileSizeAccumulator'
-            params:
+          - key: 'FileSizeAccumulator'
+            kwargs:
               unit: 'KB'
     classification_model:
       name: &model_name 'resnet50'
-      params:
+      kwargs:
         num_classes: 1000
         pretrained: True
 

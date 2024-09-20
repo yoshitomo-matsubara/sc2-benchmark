@@ -352,7 +352,7 @@ def get_wrapped_classification_model(wrapper_model_config, device, distributed):
     :return: wrapped image classification model
     :rtype: nn.Module
     """
-    wrapper_model_name = wrapper_model_config['name']
+    wrapper_model_name = wrapper_model_config['key']
     if wrapper_model_name not in WRAPPER_CLASS_DICT:
         raise ValueError('wrapper_model_name `{}` is not expected'.format(wrapper_model_name))
 
@@ -361,7 +361,7 @@ def get_wrapped_classification_model(wrapper_model_config, device, distributed):
     classification_model_config = wrapper_model_config['classification_model']
     model = load_classification_model(classification_model_config, device, distributed)
     wrapped_model = WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model, device=device,
-                                                           **wrapper_model_config['params'])
+                                                           **wrapper_model_config['kwargs'])
     src_ckpt_file_path = wrapper_model_config.get('src_ckpt', None)
     if src_ckpt_file_path is not None:
         load_ckpt(src_ckpt_file_path, model=wrapped_model, strict=False)

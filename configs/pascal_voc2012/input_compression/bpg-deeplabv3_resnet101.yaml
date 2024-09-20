@@ -1,31 +1,31 @@
 datasets:
   pascal_voc:
     name: &dataset_name 'pascal_voc2012'
-    type: 'VOCSegmentation'
+    key: 'VOCSegmentation'
     root: &root_dir '~/dataset'
     splits:
       val:
         dataset_id: &pascal_val !join [*dataset_name, '/val']
-        params:
+        kwargs:
           root: *root_dir
           image_set: 'val'
           year: '2012'
           download: False
           transforms_compose_cls: 'CustomCompose'
-          transforms_params: &val_transform
-            - type: 'CustomRandomResize'
-              params:
+          transforms_kwargs: &val_transform
+            - key: 'CustomRandomResize'
+              kwargs:
                 min_size: 513
                 max_size: 513
-            - type: 'CustomToTensor'
-              params:
+            - key: 'CustomToTensor'
+              kwargs:
                 converts_sample: False
                 converts_target: True
 
 models:
   model:
     name: 'CodecInputCompressionSegmentationModel'
-    params:
+    kwargs:
       codec_encoder_decoder:
       	!import_call
           key: 'torchvision.transforms.Compose'
@@ -42,8 +42,8 @@ models:
                       returns_file_size: True
       analysis_config:
         analyzer_configs:
-          - type: 'FileSizeAccumulator'
-            params:
+          - key: 'FileSizeAccumulator'
+            kwargs:
               unit: 'KB'
       post_transform:
         !import_call
@@ -62,7 +62,7 @@ models:
                     std: [0.229, 0.224, 0.225]
     segmentation_model:
       name: 'deeplabv3_resnet101'
-      params:
+      kwargs:
         pretrained: True
         pretrained_backbone: True
         num_classes: 21

@@ -232,7 +232,7 @@ def main(args):
     num_classes = args.num_classes
     if not args.student_only and teacher_model is not None:
         evaluate(teacher_model, test_data_loader, device, device_ids, distributed, num_classes=num_classes,
-                 no_dp_eval=no_dp_eval, log_freq=log_freq, title='[Teacher: {}]'.format(teacher_model_config['name']))
+                 no_dp_eval=no_dp_eval, log_freq=log_freq, title='[Teacher: {}]'.format(teacher_model_config['key']))
 
     if check_if_updatable_segmentation_model(student_model):
         student_model.update()
@@ -240,7 +240,7 @@ def main(args):
     if check_if_analyzable(student_model):
         student_model.activate_analysis()
     evaluate(student_model, test_data_loader, device, device_ids, distributed, num_classes=num_classes,
-             no_dp_eval=no_dp_eval, log_freq=log_freq, title='[Student: {}]'.format(student_model_config['name']))
+             no_dp_eval=no_dp_eval, log_freq=log_freq, title='[Student: {}]'.format(student_model_config['key']))
 
 
 if __name__ == '__main__':

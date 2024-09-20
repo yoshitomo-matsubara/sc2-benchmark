@@ -1,7 +1,7 @@
 datasets:
   coco2017:
     name: &dataset_name 'coco2017'
-    type: 'cocodetect'
+    key: 'cocodetect'
     root: &root_dir !join ['~/dataset/', *dataset_name]
     splits:
       train:
@@ -18,8 +18,8 @@ datasets:
 
 models:
   teacher_model:
-    name: &teacher_model_name 'fasterrcnn_resnet50_fpn'
-    params:
+    key: &teacher_model_name 'fasterrcnn_resnet50_fpn'
+    kwargs:
       pretrained: True
       progress: True
       num_classes: 91
@@ -27,20 +27,20 @@ models:
     experiment: &teacher_experiment !join [*dataset_name, '-', *teacher_model_name]
     ckpt: !join ['./resource/ckpt/coco2017/teacher/', *teacher_experiment, '.pt']
   student_model:
-    name: 'faster_rcnn_model'
-    params:
+    key: 'faster_rcnn_model'
+    kwargs:
       pretrained: True
       pretrained_backbone_name: 'resnet50'
       progress: True
       num_classes: 91
       backbone_config:
-        name: 'splittable_resnet'
-        params:
+        key: 'splittable_resnet'
+        kwargs:
           num_classes: 1000
           pretrained: True
           bottleneck_config:
-            name: 'larger_resnet_bottleneck'
-            params:
+            key: 'larger_resnet_bottleneck'
+            kwargs:
               bottleneck_channel: &bch 6
               bottleneck_idx: 12
               output_channel: 256
@@ -82,8 +82,8 @@ models:
         analysis_config:
           analyzes_after_compress: True
           analyzer_configs:
-            - type: 'FileSizeAnalyzer'
-              params:
+            - key: 'FileSizeAnalyzer'
+              kwargs:
                 unit: 'KB'
         analyzable_layer_key: 'bottleneck_layer'
       start_ckpt_file_path:
@@ -99,8 +99,8 @@ train:
     random_sample: True
     num_workers: 8
     batch_sampler:
-      type: 'GroupedBatchSampler'
-      params:
+      key: 'GroupedBatchSampler'
+      kwargs:
         aspect_ratio_group_factor: 3
         batch_size: 4
     collate_fn: 'coco_collate_fn'
@@ -115,8 +115,8 @@ train:
     forward_proc: 'forward_batch'
     sequential: []
     special:
-      type: 'HeadRCNN'
-      params:
+      key: 'HeadRCNN'
+      kwargs:
         head_rcnn:
           sequential: ['backbone.body']
     frozen_modules: []
@@ -130,8 +130,8 @@ train:
     adaptations:
     sequential: []
     special:
-      type: 'HeadRCNN'
-      params:
+      key: 'HeadRCNN'
+      kwargs:
         head_rcnn:
           sequential: ['backbone.body']
     frozen_modules: []
@@ -141,25 +141,25 @@ train:
     wrapper: 'DistributedDataParallel'
     requires_grad: True
   optimizer:
-    type: 'Adam'
-    params:
+    key: 'Adam'
+    kwargs:
       lr: 0.001
   scheduler:
-    type: 'MultiStepLR'
-    params:
+    key: 'MultiStepLR'
+    kwargs:
       milestones: [5, 15]
       gamma: 0.1
   criterion:
-    type: 'GeneralizedCustomLoss'
+    key: 'GeneralizedCustomLoss'
     org_term:
       factor: 0.0
     sub_terms:
       layer1:
         criterion:
-          type: 'MSELoss'
-          params:
+          key: 'MSELoss'
+          kwargs:
             reduction: 'sum'
-        params:
+        kwargs:
           input:
             is_from_teacher: False
             module_path: 'seq.backbone.body.bottleneck_layer'
@@ -171,10 +171,10 @@ train:
         factor: 1.0
       layer2:
         criterion:
-          type: 'MSELoss'
-          params:
+          key: 'MSELoss'
+          kwargs:
             reduction: 'sum'
-        params:
+        kwargs:
           input:
             is_from_teacher: False
             module_path: 'seq.backbone.body.layer2'
@@ -186,10 +186,10 @@ train:
         factor: 1.0
       layer3:
         criterion:
-          type: 'MSELoss'
-          params:
+          key: 'MSELoss'
+          kwargs:
             reduction: 'sum'
-        params:
+        kwargs:
           input:
             is_from_teacher: False
             module_path: 'seq.backbone.body.layer3'
@@ -201,10 +201,10 @@ train:
         factor: 1.0
       layer4:
         criterion:
-          type: 'MSELoss'
-          params:
+          key: 'MSELoss'
+          kwargs:
             reduction: 'sum'
-        params:
+        kwargs:
           input:
             is_from_teacher: False
             module_path: 'seq.backbone.body.layer4'

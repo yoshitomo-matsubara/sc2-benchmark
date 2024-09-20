@@ -68,13 +68,13 @@ def load_detection_model(model_config, device, strict=True):
     :rtype: nn.Module
     """
     model = get_object_detection_model(model_config)
-    model_name = model_config['name']
+    model_name = model_config['key']
     if model is None:
-        model = get_detection_model(model_name, **model_config['params'])
+        model = get_detection_model(model_name, **model_config['kwargs'])
 
     if model is None:
         repo_or_dir = model_config.get('repo_or_dir', None)
-        model = get_model(model_name, repo_or_dir, **model_config['params'])
+        model = get_model(model_name, repo_or_dir, **model_config['kwargs'])
 
     if model_config.get('update_before_ckpt', False) and check_if_updatable_detection_model(model):
         model.update()

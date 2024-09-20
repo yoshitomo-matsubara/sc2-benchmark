@@ -1,7 +1,7 @@
 datasets:
   coco2017:
     name: &dataset_name 'coco2017'
-    type: 'cocodetect'
+    key: 'cocodetect'
     root: &root_dir !join ['~/dataset/', *dataset_name]
     splits:
       val:
@@ -12,12 +12,12 @@ datasets:
 
 models:
   model:
-    name: 'InputCompressionDetectionModel'
-    params:
+    key: 'InputCompressionDetectionModel'
+    kwargs:
       analysis_config:
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
         analyzes_after_compress: True
       adaptive_pad_kwargs:
@@ -28,15 +28,15 @@ models:
       post_transform:
       uses_cpu4compression_model: True
     compression_model:
-      name: 'mbt2018'
-      params:
+      key: 'mbt2018'
+      kwargs:
         pretrained: True
         quality: 8
         metric: 'mse'
       ckpt: './resource/ckpt/input_compression/joint_autoregressive_hierarchical_prior.pt'
     detection_model:
-      name: 'fasterrcnn_resnet50_fpn'
-      params:
+      key: 'fasterrcnn_resnet50_fpn'
+      kwargs:
         pretrained: True
         progress: True
         pretrained_backbone: True

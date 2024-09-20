@@ -33,7 +33,7 @@ class AnalyzableModule(nn.Module):
             analyzer_configs = list()
 
         super().__init__()
-        self.analyzers = [get_analyzer(analyzer_config['type'], **analyzer_config['params'])
+        self.analyzers = [get_analyzer(analyzer_config['key'], **analyzer_config['kwargs'])
                           for analyzer_config in analyzer_configs]
         self.activated_analysis = False
 

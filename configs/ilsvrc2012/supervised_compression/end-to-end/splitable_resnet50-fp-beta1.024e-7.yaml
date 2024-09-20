@@ -61,12 +61,12 @@ datasets:
 models:
   model:
     name: &model_name 'splittable_resnet'
-    params:
+    kwargs:
       num_classes: 1000
       pretrained: False
       bottleneck_config:
         name: 'FPBasedResNetBottleneck'
-        params:
+        kwargs:
           num_bottleneck_channels: 24
           num_target_channels: 256
       resnet_name: 'resnet50'
@@ -76,8 +76,8 @@ models:
       analysis_config:
         analyzes_after_compress: True
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
     experiment: &experiment !join [*dataset_name, '-', *model_name, '50-fp-beta1.024e-7']
     dst_ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/end-to-end/', *experiment, '.pt']
@@ -104,28 +104,28 @@ train:
     wrapper: 'DistributedDataParallel'
     requires_grad: True
   optimizer:
-    type: 'Adam'
-    params:
+    key: 'Adam'
+    kwargs:
       lr: 0.001
       weight_decay: 0.0001
   scheduler:
-    type: 'CosineAnnealingLR'
-    params:
+    key: 'CosineAnnealingLR'
+    kwargs:
       T_max: 300000
     scheduling_step: 1
   criterion:
-    type: 'GeneralizedCustomLoss'
+    key: 'GeneralizedCustomLoss'
     org_term:
       criterion:
-        type: 'CrossEntropyLoss'
-        params:
+        key: 'CrossEntropyLoss'
+        kwargs:
           reduction: 'mean'
       factor: 1.0
     sub_terms:
       bpp:
         criterion:
-          type: 'BppLoss'
-          params:
+          key: 'BppLoss'
+          kwargs:
             entropy_module_path: 'bottleneck_layer.entropy_bottleneck'
             reduction: 'batchmean'
         factor: 1.024e-7

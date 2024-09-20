@@ -1,7 +1,7 @@
 datasets:
   coco2017:
     name: &dataset_name 'coco2017'
-    type: 'cocodetect'
+    key: 'cocodetect'
     root: &root_dir !join ['~/dataset/', *dataset_name]
     splits:
       train:
@@ -18,20 +18,20 @@ datasets:
 
 models:
   model:
-    name: 'faster_rcnn_model'
-    params:
+    key: 'faster_rcnn_model'
+    kwargs:
       pretrained: True
       pretrained_backbone_name: 'resnet50'
       progress: True
       num_classes: 91
       backbone_config:
-        name: 'splittable_resnet'
-        params:
+        key: 'splittable_resnet'
+        kwargs:
           num_classes: 1000
           pretrained: True
           bottleneck_config:
             name: 'FPBasedResNetBottleneck'
-            params:
+            kwargs:
               num_bottleneck_channels: 24
               num_target_channels: &bch 256
           resnet_name: 'resnet50'
@@ -50,8 +50,8 @@ models:
         analysis_config:
           analyzes_after_compress: True
           analyzer_configs:
-            - type: 'FileSizeAnalyzer'
-              params:
+            - key: 'FileSizeAnalyzer'
+              kwargs:
                 unit: 'KB'
         analyzable_layer_key: 'bottleneck_layer'
       start_ckpt_file_path:
@@ -68,8 +68,8 @@ train:
     random_sample: True
     num_workers: 8
     batch_sampler:
-      type: 'GroupedBatchSampler'
-      params:
+      key: 'GroupedBatchSampler'
+      kwargs:
         aspect_ratio_group_factor: 3
         batch_size: 6
     collate_fn: 'coco_collate_fn'
@@ -91,18 +91,18 @@ train:
     wrapper: 'DistributedDataParallel'
     requires_grad: True
   optimizer:
-    type: 'SGD'
-    params:
+    key: 'SGD'
+    kwargs:
       lr: 0.0001
       momentum: 0.9
       weight_decay: 0.0005
   scheduler:
-    type: 'MultiStepLR'
-    params:
+    key: 'MultiStepLR'
+    kwargs:
       milestones: [5]
       gamma: 0.1
   criterion:
-    type: 'GeneralizedCustomLoss'
+    key: 'GeneralizedCustomLoss'
     func2extract_org_loss: 'extract_org_loss_dict'
     org_term:
       factor: 1.0

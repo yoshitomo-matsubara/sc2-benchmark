@@ -71,17 +71,17 @@ datasets:
 models:
   teacher_model:
     name: &teacher_model_name 'regnety_064'
-    params:
+    kwargs:
       num_classes: 1000
       pretrained: True
   student_model:
     name: &student_model_name 'splittable_regnet'
-    params:
+    kwargs:
       num_classes: 1000
       pretrained: True
       bottleneck_config:
         name: 'FPBasedResNetBottleneck'
-        params:
+        kwargs:
           num_bottleneck_channels: &bch 64
           encoder_channel_sizes: [3, *bch, *bch, *bch]
           decoder_channel_sizes: [*bch, 288, 144, 144]
@@ -91,8 +91,8 @@ models:
       analysis_config:
         analyzes_after_compress: True
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
     experiment: &student_experiment !join [*dataset_name, '-', *student_model_name, 'y6.4gf-fp-beta0.16_from_regnety6.4gf']
     dst_ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/', *student_experiment, '.pt']
@@ -131,25 +131,25 @@ train:
       wrapper: 'DistributedDataParallel'
       requires_grad: True
     optimizer:
-      type: 'Adam'
-      params:
+      key: 'Adam'
+      kwargs:
         lr: 0.001
     scheduler:
-      type: 'MultiStepLR'
-      params:
+      key: 'MultiStepLR'
+      kwargs:
         milestones: [5, 8]
         gamma: 0.1
     criterion:
-      type: 'GeneralizedCustomLoss'
+      key: 'GeneralizedCustomLoss'
       org_term:
         factor: 0.0
       sub_terms:
         s1:
           criterion:
-            type: 'MSELoss'
-            params:
+            key: 'MSELoss'
+            kwargs:
               reduction: 'sum'
-          params:
+          kwargs:
             input:
               is_from_teacher: False
               module_path: 'bottleneck_layer'
@@ -161,10 +161,10 @@ train:
           factor: 1.0
         s2:
           criterion:
-            type: 'MSELoss'
-            params:
+            key: 'MSELoss'
+            kwargs:
               reduction: 'sum'
-          params:
+          kwargs:
             input:
               is_from_teacher: False
               module_path: 's2'
@@ -176,10 +176,10 @@ train:
           factor: 1.0
         s3:
           criterion:
-            type: 'MSELoss'
-            params:
+            key: 'MSELoss'
+            kwargs:
               reduction: 'sum'
-          params:
+          kwargs:
             input:
               is_from_teacher: False
               module_path: 's3'
@@ -191,10 +191,10 @@ train:
           factor: 1.0
         s4:
           criterion:
-            type: 'MSELoss'
-            params:
+            key: 'MSELoss'
+            kwargs:
               reduction: 'sum'
-          params:
+          kwargs:
             input:
               is_from_teacher: False
               module_path: 's4'
@@ -206,8 +206,8 @@ train:
           factor: 1.0
         bpp:
           criterion:
-            type: 'BppLoss'
-            params:
+            key: 'BppLoss'
+            kwargs:
               entropy_module_path: 'bottleneck_layer.entropy_bottleneck'
               reduction: 'sum'
           factor: 0.16
@@ -242,22 +242,22 @@ train:
       wrapper: 'DistributedDataParallel'
       requires_grad: True
     optimizer:
-      type: 'SGD'
-      params:
+      key: 'SGD'
+      kwargs:
         lr: 0.001
         momentum: 0.9
         weight_decay: 0.0005
     scheduler:
-      type: 'MultiStepLR'
-      params:
+      key: 'MultiStepLR'
+      kwargs:
         milestones: [5]
         gamma: 0.1
     criterion:
-      type: 'GeneralizedCustomLoss'
+      key: 'GeneralizedCustomLoss'
       org_term:
         criterion:
-          type: 'KDLoss'
-          params:
+          key: 'KDLoss'
+          kwargs:
             temperature: 1.0
             alpha: 0.5
             reduction: 'batchmean'

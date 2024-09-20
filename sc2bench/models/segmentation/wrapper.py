@@ -128,7 +128,7 @@ def get_wrapped_segmentation_model(wrapper_model_config, device):
     :return: wrapped semantic segmentation model
     :rtype: nn.Module
     """
-    wrapper_model_name = wrapper_model_config['name']
+    wrapper_model_name = wrapper_model_config['key']
     if wrapper_model_name not in WRAPPER_CLASS_DICT:
         raise ValueError('wrapper_model_name `{}` is not expected'.format(wrapper_model_name))
 
@@ -137,7 +137,7 @@ def get_wrapped_segmentation_model(wrapper_model_config, device):
     segmentation_model_config = wrapper_model_config['segmentation_model']
     model = load_segmentation_model(segmentation_model_config, device)
     wrapped_model = WRAPPER_CLASS_DICT[wrapper_model_name](model, compression_model=compression_model, device=device,
-                                                           **wrapper_model_config['params'])
+                                                           **wrapper_model_config['kwargs'])
     src_ckpt_file_path = wrapper_model_config.get('src_ckpt', None)
     if src_ckpt_file_path is not None:
         load_ckpt(src_ckpt_file_path, model=wrapped_model, strict=False)

@@ -39,7 +39,7 @@ datasets:
 models:
   model:
     name: 'NeuralInputCompressionClassifier'
-    params:
+    kwargs:
       post_transform:
         !import_call
         key: 'torchvision.transforms.Compose'
@@ -60,19 +60,19 @@ models:
       analysis_config:
         analyzes_after_compress: True
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
     compression_model:
       name: 'mbt2018_mean'
-      params:
+      kwargs:
         pretrained: True
         quality: 8
         metric: 'mse'
     classification_model:
       name: &model_name 'tf_efficientnet_l2_ns_475'
       repo_or_dir: 'rwightman/pytorch-image-models'
-      params:
+      kwargs:
         num_classes: 1000
         pretrained: True
 
