@@ -1,14 +1,26 @@
+dependencies:
+  - name: 'custom'
+
 datasets:
-  coco2017:
-    name: &dataset_name 'coco2017'
-    key: 'cocodetect'
-    root: &root_dir !join ['~/dataset/', *dataset_name]
-    splits:
-      val:
-        dataset_id: &coco_val !join [*dataset_name, '/val']
-        images: !join [*root_dir, '/val2017']
-        annotations: !join [*root_dir, '/annotations/instances_val2017.json']
+  &coco_train_dataset_id coco2017/train: !import_call
+    _name: &dataset_name 'coco2017'
+    _root: &root_dir !join ['~/datasets/', *dataset_name]
+    key: 'coco.dataset.coco_dataset'
+    init:
+      kwargs:
+        img_dir_path: !join [*root_dir, '/train2017']
+        ann_file_path: !join [*root_dir, '/annotations/instances_train2017.json']
+        annotated_only: True
+        random_horizontal_flip: 0.5
+        is_segment: False
+  &coco_val_dataset_id coco2017/val: !import_call
+    key: 'coco.dataset.coco_dataset'
+    init:
+      kwargs:
+        img_dir_path: !join [*root_dir, '/val2017']
+        ann_file_path: !join [*root_dir, '/annotations/instances_val2017.json']
         annotated_only: False
+        is_segment: False
 
 models:
   model:
@@ -46,7 +58,7 @@ models:
 
 test:
   test_data_loader:
-    dataset_id: *coco_val
+    dataset_id: *coco_val_dataset_id
     random_sample: False
     batch_size: 1
     num_workers: 4
