@@ -204,8 +204,8 @@ class EntropicClassifier(UpdatableBackbone):
     :type device: torch.device or str
     :param encoder_config: configuration to design an encoder using modules in classification_model
     :type encoder_config: dict
-    :param compression_model_params: kwargs for `EntropyBottleneckLayer` in `compressai`
-    :type compression_model_params: dict
+    :param compression_model_kwargs: kwargs for `EntropyBottleneckLayer` in `compressai`
+    :type compression_model_kwargs: dict
     :param decoder_config: configuration to design a decoder using modules in classification_model
     :type decoder_config: dict
     :param classifier_config: configuration to design a classifier using modules in classification_model
@@ -213,14 +213,14 @@ class EntropicClassifier(UpdatableBackbone):
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
     """
-    def __init__(self, classification_model, encoder_config, compression_model_params, decoder_config,
+    def __init__(self, classification_model, encoder_config, compression_model_kwargs, decoder_config,
                  classifier_config, analysis_config=None, **kwargs):
         if analysis_config is None:
             analysis_config = dict()
 
         super().__init__(analysis_config.get('analyzer_configs', list()))
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
-        self.entropy_bottleneck = EntropyBottleneckLayer(**compression_model_params)
+        self.entropy_bottleneck = EntropyBottleneckLayer(**compression_model_kwargs)
         self.encoder = nn.Identity() if encoder_config.get('ignored', False) \
             else redesign_model(classification_model, encoder_config, model_label='encoder')
         self.decoder = nn.Identity() if decoder_config.get('ignored', False) \
