@@ -92,15 +92,27 @@ train:
   num_epochs: *epoch_to_update
   train_data_loader:
     dataset_id: *imagenet_train
-    random_sample: True
-    batch_size: 256
-    num_workers: 16
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.RandomSampler'
+      kwargs:
+    kwargs:
+      batch_size: 256
+      num_workers: 16
+      pin_memory: True
+      drop_last: False
     cache_output:
   val_data_loader:
     dataset_id: *imagenet_val
-    random_sample: False
-    batch_size: 32
-    num_workers: 16
+    sampler: &val_sampler
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
+    kwargs:
+      batch_size: 32
+      num_workers: 16
+      pin_memory: True
+      drop_last: False
   model:
     forward_hook:
       input: []
