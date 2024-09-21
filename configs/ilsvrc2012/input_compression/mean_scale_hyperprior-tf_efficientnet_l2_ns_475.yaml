@@ -70,7 +70,7 @@ models:
         quality: 8
         metric: 'mse'
     classification_model:
-      key: &model_name 'tf_efficientnet_l2_ns_475'
+      key: 'tf_efficientnet_l2_ns_475'
       repo_or_dir: 'rwightman/pytorch-image-models'
       kwargs:
         num_classes: 1000
@@ -79,6 +79,11 @@ models:
 test:
   test_data_loader:
     dataset_id: *imagenet_val
-    random_sample: False
-    batch_size: 1
-    num_workers: 16
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
+    kwargs:
+      batch_size: 1
+      num_workers: 16
+      drop_last: False
