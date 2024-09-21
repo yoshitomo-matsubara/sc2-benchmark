@@ -31,21 +31,19 @@ models:
   model:
     key: 'CodecInputCompressionClassifier'
     kwargs:
-      codec_encoder_decoder:
-      	!import_call
-          key: 'torchvision.transforms.Compose'
-          init:
-            kwargs:
-              transforms:
-                - !import_call
-                  key: 'sc2bench.transforms.codec.PILImageModule'
-                  init:
-                    kwargs:
-                      format: 'JPEG'
-                      quality: 90
-                      returns_file_size: True
-      post_transform:
-        !import_call
+      codec_encoder_decoder: !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'sc2bench.transforms.codec.PILImageModule'
+                init:
+                  kwargs:
+                    format: 'JPEG'
+                    quality: 90
+                    returns_file_size: True
+      post_transform: !import_call
         key: 'torchvision.transforms.Compose'
         init:
           kwargs:
@@ -65,7 +63,7 @@ models:
             kwargs:
               unit: 'KB'
     classification_model:
-      name: &model_name 'tf_efficientnet_l2_ns_475'
+      name: 'tf_efficientnet_l2_ns_475'
       repo_or_dir: 'rwightman/pytorch-image-models'
       kwargs:
         num_classes: 1000

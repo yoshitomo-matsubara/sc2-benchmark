@@ -35,8 +35,7 @@ models:
   model:
     key: 'NeuralInputCompressionClassifier'
     kwargs:
-      post_transform:
-        !import_call
+      post_transform: !import_call
         key: 'torchvision.transforms.Compose'
         init:
           kwargs:

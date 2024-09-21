@@ -35,8 +35,7 @@ models:
   model:
     key: 'CodecFeatureCompressionClassifier'
     kwargs:
-      codec_encoder_decoder:
-      	!import_call
+      codec_encoder_decoder: !import_call
         key: 'torchvision.transforms.Compose'
         init:
           kwargs:

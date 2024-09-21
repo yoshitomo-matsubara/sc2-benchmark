@@ -35,8 +35,7 @@ models:
   model:
     key: 'NeuralInputCompressionClassifier'
     kwargs:
-      post_transform:
-        !import_call
+      post_transform: !import_call
         key: 'torchvision.transforms.Compose'
         init:
           kwargs:
@@ -65,7 +64,7 @@ models:
         quality: 8
         metric: 'mse'
     classification_model:
-      name: &model_name 'resnet50'
+      name: 'resnet50'
       kwargs:
         num_classes: 1000
         pretrained: True

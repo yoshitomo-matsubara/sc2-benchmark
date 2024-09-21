@@ -26,22 +26,20 @@ models:
   model:
     key: 'CodecInputCompressionClassifier'
     kwargs:
-      codec_encoder_decoder:
-      	!import_call
-          key: 'torchvision.transforms.Compose'
-          init:
-            kwargs:
-              transforms:
-                - !import_call
-                  key: 'sc2bench.transforms.codec.BPGModule'
-                  init:
-                    kwargs:
-                      encoder_path: '~/software/libbpg-0.9.8/bpgenc'
-                      decoder_path: '~/software/libbpg-0.9.8/bpgdec'
-                      quality: 50
-                      returns_file_size: True
-      post_transform:
-        !import_call
+      codec_encoder_decoder: !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'sc2bench.transforms.codec.BPGModule'
+                init:
+                  kwargs:
+                    encoder_path: '~/software/libbpg-0.9.8/bpgenc'
+                    decoder_path: '~/software/libbpg-0.9.8/bpgdec'
+                    quality: 50
+                    returns_file_size: True
+      post_transform: !import_call
         key: 'torchvision.transforms.Compose'
         init:
           kwargs:
@@ -61,7 +59,7 @@ models:
             kwargs:
               unit: 'KB'
     classification_model:
-      name: &model_name 'resnet152'
+      name: 'resnet152'
       kwargs:
         num_classes: 1000
         pretrained: True
