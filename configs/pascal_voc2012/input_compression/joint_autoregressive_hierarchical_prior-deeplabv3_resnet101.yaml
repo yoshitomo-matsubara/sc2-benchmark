@@ -70,7 +70,6 @@ models:
         pretrained: True
         quality: 8
         metric: 'mse'
-      ckpt: './resource/ckpt/input_compression/joint_autoregressive_hierarchical_prior.pt'
     segmentation_model:
       name: 'deeplabv3_resnet101'
       kwargs:

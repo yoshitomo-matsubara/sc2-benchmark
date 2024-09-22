@@ -35,7 +35,6 @@ models:
         pretrained: True
         quality: 8
         metric: 'mse'
-      ckpt: './resource/ckpt/input_compression/mean_scale_hyperprior.pt'
     detection_model:
       key: 'fasterrcnn_resnet50_fpn'
       kwargs:

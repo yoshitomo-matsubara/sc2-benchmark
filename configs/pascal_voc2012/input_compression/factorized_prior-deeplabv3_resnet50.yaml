@@ -69,7 +69,6 @@ models:
         pretrained: True
         quality: 8
         metric: 'mse'
-      ckpt: './resource/ckpt/input_compression/factorized_prior.pt'
     segmentation_model:
       name: 'deeplabv3_resnet50'
       kwargs:

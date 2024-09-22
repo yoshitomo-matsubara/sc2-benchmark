@@ -36,7 +36,6 @@ models:
         pretrained: True
         quality: 8
         metric: 'mse'
-      ckpt: './resource/ckpt/input_compression/joint_autoregressive_hierarchical_prior.pt'
     detection_model:
       key: 'fasterrcnn_resnet50_fpn'
       kwargs:
