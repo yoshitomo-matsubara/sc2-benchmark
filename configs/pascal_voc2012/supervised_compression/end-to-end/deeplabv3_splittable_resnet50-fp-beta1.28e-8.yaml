@@ -177,7 +177,7 @@ train:
         kwargs:
           reduction: 'mean'
           ignore_index: 255
-      factor:
+      weight:
         out: 1.0
         aux: 0.5
     sub_terms:

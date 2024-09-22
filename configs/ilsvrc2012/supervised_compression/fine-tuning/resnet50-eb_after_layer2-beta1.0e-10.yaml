@@ -129,7 +129,7 @@ train:
         key: 'CrossEntropyLoss'
         kwargs:
           reduction: 'mean'
-      factor: 1.0
+      weight: 1.0
     sub_terms:
       bpp:
         criterion:
@@ -137,7 +137,7 @@ train:
           kwargs:
             entropy_module_path: 'entropy_bottleneck'
             reduction: 'batchmean'
-        factor: 1.0e-10
+        weight: 1.0e-10
 
 test:
   test_data_loader:

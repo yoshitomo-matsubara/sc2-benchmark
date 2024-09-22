@@ -186,7 +186,7 @@ train:
   criterion:
     key: 'GeneralizedCustomLoss'
     org_term:
-      factor: 0.0
+      weight: 0.0
     sub_terms:
       layer2:
         criterion:
@@ -202,7 +202,7 @@ train:
             is_from_teacher: True
             module_path: 'backbone.layer2'
             io: 'output'
-        factor: 1.0
+        weight: 1.0
       layer3:
         criterion:
           key: 'MSELoss'
@@ -217,7 +217,7 @@ train:
             is_from_teacher: True
             module_path: 'backbone.layer3'
             io: 'output'
-        factor: 1.0
+        weight: 1.0
       layer4:
         criterion:
           key: 'MSELoss'
@@ -232,7 +232,7 @@ train:
             is_from_teacher: True
             module_path: 'backbone.layer4'
             io: 'output'
-        factor: 1.0
+        weight: 1.0
 
 test:
   test_data_loader:
