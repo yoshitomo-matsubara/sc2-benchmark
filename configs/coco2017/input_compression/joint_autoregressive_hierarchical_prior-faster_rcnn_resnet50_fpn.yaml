@@ -42,7 +42,6 @@ models:
         pretrained: True
         progress: True
         pretrained_backbone: True
-      ckpt: ''
 
 test:
   test_data_loader:

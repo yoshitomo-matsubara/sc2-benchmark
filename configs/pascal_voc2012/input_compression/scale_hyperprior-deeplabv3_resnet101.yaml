@@ -31,8 +31,7 @@ models:
   model:
     name: 'NeuralInputCompressionSegmentationModel'
     kwargs:
-      pre_transform:
-        !import_call
+      pre_transform: !import_call
         key: 'torchvision.transforms.Compose'
         init:
           kwargs:
@@ -51,8 +50,7 @@ models:
           - key: 'FileSizeAnalyzer'
             kwargs:
               unit: 'KB'
-      post_transform:
-        !import_call
+      post_transform: !import_call
         key: 'torchvision.transforms.Compose'
         init:
           kwargs:

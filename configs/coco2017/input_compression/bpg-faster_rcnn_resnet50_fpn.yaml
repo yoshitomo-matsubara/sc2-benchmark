@@ -17,20 +17,19 @@ models:
   model:
     key: 'InputCompressionDetectionModel'
     kwargs:
-      codec_encoder_decoder:
-      	!import_call
-          key: 'torchvision.transforms.Compose'
-          init:
-            kwargs:
-              transforms:
-                - !import_call
-                  key: 'sc2bench.transforms.codec.BPGModule'
-                  init:
-                    kwargs:
-                      encoder_path: '~/software/libbpg-0.9.8/bpgenc'
-                      decoder_path: '~/software/libbpg-0.9.8/bpgdec'
-                      quality: 50
-                      returns_file_size: True
+      codec_encoder_decoder: !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'sc2bench.transforms.codec.BPGModule'
+                init:
+                  kwargs:
+                    encoder_path: '~/software/libbpg-0.9.8/bpgenc'
+                    decoder_path: '~/software/libbpg-0.9.8/bpgdec'
+                    quality: 50
+                    returns_file_size: True
       analysis_config:
         analyzer_configs:
           - key: 'FileSizeAccumulator'
@@ -46,7 +45,6 @@ models:
         pretrained: True
         progress: True
         pretrained_backbone: True
-      ckpt: ''
 
 test:
   test_data_loader:

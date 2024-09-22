@@ -31,27 +31,25 @@ models:
   model:
     name: 'CodecInputCompressionSegmentationModel'
     kwargs:
-      codec_encoder_decoder:
-      	!import_call
-          key: 'torchvision.transforms.Compose'
-          init:
-            kwargs:
-              transforms:
-                - !import_call
-                  key: 'sc2bench.transforms.codec.BPGModule'
-                  init:
-                    kwargs:
-                      encoder_path: '~/software/libbpg-0.9.8/bpgenc'
-                      decoder_path: '~/software/libbpg-0.9.8/bpgdec'
-                      quality: 50
-                      returns_file_size: True
+      codec_encoder_decoder: !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'sc2bench.transforms.codec.BPGModule'
+                init:
+                  kwargs:
+                    encoder_path: '~/software/libbpg-0.9.8/bpgenc'
+                    decoder_path: '~/software/libbpg-0.9.8/bpgdec'
+                    quality: 50
+                    returns_file_size: True
       analysis_config:
         analyzer_configs:
           - key: 'FileSizeAccumulator'
             kwargs:
               unit: 'KB'
-      post_transform:
-        !import_call
+      post_transform: !import_call
         key: 'torchvision.transforms.Compose'
         init:
           kwargs:

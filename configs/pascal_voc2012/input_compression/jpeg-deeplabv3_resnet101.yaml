@@ -31,26 +31,24 @@ models:
   model:
     name: 'CodecInputCompressionSegmentationModel'
     kwargs:
-      codec_encoder_decoder:
-      	!import_call
-          key: 'torchvision.transforms.Compose'
-          init:
-            kwargs:
-              transforms:
-                - !import_call
-                  key: 'sc2bench.transforms.codec.PILImageModule'
-                  init:
-                    kwargs:
-                      format: 'JPEG'
-                      quality: 90
-                      returns_file_size: True
+      codec_encoder_decoder: !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'sc2bench.transforms.codec.PILImageModule'
+                init:
+                  kwargs:
+                    format: 'JPEG'
+                    quality: 90
+                    returns_file_size: True
       analysis_config:
         analyzer_configs:
           - key: 'FileSizeAccumulator'
             kwargs:
               unit: 'KB'
-      post_transform:
-        !import_call
+      post_transform: !import_call
         key: 'torchvision.transforms.Compose'
         init:
           kwargs:

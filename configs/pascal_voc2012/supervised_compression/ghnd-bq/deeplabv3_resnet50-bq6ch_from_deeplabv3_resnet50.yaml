@@ -109,8 +109,7 @@ models:
               bottleneck_channel: &bch 6
               bottleneck_idx: 12
               output_channel: 256
-              compressor_transform:
-                !import_call
+              compressor_transform: !import_call
                 key: 'torchvision.transforms.Compose'
                 init:
                   kwargs:
@@ -120,8 +119,7 @@ models:
                         init:
                           kwargs:
                             num_bits: 8
-              decompressor_transform:
-                !import_call
+              decompressor_transform: !import_call
                 key: 'torchvision.transforms.Compose'
                 init:
                   kwargs:
