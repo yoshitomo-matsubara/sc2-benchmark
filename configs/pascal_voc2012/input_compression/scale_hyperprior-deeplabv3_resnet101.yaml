@@ -1,6 +1,6 @@
 datasets:
   &pascal_val 'pascal_voc2012/val': !import_call
-    _name: &dataset_name 'pascal_voc2012'
+    _name: 'pascal_voc2012'
     _root: &root_dir '~/datasets'
     key: 'torchvision.datasets.VOCSegmentation'
     init:
