@@ -44,7 +44,7 @@ models:
           pre_transform:
           skips_avgpool: True
           skips_fc: True
-        ckpt: './resource/ckpt/ilsvrc2012/supervised_compression/end-to-end/ilsvrc2012-splittable_resnet50-fp-beta2.048e-7.pt'
+        src_ckpt: './resource/ckpt/ilsvrc2012/supervised_compression/end-to-end/ilsvrc2012-splittable_resnet50-fp-beta2.048e-7.pt'
       backbone_fpn_kwargs:
         return_layer_dict:
           bottleneck_layer: '1'
@@ -63,7 +63,7 @@ models:
       start_ckpt_file_path:
     update_before_ckpt: True
     experiment: &experiment !join [*dataset_name, '-faster_rcnn_splittable_resnet50-fp-beta2.048e-7_fpn']
-    ckpt: !join ['./resource/ckpt/coco2017/supervised_compression/end-to-end/', *experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/coco2017/supervised_compression/end-to-end/', *experiment, '.pt']
 
 train:
   log_freq: 1000

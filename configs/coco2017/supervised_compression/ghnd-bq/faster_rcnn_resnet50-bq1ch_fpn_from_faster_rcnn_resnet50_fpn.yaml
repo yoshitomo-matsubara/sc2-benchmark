@@ -24,14 +24,12 @@ datasets:
 
 models:
   teacher_model:
-    key: &teacher_model_name 'fasterrcnn_resnet50_fpn'
+    key: 'fasterrcnn_resnet50_fpn'
     kwargs:
       pretrained: True
       progress: True
       num_classes: 91
       pretrained_backbone: True
-    experiment: &teacher_experiment !join [*dataset_name, '-', *teacher_model_name]
-    ckpt: !join ['./resource/ckpt/coco2017/teacher/', *teacher_experiment, '.pt']
   student_model:
     key: 'faster_rcnn_model'
     kwargs:
@@ -74,7 +72,6 @@ models:
           pre_transform:
           skips_avgpool: True
           skips_fc: True
-        ckpt:
       backbone_fpn_kwargs:
         return_layer_dict:
           bottleneck_layer: '1'
@@ -92,7 +89,7 @@ models:
         analyzable_layer_key: 'bottleneck_layer'
       start_ckpt_file_path:
     experiment: &student_experiment !join [*dataset_name, '-faster_rcnn_resnet50-bq', *bch, 'ch_fpn_from_faster_rcnn_resnet50_fpn']
-    ckpt: !join ['./resource/ckpt/coco2017/supervised_compression/ghnd-bq/', *student_experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/coco2017/supervised_compression/ghnd-bq/', *student_experiment, '.pt']
 
 train:
   log_freq: 1000

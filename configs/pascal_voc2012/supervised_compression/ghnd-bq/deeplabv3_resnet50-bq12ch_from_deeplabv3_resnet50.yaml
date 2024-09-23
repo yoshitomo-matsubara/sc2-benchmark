@@ -77,7 +77,7 @@ models:
       pretrained_backbone: True
       num_classes: 21
       aux_loss: True
-    ckpt: 'https://github.com/yoshitomo-matsubara/torchdistill/releases/download/v0.2.8/pascal_voc2012-deeplabv3_resnet50.pt'
+    src_ckpt: 'https://github.com/yoshitomo-matsubara/torchdistill/releases/download/v0.2.8/pascal_voc2012-deeplabv3_resnet50.pt'
   student_model:
     name: 'deeplabv3_model'
     kwargs:
@@ -133,10 +133,9 @@ models:
           pre_transform:
           skips_avgpool: True
           skips_fc: True
-        ckpt:
       start_ckpt_file_path:
     experiment: &student_experiment !join [*dataset_name, '-deeplabv3_resnet50-bq', *bch, 'ch_from_', *teacher_model_name]
-    ckpt: !join ['./resource/ckpt/pascal_voc2012/supervised_compression/ghnd-bq/', *student_experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/pascal_voc2012/supervised_compression/ghnd-bq/', *student_experiment, '.pt']
 
 train:
   log_freq: 1000

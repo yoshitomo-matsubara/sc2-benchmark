@@ -24,14 +24,12 @@ datasets:
 
 models:
   teacher_model:
-    key: &teacher_model_name 'fasterrcnn_resnet50_fpn'
+    key: 'fasterrcnn_resnet50_fpn'
     kwargs:
       pretrained: True
       progress: True
       num_classes: 91
       pretrained_backbone: True
-    experiment: &teacher_experiment !join [*dataset_name, '-', *teacher_model_name]
-    ckpt: !join ['./resource/ckpt/coco2017/teacher/', *teacher_experiment, '.pt']
   student_model:
     key: 'faster_rcnn_model'
     kwargs:
@@ -53,7 +51,7 @@ models:
           pre_transform:
           skips_avgpool: True
           skips_fc: True
-        ckpt: './resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/ilsvrc2012-splittable_resnet50-fp-beta0.64_from_resnet50.pt'
+        src_ckpt: './resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/ilsvrc2012-splittable_resnet50-fp-beta0.64_from_resnet50.pt'
       backbone_fpn_kwargs:
         return_layer_dict:
           bottleneck_layer: '1'
@@ -71,7 +69,7 @@ models:
         analyzable_layer_key: 'bottleneck_layer'
       start_ckpt_file_path:
     experiment: &student_experiment !join [*dataset_name, '-faster_rcnn_splittable_resnet50-fp-beta0.64_fpn_from_faster_rcnn_resnet50_fpn']
-    ckpt: !join ['./resource/ckpt/coco2017/supervised_compression/entropic_student/', *student_experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/coco2017/supervised_compression/entropic_student/', *student_experiment, '.pt']
 
 train:
   log_freq: 1000
