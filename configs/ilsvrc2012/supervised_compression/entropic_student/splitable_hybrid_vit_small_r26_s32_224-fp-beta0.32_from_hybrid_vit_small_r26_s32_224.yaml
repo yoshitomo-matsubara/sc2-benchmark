@@ -16,8 +16,7 @@ datasets:
                   init:
                     kwargs:
                       size: &input_size [224, 224]
-                      interpolation:
-                        !getattr
+                      interpolation: !getattr
                         - !import_get
                           key: 'torchvision.transforms.functional.InterpolationMode'
                         - 'BICUBIC'
@@ -50,8 +49,7 @@ datasets:
                   init:
                     kwargs:
                       size: 248
-                      interpolation:
-                        !getattr
+                      interpolation: !getattr
                         - !import_get
                           key: 'torchvision.transforms.functional.InterpolationMode'
                         - 'BICUBIC'
