@@ -89,9 +89,10 @@ train:
       class_or_func: !import_get
         key: 'torch.utils.data.SequentialSampler'
       kwargs:
-    batch_size: 1
-    num_workers: 8
     collate_fn: 'coco_collate_fn'
+    kwargs:
+      batch_size: 1
+      num_workers: 8
   model:
     forward_proc: 'forward_batch_target'
     adaptations:
@@ -127,6 +128,7 @@ test:
       class_or_func: !import_get
         key: 'torch.utils.data.SequentialSampler'
       kwargs:
-    batch_size: 1
-    num_workers: 8
     collate_fn: 'coco_collate_fn'
+    kwargs:
+      batch_size: 1
+      num_workers: 8
