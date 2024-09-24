@@ -82,13 +82,14 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.RandomSampler'
         kwargs:
-      num_workers: 8
       batch_sampler:
         key: 'GroupedBatchSampler'
         kwargs:
           aspect_ratio_group_factor: 3
           batch_size: 6
       collate_fn: 'coco_collate_fn'
+      kwargs:
+        num_workers: 8
       cache_output:
     val_data_loader:
       dataset_id: *coco_val
@@ -96,9 +97,10 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.SequentialSampler'
         kwargs:
-      batch_size: 1
-      num_workers: 8
       collate_fn: 'coco_collate_fn'
+      kwargs:
+        batch_size: 1
+        num_workers: 8
     teacher:
       forward_proc: 'forward_batch'
       sequential: []
@@ -210,13 +212,14 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.RandomSampler'
         kwargs:
-      num_workers: 8
       batch_sampler:
         key: 'GroupedBatchSampler'
         kwargs:
           aspect_ratio_group_factor: 3
           batch_size: 6
       collate_fn: 'coco_collate_fn'
+      kwargs:
+        num_workers: 8
       cache_output:
     teacher:
       forward_proc: 'forward_batch_target'
