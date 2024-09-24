@@ -78,7 +78,10 @@ train:
     num_epochs: 5
     train_data_loader:
       dataset_id: *coco_train
-      random_sample: True
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.RandomSampler'
+        kwargs:
       num_workers: 8
       batch_sampler:
         key: 'GroupedBatchSampler'
@@ -89,7 +92,10 @@ train:
       cache_output:
     val_data_loader:
       dataset_id: *coco_val
-      random_sample: False
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.SequentialSampler'
+        kwargs:
       batch_size: 1
       num_workers: 8
       collate_fn: 'coco_collate_fn'
@@ -200,7 +206,10 @@ train:
     num_epochs: 5
     train_data_loader:
       dataset_id: *coco_train
-      random_sample: True
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.RandomSampler'
+        kwargs:
       num_workers: 8
       batch_sampler:
         key: 'GroupedBatchSampler'
@@ -251,7 +260,10 @@ train:
 test:
   test_data_loader:
     dataset_id: *coco_val
-    random_sample: False
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
     batch_size: 1
     num_workers: 8
     collate_fn: 'coco_collate_fn'

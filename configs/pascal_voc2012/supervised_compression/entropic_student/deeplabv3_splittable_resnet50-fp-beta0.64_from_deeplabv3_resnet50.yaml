@@ -124,14 +124,20 @@ train:
     num_epochs: 40
     train_data_loader:
       dataset_id: *pascal_train
-      random_sample: True
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.RandomSampler'
+        kwargs:
       batch_size: 16
       num_workers: 16
       collate_fn: 'pascal_seg_collate_fn'
       cache_output:
     val_data_loader:
       dataset_id: *pascal_val
-      random_sample: False
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.SequentialSampler'
+        kwargs:
       batch_size: 1
       num_workers: 16
       collate_fn: 'pascal_seg_eval_collate_fn'
@@ -215,7 +221,10 @@ train:
     num_epochs: &num_epochs 10
     train_data_loader:
       dataset_id: *pascal_train
-      random_sample: True
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.RandomSampler'
+        kwargs:
       batch_size: 16
       num_workers: 16
       collate_fn: 'pascal_seg_collate_fn'
@@ -278,7 +287,10 @@ train:
 test:
   test_data_loader:
     dataset_id: *pascal_val
-    random_sample: False
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
     batch_size: 1
     num_workers: 16
     collate_fn: 'pascal_seg_eval_collate_fn'

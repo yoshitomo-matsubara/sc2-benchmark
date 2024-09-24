@@ -114,7 +114,10 @@ train:
   num_epochs: *epoch_to_update
   train_data_loader:
     dataset_id: *imagenet_train
-    random_sample: True
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.RandomSampler'
+      kwargs:
     batch_size: 64
     num_workers: 16
     cache_output:
