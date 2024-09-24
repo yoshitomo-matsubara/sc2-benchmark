@@ -291,5 +291,6 @@ test:
       class_or_func: !import_get
         key: 'torch.utils.data.SequentialSampler'
       kwargs:
-    batch_size: 1
-    num_workers: 16
+    kwargs:
+      batch_size: 1
+      num_workers: 16
