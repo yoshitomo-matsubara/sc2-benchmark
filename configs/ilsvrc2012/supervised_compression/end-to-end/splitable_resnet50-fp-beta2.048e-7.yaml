@@ -60,12 +60,12 @@ datasets:
 
 models:
   model:
-    name: &model_name 'splittable_resnet'
+    key: &model_name 'splittable_resnet'
     kwargs:
       num_classes: 1000
       pretrained: False
       bottleneck_config:
-        name: 'FPBasedResNetBottleneck'
+        key: 'FPBasedResNetBottleneck'
         kwargs:
           num_bottleneck_channels: 24
           num_target_channels: 256

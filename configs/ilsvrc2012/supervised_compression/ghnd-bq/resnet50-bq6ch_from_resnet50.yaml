@@ -65,12 +65,12 @@ models:
       num_classes: 1000
       pretrained: True
   student_model:
-    name: 'splittable_resnet'
+    key: 'splittable_resnet'
     kwargs:
       num_classes: 1000
       pretrained: True
       bottleneck_config:
-        name: 'larger_resnet_bottleneck'
+        key: 'larger_resnet_bottleneck'
         kwargs:
           bottleneck_channel: &bch 6
           bottleneck_idx: 12

@@ -29,7 +29,7 @@ datasets:
 
 models:
   model:
-    name: 'CodecInputCompressionSegmentationModel'
+    key: 'CodecInputCompressionSegmentationModel'
     kwargs:
       codec_encoder_decoder: !import_call
         key: 'torchvision.transforms.Compose'
@@ -64,7 +64,7 @@ models:
                     mean: [0.485, 0.456, 0.406]
                     std: [0.229, 0.224, 0.225]
     segmentation_model:
-      name: 'deeplabv3_resnet50'
+      key: 'deeplabv3_resnet50'
       kwargs:
         pretrained: True
         pretrained_backbone: True

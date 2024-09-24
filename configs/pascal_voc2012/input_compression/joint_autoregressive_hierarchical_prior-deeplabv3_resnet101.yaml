@@ -29,7 +29,7 @@ datasets:
 
 models:
   model:
-    name: 'NeuralInputCompressionSegmentationModel'
+    key: 'NeuralInputCompressionSegmentationModel'
     kwargs:
       pre_transform: !import_call
         key: 'torchvision.transforms.Compose'
@@ -63,13 +63,13 @@ models:
                     std: [0.229, 0.224, 0.225]
       uses_cpu4compression_model: True
     compression_model:
-      name: 'mbt2018'
+      key: 'mbt2018'
       kwargs:
         pretrained: True
         quality: 8
         metric: 'mse'
     segmentation_model:
-      name: 'deeplabv3_resnet101'
+      key: 'deeplabv3_resnet101'
       kwargs:
         pretrained: True
         pretrained_backbone: True

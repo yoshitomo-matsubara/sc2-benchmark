@@ -71,7 +71,7 @@ datasets:
 
 models:
   teacher_model:
-    name: &teacher_model_name 'deeplabv3_resnet50'
+    key: &teacher_model_name 'deeplabv3_resnet50'
     kwargs:
       pretrained: True
       pretrained_backbone: True
@@ -79,7 +79,7 @@ models:
       aux_loss: True
     src_ckpt: 'https://github.com/yoshitomo-matsubara/torchdistill/releases/download/v0.2.8/pascal_voc2012-deeplabv3_resnet50.pt'
   student_model:
-    name: 'deeplabv3_model'
+    key: 'deeplabv3_model'
     kwargs:
       pretrained: True
       pretrained_backbone_name: 'resnet50'
@@ -98,13 +98,13 @@ models:
               unit: 'KB'
       analyzable_layer_key: 'bottleneck_layer'
       backbone_config:
-        name: 'splittable_resnet'
+        key: 'splittable_resnet'
         kwargs:
           num_classes: 1000
           pretrained: True
           replace_stride_with_dilation: [False, True, True]
           bottleneck_config:
-            name: 'FPBasedResNetBottleneck'
+            key: 'FPBasedResNetBottleneck'
             kwargs:
               num_bottleneck_channels: 24
               num_target_channels: 256

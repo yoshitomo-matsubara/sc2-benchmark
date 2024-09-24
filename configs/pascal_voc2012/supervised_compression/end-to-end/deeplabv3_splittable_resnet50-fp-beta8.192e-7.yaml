@@ -71,7 +71,7 @@ datasets:
 
 models:
   model:
-    name: 'deeplabv3_model'
+    key: 'deeplabv3_model'
     kwargs:
       pretrained: True
       pretrained_backbone_name: 'resnet50'
@@ -90,13 +90,13 @@ models:
               unit: 'KB'
       analyzable_layer_key: 'bottleneck_layer'
       backbone_config:
-        name: 'splittable_resnet'
+        key: 'splittable_resnet'
         kwargs:
           num_classes: 1000
           pretrained: True
           replace_stride_with_dilation: [False, True, True]
           bottleneck_config:
-            name: 'FPBasedResNetBottleneck'
+            key: 'FPBasedResNetBottleneck'
             kwargs:
               num_bottleneck_channels: 24
               num_target_channels: 256

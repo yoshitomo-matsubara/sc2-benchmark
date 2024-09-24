@@ -59,7 +59,7 @@ models:
             kwargs:
               unit: 'KB'
     classification_model:
-      name: 'resnet152'
+      key: 'resnet152'
       kwargs:
         num_classes: 1000
         pretrained: True

@@ -58,13 +58,13 @@ models:
             kwargs:
               unit: 'KB'
     compression_model:
-      name: 'bmshj2018_factorized'
+      key: 'bmshj2018_factorized'
       kwargs:
         pretrained: True
         quality: 8
         metric: 'mse'
     classification_model:
-      name: 'resnet50'
+      key: 'resnet50'
       kwargs:
         num_classes: 1000
         pretrained: True

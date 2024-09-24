@@ -70,18 +70,18 @@ datasets:
 
 models:
   teacher_model:
-    name: &teacher_model_name 'vit_small_r26_s32_224'
+    key: &teacher_model_name 'vit_small_r26_s32_224'
     kwargs:
       num_classes: 1000
       pretrained: True
   student_model:
-    name: &student_model_name 'splittable_hybrid_vit'
+    key: &student_model_name 'splittable_hybrid_vit'
     kwargs:
       num_classes: 1000
       pretrained: True
       num_pruned_stages: 1
       bottleneck_config:
-        name: 'FPBasedResNetBottleneck'
+        key: 'FPBasedResNetBottleneck'
         kwargs:
           num_bottleneck_channels: &bch 64
           encoder_channel_sizes: [3, *bch, *bch, *bch]
