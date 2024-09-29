@@ -122,7 +122,7 @@ train:
       kwargs:
     collate_fn: 'pascal_seg_collate_fn'
     kwargs:
-      batch_size: 8
+      batch_size: &train_batch_size 8
       num_workers: 16
     cache_output:
   val_data_loader:
@@ -172,7 +172,13 @@ train:
   scheduler:
     key: 'poly_lr_scheduler'
     kwargs:
-      num_iterations: None
+      num_iterations: !import_call
+        key: 'utils.dataset.get_num_iterations'
+        init:
+          kwargs:
+            dataset: *pascal_train
+            batch_size: *train_batch_size
+            world_size: 1
       num_epochs: *num_epochs
       power: 0.9
     scheduling_step: 1

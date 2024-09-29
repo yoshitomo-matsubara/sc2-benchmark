@@ -230,7 +230,7 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.RandomSampler'
         kwargs:
-      batch_size: 16
+      batch_size: &train_batch_size 16
       num_workers: 16
       collate_fn: 'pascal_seg_collate_fn'
       cache_output:
@@ -271,7 +271,13 @@ train:
     scheduler:
       key: 'poly_lr_scheduler'
       kwargs:
-        num_iterations: None
+        num_iterations: !import_call
+        key: 'utils.dataset.get_num_iterations'
+        init:
+          kwargs:
+            dataset: *pascal_train
+            batch_size: *train_batch_size
+            world_size: 1
         num_epochs: *num_epochs
         power: 0.9
       scheduling_step: 1
