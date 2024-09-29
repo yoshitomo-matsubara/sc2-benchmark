@@ -116,11 +116,11 @@ train:
       milestones: [5]
       gamma: 0.1
   criterion:
-    key: 'GeneralizedCustomLoss'
-    func2extract_org_loss: 'extract_org_loss_dict'
-    org_term:
-      weight: 1.0
-    sub_terms:
+    key: 'WeightedSumLoss'
+    func2extract_model_loss: 'extract_model_loss_dict'
+    kwargs:
+      model_term:
+        weight: 1.0
 
 test:
   test_data_loader:
