@@ -275,19 +275,29 @@ train:
         num_epochs: *num_epochs
         power: 0.9
       scheduling_step: 1
-    criterion:
-      key: 'GeneralizedCustomLoss'
-      func2extract_org_loss: 'extract_simple_org_loss_dict'
-      org_term:
-        criterion:
-          key: 'CrossEntropyLoss'
-          kwargs:
-            reduction: 'mean'
-            ignore_index: 255
-        weight:
-          out: 1.0
-          aux: 0.5
+  criterion:
+    key: 'WeightedSumLoss'
+    kwargs:
       sub_terms:
+        ce:
+          criterion:
+            key: 'CrossEntropyLoss'
+            kwargs:
+              reduction: 'mean'
+              ignore_index: 255
+          criterion_wrapper:
+            key: 'DictLossWrapper'
+            kwargs:
+              input:
+                is_from_teacher: False
+                module_path: '.'
+                io: 'output'
+              target:
+                uses_label: True
+              weights:
+                out: 1.0
+                aux: 0.5
+          weight: 1.0
 
 test:
   test_data_loader:
