@@ -146,84 +146,91 @@ train:
         milestones: [5, 8]
         gamma: 0.1
     criterion:
-      key: 'GeneralizedCustomLoss'
-      org_term:
-        weight: 0.0
-      sub_terms:
-        stages0:
-          criterion:
-            key: 'MSELoss'
-            kwargs:
-              reduction: 'sum'
-          kwargs:
-            input:
-              is_from_teacher: False
-              module_path: 'bottleneck_layer'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 'patch_embed.backbone.stages.0'
-              io: 'output'
-          weight: 1.0
-        stages1:
-          criterion:
-            key: 'MSELoss'
-            kwargs:
-              reduction: 'sum'
-          kwargs:
-            input:
-              is_from_teacher: False
-              module_path: 'patch_embed_pruned_stages.1'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 'patch_embed.backbone.stages.1'
-              io: 'output'
-          weight: 1.0
-        stages2:
-          criterion:
-            key: 'MSELoss'
-            kwargs:
-              reduction: 'sum'
-          kwargs:
-            input:
-              is_from_teacher: False
-              module_path: 'patch_embed_pruned_stages.2'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 'patch_embed.backbone.stages.2'
-              io: 'output'
-          weight: 1.0
-        stages3:
-          criterion:
-            key: 'MSELoss'
-            kwargs:
-              reduction: 'sum'
-          kwargs:
-            input:
-              is_from_teacher: False
-              module_path: 'patch_embed_pruned_stages.3'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 'patch_embed.backbone.stages.3'
-              io: 'output'
-          weight: 1.0
-        bpp_entropy:
-          criterion:
-            key: 'BppLoss'
-            kwargs:
-              entropy_module_path: 'bottleneck_layer.entropy_bottleneck'
-              reduction: 'sum'
-          weight: 5.12
-        bpp_gaussian:
-          criterion:
-            key: 'BppLoss'
-            kwargs:
-              entropy_module_path: 'bottleneck_layer.gaussian_conditional'
-              reduction: 'sum'
-          weight: 5.12
+      key: 'WeightedSumLoss'
+      kwargs:
+        sub_terms:
+          stages0:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 'bottleneck_layer'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 'patch_embed.backbone.stages.0'
+                  io: 'output'
+            weight: 1.0
+          stages1:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 'patch_embed_pruned_stages.1'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 'patch_embed.backbone.stages.1'
+                  io: 'output'
+            weight: 1.0
+          stages2:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 'patch_embed_pruned_stages.2'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 'patch_embed.backbone.stages.2'
+                  io: 'output'
+            weight: 1.0
+          stages3:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 'patch_embed_pruned_stages.3'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 'patch_embed.backbone.stages.3'
+                  io: 'output'
+            weight: 1.0
+          bpp_entropy:
+            criterion:
+              key: 'BppLoss'
+              kwargs:
+                entropy_module_path: 'bottleneck_layer.entropy_bottleneck'
+                reduction: 'sum'
+            weight: 5.12
+          bpp_gaussian:
+            criterion:
+              key: 'BppLoss'
+              kwargs:
+                entropy_module_path: 'bottleneck_layer.gaussian_conditional'
+                reduction: 'sum'
+            weight: 5.12
   stage2:
     num_epochs: 10
     train_data_loader:
@@ -272,21 +279,29 @@ train:
         milestones: [5]
         gamma: 0.1
     criterion:
-      key: 'GeneralizedCustomLoss'
-      org_term:
-        criterion:
-          key: 'KDLoss'
-          kwargs:
-            temperature: 1.0
-            alpha: 0.5
-            reduction: 'batchmean'
-        weight: 1.0
-      sub_terms:
+      key: 'WeightedSumLoss'
+      kwargs:
+        sub_terms:
+          kd:
+            criterion:
+              key: 'KDLoss'
+              kwargs:
+                student_module_path: '.'
+                student_module_io: 'output'
+                teacher_module_path: '.'
+                teacher_module_io: 'output'
+                temperature: 1.0
+                alpha: 0.5
+                reduction: 'batchmean'
+            weight: 1.0
 
 test:
   test_data_loader:
     dataset_id: *imagenet_val
-    sampler: *val_sampler
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
     kwargs:
       batch_size: 1
       num_workers: 16

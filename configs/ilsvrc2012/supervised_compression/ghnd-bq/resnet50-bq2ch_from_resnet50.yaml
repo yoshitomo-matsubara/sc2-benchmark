@@ -124,7 +124,7 @@ train:
     cache_output:
   val_data_loader:
     dataset_id: *imagenet_val
-    sampler: &val_sampler
+    sampler:
       class_or_func: !import_get
         key: 'torch.utils.data.SequentialSampler'
       kwargs:
@@ -158,75 +158,85 @@ train:
       milestones: [5, 10, 15]
       gamma: 0.1
   criterion:
-    key: 'GeneralizedCustomLoss'
-    org_term:
-      weight: 0.0
-    sub_terms:
-      layer1:
-        criterion:
-          key: 'MSELoss'
-          kwargs:
-            reduction: 'sum'
-        kwargs:
-          input:
-            is_from_teacher: False
-            module_path: 'bottleneck_layer'
-            io: 'output'
-          target:
-            is_from_teacher: True
-            module_path: 'layer1'
-            io: 'output'
-        weight: 1.0
-      layer2:
-        criterion:
-          key: 'MSELoss'
-          kwargs:
-            reduction: 'sum'
-        kwargs:
-          input:
-            is_from_teacher: False
-            module_path: 'layer2'
-            io: 'output'
-          target:
-            is_from_teacher: True
-            module_path: 'layer2'
-            io: 'output'
-        weight: 1.0
-      layer3:
-        criterion:
-          key: 'MSELoss'
-          kwargs:
-            reduction: 'sum'
-        kwargs:
-          input:
-            is_from_teacher: False
-            module_path: 'layer3'
-            io: 'output'
-          target:
-            is_from_teacher: True
-            module_path: 'layer3'
-            io: 'output'
-        weight: 1.0
-      layer4:
-        criterion:
-          key: 'MSELoss'
-          kwargs:
-            reduction: 'sum'
-        kwargs:
-          input:
-            is_from_teacher: False
-            module_path: 'layer4'
-            io: 'output'
-          target:
-            is_from_teacher: True
-            module_path: 'layer4'
-            io: 'output'
-        weight: 1.0
+    key: 'WeightedSumLoss'
+    kwargs:
+      sub_terms:
+        layer1:
+          criterion:
+            key: 'MSELoss'
+            kwargs:
+              reduction: 'sum'
+          criterion_wrapper:
+            key: 'SimpleLossWrapper'
+            kwargs:
+              input:
+                is_from_teacher: False
+                module_path: 'bottleneck_layer'
+                io: 'output'
+              target:
+                is_from_teacher: True
+                module_path: 'layer1'
+                io: 'output'
+          weight: 1.0
+        layer2:
+          criterion:
+            key: 'MSELoss'
+            kwargs:
+              reduction: 'sum'
+          criterion_wrapper:
+            key: 'SimpleLossWrapper'
+            kwargs:
+              input:
+                is_from_teacher: False
+                module_path: 'layer2'
+                io: 'output'
+              target:
+                is_from_teacher: True
+                module_path: 'layer2'
+                io: 'output'
+          weight: 1.0
+        layer3:
+          criterion:
+            key: 'MSELoss'
+            kwargs:
+              reduction: 'sum'
+          criterion_wrapper:
+            key: 'SimpleLossWrapper'
+            kwargs:
+              input:
+                is_from_teacher: False
+                module_path: 'layer3'
+                io: 'output'
+              target:
+                is_from_teacher: True
+                module_path: 'layer3'
+                io: 'output'
+          weight: 1.0
+        layer4:
+          criterion:
+            key: 'MSELoss'
+            kwargs:
+              reduction: 'sum'
+          criterion_wrapper:
+            key: 'SimpleLossWrapper'
+            kwargs:
+              input:
+                is_from_teacher: False
+                module_path: 'layer4'
+                io: 'output'
+              target:
+                is_from_teacher: True
+                module_path: 'layer4'
+                io: 'output'
+          weight: 1.0
 
 test:
   test_data_loader:
     dataset_id: *imagenet_val
-    sampler: *val_sampler
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
     kwargs:
       batch_size: 1
       num_workers: 16
