@@ -168,55 +168,60 @@ train:
         milestones: [30, 35]
         gamma: 0.1
     criterion:
-      key: 'GeneralizedCustomLoss'
-      org_term:
-        weight: 0.0
-      sub_terms:
-        layer2:
-          criterion:
-            key: 'MSELoss'
-            kwargs:
-              reduction: 'sum'
-          kwargs:
-            input:
-              is_from_teacher: False
-              module_path: 'backbone.layer2'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 'backbone.layer2'
-              io: 'output'
-          weight: 1.0
-        layer3:
-          criterion:
-            key: 'MSELoss'
-            kwargs:
-              reduction: 'sum'
-          kwargs:
-            input:
-              is_from_teacher: False
-              module_path: 'backbone.layer3'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 'backbone.layer3'
-              io: 'output'
-          weight: 1.0
-        layer4:
-          criterion:
-            key: 'MSELoss'
-            kwargs:
-              reduction: 'sum'
-          kwargs:
-            input:
-              is_from_teacher: False
-              module_path: 'backbone.layer4'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 'backbone.layer4'
-              io: 'output'
-          weight: 1.0
+      key: 'WeightedSumLoss'
+      kwargs:
+        sub_terms:
+          layer2:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 'backbone.layer2'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 'backbone.layer2'
+                  io: 'output'
+            weight: 1.0
+          layer3:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 'backbone.layer3'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 'backbone.layer3'
+                  io: 'output'
+            weight: 1.0
+          layer4:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 'backbone.layer4'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 'backbone.layer4'
+                  io: 'output'
+            weight: 1.0
   stage2:
     num_epochs: &num_epochs 10
     train_data_loader:
