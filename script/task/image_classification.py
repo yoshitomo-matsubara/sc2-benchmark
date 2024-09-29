@@ -33,7 +33,7 @@ def get_argparser():
     parser.add_argument('--config', required=True, help='yaml file path')
     parser.add_argument('--json', help='json string to overwrite config')
     parser.add_argument('--device', default='cuda', help='device')
-    parser.add_argument('--log', help='log file path')
+    parser.add_argument('--run_log', help='log file path')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help='start epoch')
     parser.add_argument('--seed', type=int, help='seed in random number generator')
     parser.add_argument('-test_only', action='store_true', help='only test the models')
@@ -70,13 +70,13 @@ def train_one_epoch(training_box, aux_module, bottleneck_updated, device, epoch,
             targets = targets.to(device)
 
         start_time = time.time()
-        loss = training_box(sample_batch, targets, supp_dict)
+        loss = training_box.forward_process(sample_batch, targets, supp_dict)
         aux_loss = None
         if uses_aux_loss:
             aux_loss = aux_module.aux_loss()
             aux_loss.backward()
 
-        training_box.update_params(loss)
+        training_box.post_forward_process(loss)
         batch_size = len(sample_batch)
         if uses_aux_loss:
             metric_logger.update(loss=loss.item(), aux_loss=aux_loss.item(),
@@ -194,7 +194,7 @@ def train(teacher_model, student_model, dataset_dict, src_ckpt_file_path, dst_ck
 
 
 def main(args):
-    log_file_path = args.log
+    log_file_path = args.run_log
     if is_main_process() and log_file_path is not None:
         setup_log_file(os.path.expanduser(log_file_path))
 
