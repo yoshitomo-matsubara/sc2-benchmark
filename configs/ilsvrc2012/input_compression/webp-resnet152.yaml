@@ -58,10 +58,13 @@ models:
             kwargs:
               unit: 'KB'
     classification_model:
+
       key: 'resnet152'
+      _weights: &model_weights_enum !import_get
+        key: 'torchvision.models.resnet.ResNet152_Weights'
       kwargs:
         num_classes: 1000
-        pretrained: True
+        weights: !getattr [*model_weights_enum, 'IMAGENET1K_V1']
 
 test:
   test_data_loader:

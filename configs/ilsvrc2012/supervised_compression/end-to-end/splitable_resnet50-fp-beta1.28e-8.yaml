@@ -63,7 +63,6 @@ models:
     key: &model_name 'splittable_resnet'
     kwargs:
       num_classes: 1000
-      pretrained: False
       bottleneck_config:
         key: 'FPBasedResNetBottleneck'
         kwargs:

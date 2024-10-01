@@ -43,7 +43,6 @@ models:
       kwargs:
         pretrained: True
         progress: True
-        pretrained_backbone: True
 
 test:
   test_data_loader:

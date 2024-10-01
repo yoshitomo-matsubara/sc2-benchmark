@@ -78,10 +78,11 @@ models:
               unit: 'KB'
     classification_model:
       key: &model_name 'resnet50'
+      _weights: &model_weights_enum !import_get
+        key: 'torchvision.models.resnet.ResNet50_Weights'
       kwargs:
         num_classes: 1000
-        pretrained: True
-      src_ckpt: !join ['./resource/ckpt/', *dataset_name, '-', *model_name, '.pt']
+        weights: !getattr [*model_weights_enum, 'IMAGENET1K_V1']
     experiment: &experiment !join [*dataset_name, '-', *model_name, '-eb_after_layer4-beta1.0e-6']
     dst_ckpt: !join ['./resource/ckpt/ilsvrc2012/fine-tuning/', *experiment, '.pt']
 

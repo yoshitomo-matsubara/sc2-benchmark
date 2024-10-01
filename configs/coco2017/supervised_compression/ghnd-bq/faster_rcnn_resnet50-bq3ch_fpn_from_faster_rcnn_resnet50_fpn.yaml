@@ -29,7 +29,6 @@ models:
       pretrained: True
       progress: True
       num_classes: 91
-      pretrained_backbone: True
   student_model:
     key: 'faster_rcnn_model'
     kwargs:

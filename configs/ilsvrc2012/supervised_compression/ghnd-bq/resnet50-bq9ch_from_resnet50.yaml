@@ -61,14 +61,18 @@ datasets:
 models:
   teacher_model:
     key: &teacher_model_name 'resnet50'
+    _weights: &teacher_model_weights_enum !import_get
+      key: 'torchvision.models.resnet.ResNet50_Weights'
     kwargs:
       num_classes: 1000
-      pretrained: True
+      weights: !getattr [*teacher_model_weights_enum, 'IMAGENET1K_V1']
   student_model:
     key: 'splittable_resnet'
+    _weights: &student_model_weights_enum !import_get
+      key: 'torchvision.models.resnet.ResNet50_Weights'
     kwargs:
       num_classes: 1000
-      pretrained: True
+      weights: !getattr [*student_model_weights_enum, 'IMAGENET1K_V1']
       bottleneck_config:
         key: 'larger_resnet_bottleneck'
         kwargs:

@@ -66,7 +66,6 @@ models:
       key: 'deeplabv3_resnet101'
       kwargs:
         pretrained: True
-        pretrained_backbone: True
         num_classes: 21
         aux_loss: True
       src_ckpt: 'https://github.com/yoshitomo-matsubara/torchdistill/releases/download/v0.2.8/pascal_voc2012-deeplabv3_resnet101.pt'
