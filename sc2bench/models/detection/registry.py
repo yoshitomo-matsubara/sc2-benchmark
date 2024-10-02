@@ -1,7 +1,6 @@
 from torchdistill.common.main_util import load_ckpt
 from torchdistill.models.official import get_object_detection_model
-from torchdistill.models.registry import get_model
-from torchdistill.models.registry import register_model_class, register_model_func
+from torchdistill.models.registry import get_model, register_model
 
 from sc2bench.models.detection.base import check_if_updatable_detection_model
 
@@ -19,7 +18,7 @@ def register_detection_model_class(cls):
     :rtype: class
     """
     DETECTION_MODEL_CLASS_DICT[cls.__name__] = cls
-    register_model_class(cls)
+    register_model(cls)
     return cls
 
 
@@ -33,7 +32,7 @@ def register_detection_model_func(func):
     :rtype: typing.Callable
     """
     DETECTION_MODEL_FUNC_DICT[func.__name__] = func
-    register_model_func(func)
+    register_model(func)
     return func
 
 
