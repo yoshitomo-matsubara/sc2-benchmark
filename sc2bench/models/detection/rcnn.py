@@ -21,6 +21,7 @@ MODEL_URL_DICT = {
 
 }
 
+
 class BaseRCNN(GeneralizedRCNN, UpdatableDetectionModel):
     """
     A base, updatable R-CNN model.
