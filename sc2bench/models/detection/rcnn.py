@@ -13,7 +13,6 @@ from ..backbone import check_if_updatable
 from ..registry import load_classification_model
 from ...analysis import check_if_analyzable
 
-
 MODEL_URL_DICT = {
     'fasterrcnn_resnet50_fpn_coco': 'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth',
     'fasterrcnn_resnet50_fpn_v2_coco': 'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_v2_coco-dd69338a.pth',
