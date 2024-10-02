@@ -1,3 +1,8 @@
+dependencies:
+  - name: 'sc2bench.models'
+  - name: 'sc2bench.transforms'
+  - name: 'sc2bench.loss'
+
 datasets:
   &imagenet_train ilsvrc2012/train: !import_call
     _name: &dataset_name 'ilsvrc2012'
