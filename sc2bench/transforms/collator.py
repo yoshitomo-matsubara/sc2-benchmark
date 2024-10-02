@@ -1,5 +1,5 @@
 import torch
-from torchdistill.datasets.collator import register_collate_func
+from torchdistill.datasets.registry import register_collate_func
 
 
 def cat_list(images, fill_value=0):

@@ -6,8 +6,7 @@ from PIL.Image import Image
 from torch import nn
 from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_collate_err_msg_format
 from torchdistill.common import tensor_util
-from torchdistill.datasets.collator import register_collate_func
-from torchdistill.datasets.transform import register_transform_class
+from torchdistill.datasets.registry import register_collate_func, register_transform
 from torchvision.transforms import functional as F
 from torchvision.transforms.functional import pad
 
@@ -24,7 +23,7 @@ def register_misc_transform_module(cls):
     :rtype: class
     """
     MISC_TRANSFORM_MODULE_DICT[cls.__name__] = cls
-    register_transform_class(cls)
+    register_transform(cls)
     return cls
 
 
