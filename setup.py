@@ -26,7 +26,7 @@ setup(
         'pycocotools>=2.0.2',
         'torchdistill>=1.0.0',
         'compressai>=1.2.3',
-        'timm>=0.4.12'
+        'timm>=1.0.3'
     ],
     extras_require={
         'test': ['pytest'],
