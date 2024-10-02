@@ -1,13 +1,19 @@
 import torch
 from torch.hub import load_state_dict_from_url
 from torchdistill.common.main_util import load_ckpt
-from torchvision.models.segmentation.deeplabv3 import model_urls, DeepLabHead
+from torchvision.models.segmentation.deeplabv3 import DeepLabHead
 from torchvision.models.segmentation.fcn import FCNHead
 
 from .base import BaseSegmentationModel
 from .registry import register_segmentation_model_func
 from ..backbone import FeatureExtractionBackbone
 from ..registry import load_classification_model
+
+MODEL_URL_DICT = {
+    'deeplabv3_resnet50_coco': 'https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth',
+    'deeplabv3_resnet101_coco': 'https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth',
+    'deeplabv3_mobilenet_v3_large': 'https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth'
+}
 
 
 def create_deeplabv3(backbone, num_input_channels=2048, uses_aux=False, num_aux_channels=1024, num_classes=21):
@@ -89,7 +95,7 @@ def deeplabv3_model(backbone_config, pretrained=True, pretrained_backbone_name=N
                              uses_aux=uses_aux, num_aux_channels=num_aux_channels, num_classes=num_classes)
     if pretrained and pretrained_backbone_name in ('resnet50', 'resnet101'):
         state_dict = \
-            load_state_dict_from_url(model_urls['deeplabv3_{}_coco'.format(pretrained_backbone_name)],
+            load_state_dict_from_url(MODEL_URL_DICT['deeplabv3_{}_coco'.format(pretrained_backbone_name)],
                                      progress=progress)
         model.load_state_dict(state_dict, strict=False)
 
