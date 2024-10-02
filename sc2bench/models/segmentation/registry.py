@@ -1,7 +1,6 @@
 from torchdistill.common.main_util import load_ckpt
 from torchdistill.models.official import get_semantic_segmentation_model
-from torchdistill.models.registry import get_model
-from torchdistill.models.registry import register_model_class, register_model_func
+from torchdistill.models.registry import get_model, register_model
 
 from sc2bench.models.segmentation.base import check_if_updatable_segmentation_model
 
@@ -19,7 +18,7 @@ def register_segmentation_model_class(cls):
     :rtype: class
     """
     SEGMENTATION_MODEL_CLASS_DICT[cls.__name__] = cls
-    register_model_class(cls)
+    register_model(cls)
     return cls
 
 
@@ -33,7 +32,7 @@ def register_segmentation_model_func(func):
     :rtype: typing.Callable
     """
     SEGMENTATION_MODEL_FUNC_DICT[func.__name__] = func
-    register_model_func(func)
+    register_model(func)
     return func
 
 
