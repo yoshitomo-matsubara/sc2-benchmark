@@ -12,7 +12,7 @@ do
   json_str+=${quality}
   json_str+='}}}}}'
   python script/task/semantic_segmentation.py \
-  --config configs/pascal_voc2012/input_compression/${BASE_NAME}.yaml \
-  --log log/input_compression/${BASE_NAME}-quality${quality}.txt \
-  --json "${json_str}" -student_only -test_only -no_dp_eval
+    --config configs/pascal_voc2012/input_compression/${BASE_NAME}.yaml \
+    --run_log log/input_compression/${BASE_NAME}-quality${quality}.txt \
+    --json "${json_str}" -student_only -test_only -no_dp_eval
 done
