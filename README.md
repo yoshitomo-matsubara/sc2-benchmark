@@ -50,7 +50,7 @@ pip install sc2bench
 ### Virtual Environments
 For pipenv users,
 ```shell
-pipenv install --python 3.8
+pipenv install --python 3.9
 # or create your own pipenv environment
 pipenv install sc2bench 
 ```

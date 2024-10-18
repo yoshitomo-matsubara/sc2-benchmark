@@ -15,7 +15,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/yoshitomo-matsubara/sc2-benchmark',
     packages=find_packages(exclude=('configs', 'resources', 'script', 'tests')),
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     install_requires=[
         'torch>=2.0.0',
         'torchvision>=0.15.1',
