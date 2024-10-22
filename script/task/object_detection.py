@@ -255,7 +255,7 @@ def main(args):
     student_model_config =\
         models_config['student_model'] if 'student_model' in models_config else models_config['model']
     src_ckpt_file_path = student_model_config.get('src_ckpt', None)
-    dst_ckpt_file_path = student_model_config['dst_ckpt']
+    dst_ckpt_file_path = student_model_config.get('dst_ckpt', None)
     student_model = load_model(student_model_config, device)
     if args.log_config:
         logger.info(config)
