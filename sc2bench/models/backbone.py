@@ -3,6 +3,7 @@ from collections import OrderedDict
 import torch
 from compressai.models import CompressionModel
 from timm.models import resnest, regnet, vision_transformer_hybrid
+from torch import nn
 from torchdistill.common.main_util import load_ckpt
 from torchdistill.models.registry import register_model
 from torchvision import models
@@ -173,7 +174,7 @@ class FeatureExtractionBackbone(UpdatableBackbone):
 
 class SplittableResNet(UpdatableBackbone):
     """
-    ResNet/ResNeSt-based splittable image classification model containing neural encoder, entropy bottleneck,
+    ResNet/ResNeSt-based splittable image classification model optionally containing neural encoder, entropy bottleneck,
     and decoder.
 
     - Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun: `"Deep Residual Learning for Image Recognition" <https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf>`_ @ CVPR 2016 (2016)
@@ -262,9 +263,105 @@ class SplittableResNet(UpdatableBackbone):
         return self.bottleneck_layer if isinstance(self.bottleneck_layer, CompressionModel) else None
 
 
+class SplittableDenseNet(UpdatableBackbone):
+    """
+    DenseNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck,
+    and decoder.
+
+    - Gao Huang, Zhuang Liu, Laurens van der Maaten, Kilian Q. Weinberger: `"Densely Connected Convolutional Networks" <https://openaccess.thecvf.com/content_cvpr_2017/papers/Huang_Densely_Connected_Convolutional_CVPR_2017_paper.pdf>`_ @ CVPR 2017 (2017)
+    - Yoshitomo Matsubara, Davide Callegaro, Sabur Baidya, Marco Levorato, Sameer Singh: `"Head Network Distillation: Splitting Distilled Deep Neural Networks for Resource-constrained Edge Computing Systems" <https://ieeexplore.ieee.org/document/9265295>`_ @ IEEE Access (2020)
+
+
+    :param bottleneck_layer: high-level bottleneck layer that consists of encoder and decoder
+    :type bottleneck_layer: nn.Module
+    :param short_feature_names: child module names of "features" to use
+    :type short_feature_names: list
+    :param densenet_model: DenseNet model to be used as a base model
+    :type densenet_model: nn.Module
+    :param skips_avgpool: if True, skips adaptive_avgpool (average pooling) after features
+    :type skips_avgpool: bool
+    :param skips_classifier: if True, skips classifier after average pooling
+    :type skips_classifier: bool
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
+    :param analysis_config: analysis configuration
+    :type analysis_config: dict or None
+    """
+    # Referred to the DenseNet implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/densenet.py
+    def __init__(self, bottleneck_layer, short_feature_names, densenet_model, skips_avgpool=True, skips_classifier=True,
+                 pre_transform=None, analysis_config=None):
+        if analysis_config is None:
+            analysis_config = dict()
+
+        super().__init__(analysis_config.get('analyzer_configs', list()))
+
+        module_dict = OrderedDict()
+        short_features_set = set(short_feature_names)
+        if 'classifier' in short_features_set:
+            short_features_set.remove('classifier')
+
+        for child_name, child_module in densenet_model.features.named_children():
+            if child_name in short_features_set:
+                module_dict[child_name] = child_module
+
+        self.pre_transform = pre_transform
+        self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
+        self.bottleneck_layer = bottleneck_layer
+        self.features = nn.Sequential(module_dict)
+        self.relu = nn.ReLU(inplace=True)
+        self.adaptive_avgpool = None if skips_avgpool else nn.AdaptiveAvgPool2d((1, 1))
+        self.classifier = None if skips_classifier else densenet_model.classifier
+
+    def forward(self, x):
+        if self.pre_transform is not None:
+            x = self.pre_transform(x)
+
+        if self.bottleneck_updated and not self.training:
+            x = self.bottleneck_layer.encode(x)
+            if self.analyzes_after_compress:
+                self.analyze(x)
+            x = self.bottleneck_layer.decode(**x)
+        else:
+            x = self.bottleneck_layer(x)
+
+        x = self.features(x)
+        if self.adaptive_avgpool is None:
+            return x
+
+        x = self.relu(x)
+        x = self.adaptive_avgpool(x)
+        if self.classifier is None:
+            return x
+
+        x = torch.flatten(x, 1)
+        return self.classifier(x)
+
+    def update(self):
+        self.bottleneck_layer.update()
+        self.bottleneck_updated = True
+
+    def load_state_dict(self, state_dict, **kwargs):
+        """
+        Loads parameters for all the sub-modules except bottleneck_layer and then bottleneck_layer.
+
+        :param state_dict: dict containing parameters and persistent buffers
+        :type state_dict: dict
+        """
+        entropy_bottleneck_state_dict = OrderedDict()
+        for key in list(state_dict.keys()):
+            if key.startswith('bottleneck_layer.'):
+                entropy_bottleneck_state_dict[key.replace('bottleneck_layer.', '', 1)] = state_dict.pop(key)
+
+        super().load_state_dict(state_dict, strict=False)
+        self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)
+
+    def get_aux_module(self, **kwargs):
+        return self.bottleneck_layer if isinstance(self.bottleneck_layer, CompressionModel) else None
+
+
 class SplittableRegNet(UpdatableBackbone):
     """
-    RegNet-based splittable image classification model containing neural encoder, entropy bottleneck, and decoder.
+    RegNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck, and decoder.
 
     - Ilija Radosavovic, Raj Prateek Kosaraju, Ross Girshick, Kaiming He, Piotr Dollár: `"Designing Network Design Spaces" <https://openaccess.thecvf.com/content_CVPR_2020/html/Radosavovic_Designing_Network_Design_Spaces_CVPR_2020_paper.html>`_ @ CVPR 2020 (2020)
     - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `"SC2 Benchmark: Supervised Compression for Split Computing" <https://openreview.net/forum?id=p28wv4G65d>`_ @ TMLR (2023)
@@ -342,7 +439,8 @@ class SplittableRegNet(UpdatableBackbone):
 
 class SplittableHybridViT(UpdatableBackbone):
     """
-    Hybrid ViT-based splittable image classification model containing neural encoder, entropy bottleneck, and decoder.
+    Hybrid ViT-based splittable image classification model optionally containing neural encoder, entropy bottleneck,
+    and decoder.
 
     - Andreas Peter Steiner, Alexander Kolesnikov, Xiaohua Zhai, Ross Wightman, Jakob Uszkoreit, Lucas Beyer: `"How to train your ViT? Data, Augmentation, and Regularization in Vision Transformers" <https://openreview.net/forum?id=4nPswr1KcP>`_ @ TMLR (2022)
     - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `"SC2 Benchmark: Supervised Compression for Split Computing" <https://openreview.net/forum?id=p28wv4G65d>`_ @ TMLR (2023)
@@ -437,7 +535,8 @@ def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, 
                       pre_transform=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
                       org_ckpt_strict=True, **resnet_kwargs):
     """
-    Builds ResNet-based splittable image classification model containing neural encoder, entropy bottleneck, and decoder.
+    Builds ResNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck,
+    and decoder.
 
     :param bottleneck_config: bottleneck configuration
     :type bottleneck_config: dict
@@ -473,11 +572,52 @@ def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, 
 
 
 @register_backbone_func
+def splittable_densenet(bottleneck_config, densenet_name='densenet169', short_feature_names=None,
+                        skips_avgpool=True, skips_classifier=True, pre_transform=None, analysis_config=None,
+                        org_model_ckpt_file_path_or_url=None, org_ckpt_strict=True, **densenet_kwargs):
+    """
+    Builds DenseNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck,
+    and decoder.
+
+    :param bottleneck_config: bottleneck configuration
+    :type bottleneck_config: dict
+    :param densenet_name: name of DenseNet function in `torchvision`
+    :type densenet_name: str
+    :param short_feature_names: child module names of "features" to use
+    :type short_feature_names: list
+    :param skips_avgpool: if True, skips adaptive_avgpool (average pooling) after features
+    :type skips_avgpool: bool
+    :param skips_classifier: if True, skips classifier after average pooling
+    :type skips_classifier: bool
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
+    :param analysis_config: analysis configuration
+    :type analysis_config: dict or None
+    :param org_model_ckpt_file_path_or_url: original DenseNet model checkpoint file path or URL
+    :type org_model_ckpt_file_path_or_url: str or None
+    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original DenseNet model’s `state_dict()` function
+    :type org_ckpt_strict: bool
+    :return: splittable DenseNet model
+    :rtype: SplittableDenseNet
+    """
+    bottleneck_layer = get_layer(bottleneck_config['key'], **bottleneck_config['kwargs'])
+    densenet_model = models.__dict__[densenet_name](**densenet_kwargs)
+
+    if short_feature_names is None:
+        short_feature_names = ['denseblock3', 'transition3', 'denseblock4', 'norm5']
+
+    if org_model_ckpt_file_path_or_url is not None:
+        load_ckpt(org_model_ckpt_file_path_or_url, model=densenet_model, strict=org_ckpt_strict)
+    return SplittableDenseNet(bottleneck_layer, short_feature_names, densenet_model, skips_avgpool, skips_classifier,
+                              pre_transform, analysis_config)
+
+
+@register_backbone_func
 def splittable_resnest(bottleneck_config, resnest_name='resnest50d', inplanes=None, skips_avgpool=True, skips_fc=True,
                        pre_transform=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
                        org_ckpt_strict=True, **resnest_kwargs):
     """
-    Builds ResNeSt-based splittable image classification model containing neural encoder, entropy bottleneck,
+    Builds ResNeSt-based splittable image classification model optionally containing neural encoder, entropy bottleneck,
     and decoder.
 
     :param bottleneck_config: bottleneck configuration
@@ -514,7 +654,8 @@ def splittable_regnet(bottleneck_config, regnet_name='regnety_064', inplanes=Non
                       pre_transform=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
                       org_ckpt_strict=True, **regnet_kwargs):
     """
-    Builds RegNet-based splittable image classification model containing neural encoder, entropy bottleneck, and decoder.
+    Builds RegNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck,
+    and decoder.
 
     :param bottleneck_config: bottleneck configuration
     :type bottleneck_config: dict
@@ -547,7 +688,8 @@ def splittable_hybrid_vit(bottleneck_config, hybrid_vit_name='vit_small_r26_s32_
                           skips_head=True, pre_transform=None, analysis_config=None,
                           org_model_ckpt_file_path_or_url=None, org_ckpt_strict=True, **hybrid_vit_kwargs):
     """
-    Builds Hybrid ViT-based splittable image classification model containing neural encoder, entropy bottleneck, and decoder.
+    Builds Hybrid ViT-based splittable image classification model optionally containing neural encoder,
+    entropy bottleneck, and decoder.
 
 
     :param bottleneck_config: bottleneck configuration
