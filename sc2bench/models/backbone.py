@@ -278,7 +278,7 @@ class SplittableDenseNet(UpdatableBackbone):
     :type short_feature_names: list
     :param densenet_model: DenseNet model to be used as a base model
     :type densenet_model: nn.Module
-    :param skips_avgpool: if True, skips adaptive_avgpool (average pooling) after features
+    :param skips_avgpool: if True, skips avgpool (average pooling) after features
     :type skips_avgpool: bool
     :param skips_classifier: if True, skips classifier after average pooling
     :type skips_classifier: bool
@@ -309,7 +309,7 @@ class SplittableDenseNet(UpdatableBackbone):
         self.bottleneck_layer = bottleneck_layer
         self.features = nn.Sequential(module_dict)
         self.relu = nn.ReLU(inplace=True)
-        self.adaptive_avgpool = None if skips_avgpool else nn.AdaptiveAvgPool2d((1, 1))
+        self.avgpool = None if skips_avgpool else nn.AdaptiveAvgPool2d((1, 1))
         self.classifier = None if skips_classifier else densenet_model.classifier
 
     def forward(self, x):
@@ -325,16 +325,130 @@ class SplittableDenseNet(UpdatableBackbone):
             x = self.bottleneck_layer(x)
 
         x = self.features(x)
-        if self.adaptive_avgpool is None:
+        if self.avgpool is None:
             return x
 
         x = self.relu(x)
-        x = self.adaptive_avgpool(x)
+        x = self.avgpool(x)
         if self.classifier is None:
             return x
 
         x = torch.flatten(x, 1)
         return self.classifier(x)
+
+    def update(self):
+        self.bottleneck_layer.update()
+        self.bottleneck_updated = True
+
+    def load_state_dict(self, state_dict, **kwargs):
+        """
+        Loads parameters for all the sub-modules except bottleneck_layer and then bottleneck_layer.
+
+        :param state_dict: dict containing parameters and persistent buffers
+        :type state_dict: dict
+        """
+        entropy_bottleneck_state_dict = OrderedDict()
+        for key in list(state_dict.keys()):
+            if key.startswith('bottleneck_layer.'):
+                entropy_bottleneck_state_dict[key.replace('bottleneck_layer.', '', 1)] = state_dict.pop(key)
+
+        super().load_state_dict(state_dict, strict=False)
+        self.bottleneck_layer.load_state_dict(entropy_bottleneck_state_dict)
+
+    def get_aux_module(self, **kwargs):
+        return self.bottleneck_layer if isinstance(self.bottleneck_layer, CompressionModel) else None
+
+
+class SplittableInceptionV3(UpdatableBackbone):
+    """
+    Inception V3-based splittable image classification model optionally containing neural encoder, entropy bottleneck,
+    and decoder.
+
+    - Christian Szegedy, Vincent Vanhoucke, Sergey Ioffe, Jon Shlens, Zbigniew Wojna: `"Rethinking the Inception Architecture for Computer Vision" <https://openaccess.thecvf.com/content_cvpr_2016/papers/Szegedy_Rethinking_the_Inception_CVPR_2016_paper.pdf>`_ @ CVPR 2016 (2016)
+    - Yoshitomo Matsubara, Davide Callegaro, Sabur Baidya, Marco Levorato, Sameer Singh: `"Head Network Distillation: Splitting Distilled Deep Neural Networks for Resource-constrained Edge Computing Systems" <https://ieeexplore.ieee.org/document/9265295>`_ @ IEEE Access (2020)
+
+
+    :param bottleneck_layer: high-level bottleneck layer that consists of encoder and decoder
+    :type bottleneck_layer: nn.Module
+    :param short_module_names: child module names of "Inception3" to use
+    :type short_module_names: list
+    :param inception_v3_model: Inception V3 model to be used as a base model
+    :type inception_v3_model: nn.Module
+    :param skips_avgpool: if True, skips avgpool (average pooling)
+    :type skips_avgpool: bool
+    :param skips_dropout: if True, skips dropout after avgpool
+    :type skips_dropout: bool
+    :param skips_fc: if True, skips fc (fully-connected layer) after dropout
+    :type skips_fc: bool
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
+    :param analysis_config: analysis configuration
+    :type analysis_config: dict or None
+    """
+    # Referred to the InceptionV3 implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/inception.py
+    def __init__(self, bottleneck_layer, short_module_names, inception_v3_model, skips_avgpool=True, skips_dropout=True,
+                 skips_fc=True, pre_transform=None, analysis_config=None):
+        if analysis_config is None:
+            analysis_config = dict()
+
+        super().__init__(analysis_config.get('analyzer_configs', list()))
+
+        module_dict = OrderedDict()
+        short_module_set = set(short_module_names)
+        child_name_list = list()
+        for child_name, child_module in inception_v3_model.named_children():
+            if child_name in short_module_set:
+                if len(child_name_list) > 0 and child_name_list[-1] == 'Conv2d_2b_3x3' \
+                        and child_name == 'Conv2d_3b_1x1':
+                    module_dict['maxpool1'] = nn.MaxPool2d(kernel_size=3, stride=2)
+                    child_name_list.append('maxpool1')
+                elif len(child_name_list) > 0 and child_name_list[-1] == 'Conv2d_4a_3x3' \
+                        and child_name == 'Mixed_5b':
+                    module_dict['maxpool2'] = nn.MaxPool2d(kernel_size=3, stride=2)
+                    child_name_list.append('maxpool2')
+                elif child_name == 'fc':
+                    module_dict['adaptive_avgpool'] = nn.AdaptiveAvgPool2d((1, 1))
+                    module_dict['dropout'] = nn.Dropout()
+                    module_dict['flatten'] = nn.Flatten(1)
+
+                module_dict[child_name] = child_module
+                child_name_list.append(child_name)
+
+        self.pre_transform = pre_transform
+        self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
+        self.bottleneck_layer = bottleneck_layer
+        self.inception_modules = nn.Sequential(module_dict)
+        self.relu = nn.ReLU(inplace=True)
+        self.avgpool = None if skips_avgpool else inception_v3_model.avgpool
+        self.dropout = None if skips_dropout else inception_v3_model.dropout
+        self.fc = None if skips_fc else inception_v3_model.fc
+
+    def forward(self, x):
+        if self.pre_transform is not None:
+            x = self.pre_transform(x)
+
+        if self.bottleneck_updated and not self.training:
+            x = self.bottleneck_layer.encode(x)
+            if self.analyzes_after_compress:
+                self.analyze(x)
+            x = self.bottleneck_layer.decode(**x)
+        else:
+            x = self.bottleneck_layer(x)
+
+        x = self.inception_modules(x)
+        if self.adaptive_avgpool is None:
+            return x
+
+        x = self.avgpool(x)
+        if self.dropout is None:
+            return x
+
+        x = self.dropout(x)
+        if self.fc is None:
+            return x
+
+        x = torch.flatten(x, 1)
+        return self.fc(x)
 
     def update(self):
         self.bottleneck_layer.update()
@@ -610,6 +724,50 @@ def splittable_densenet(bottleneck_config, densenet_name='densenet169', short_fe
         load_ckpt(org_model_ckpt_file_path_or_url, model=densenet_model, strict=org_ckpt_strict)
     return SplittableDenseNet(bottleneck_layer, short_feature_names, densenet_model, skips_avgpool, skips_classifier,
                               pre_transform, analysis_config)
+
+
+@register_backbone_func
+def splittable_inception3(bottleneck_config, short_module_names=None, skips_avgpool=True, skips_dropout=True,
+                          skips_fc=True, pre_transform=None, analysis_config=None,
+                          org_model_ckpt_file_path_or_url=None, org_ckpt_strict=True, **inception_v3_kwargs):
+    """
+    Builds InceptionV3-based splittable image classification model optionally containing neural encoder,
+    entropy bottleneck, and decoder.
+
+    :param bottleneck_config: bottleneck configuration
+    :type bottleneck_config: dict
+    :param short_module_names: child module names of "Inception3" to use
+    :type short_module_names: list
+    :param skips_avgpool: if True, skips avgpool (average pooling)
+    :type skips_avgpool: bool
+    :param skips_dropout: if True, skips dropout after avgpool
+    :type skips_dropout: bool
+    :param skips_fc: if True, skips fc (fully-connected layer) after dropout
+    :type skips_fc: bool
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
+    :param analysis_config: analysis configuration
+    :type analysis_config: dict or None
+    :param org_model_ckpt_file_path_or_url: original InceptionV3 model checkpoint file path or URL
+    :type org_model_ckpt_file_path_or_url: str or None
+    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original InceptionV3 model’s `state_dict()` function
+    :type org_ckpt_strict: bool
+    :return: splittable InceptionV3 model
+    :rtype: SplittableInceptionV3
+    """
+    bottleneck_layer = get_layer(bottleneck_config['key'], **bottleneck_config['kwargs'])
+    inception_v3_model = models.inception_v3(**inception_v3_kwargs)
+
+    if short_module_names is None:
+        short_module_names = [
+            'Mixed_5b', 'Mixed_5c', 'Mixed_5d', 'Mixed_6a', 'Mixed_6b', 'Mixed_6c', 'Mixed_6d', 'Mixed_6e',
+            'Mixed_7a', 'Mixed_7b', 'Mixed_7c', 'fc'
+        ]
+
+    if org_model_ckpt_file_path_or_url is not None:
+        load_ckpt(org_model_ckpt_file_path_or_url, model=inception_v3_model, strict=org_ckpt_strict)
+    return SplittableInceptionV3(bottleneck_layer, short_module_names, inception_v3_model, skips_avgpool, skips_dropout,
+                                 skips_fc, pre_transform, analysis_config)
 
 
 @register_backbone_func
