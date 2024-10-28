@@ -407,9 +407,7 @@ class SplittableInceptionV3(UpdatableBackbone):
                     module_dict['maxpool2'] = nn.MaxPool2d(kernel_size=3, stride=2)
                     child_name_list.append('maxpool2')
                 elif child_name == 'fc':
-                    module_dict['adaptive_avgpool'] = nn.AdaptiveAvgPool2d((1, 1))
-                    module_dict['dropout'] = nn.Dropout()
-                    module_dict['flatten'] = nn.Flatten(1)
+                    break
 
                 module_dict[child_name] = child_module
                 child_name_list.append(child_name)
@@ -436,7 +434,7 @@ class SplittableInceptionV3(UpdatableBackbone):
             x = self.bottleneck_layer(x)
 
         x = self.inception_modules(x)
-        if self.adaptive_avgpool is None:
+        if self.avgpool is None:
             return x
 
         x = self.avgpool(x)
@@ -727,9 +725,9 @@ def splittable_densenet(bottleneck_config, densenet_name='densenet169', short_fe
 
 
 @register_backbone_func
-def splittable_inception3(bottleneck_config, short_module_names=None, skips_avgpool=True, skips_dropout=True,
-                          skips_fc=True, pre_transform=None, analysis_config=None,
-                          org_model_ckpt_file_path_or_url=None, org_ckpt_strict=True, **inception_v3_kwargs):
+def splittable_inception_v3(bottleneck_config, short_module_names=None, skips_avgpool=True, skips_dropout=True,
+                            skips_fc=True, pre_transform=None, analysis_config=None,
+                            org_model_ckpt_file_path_or_url=None, org_ckpt_strict=True, **inception_v3_kwargs):
     """
     Builds InceptionV3-based splittable image classification model optionally containing neural encoder,
     entropy bottleneck, and decoder.

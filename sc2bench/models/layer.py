@@ -211,8 +211,8 @@ def larger_densenet_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
 
 
 @register_layer_func
-def larger_inception_v3_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
-                                   compressor_transform=None, decompressor_transform=None):
+def inception_v3_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
+                            compressor_transform=None, decompressor_transform=None):
     """
     Builds a bottleneck layer InceptionV3-based encoder and decoder (17 layers in total).
 
