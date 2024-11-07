@@ -41,8 +41,8 @@ def get_argparser():
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('--run_log', help='log file path')
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N', help='start epoch')
-    parser.add_argument('--iou_types', nargs='+', help='IoU types for evaluation '
-                                                       '(the first IoU type is used for checkpoint selection)')
+    parser.add_argument('--iou_types', nargs='+',
+                        help='IoU types for evaluation (the first IoU type is used for checkpoint selection)')
     parser.add_argument('--seed', type=int, help='seed in random number generator')
     parser.add_argument('-test_only', action='store_true', help='only test the models')
     parser.add_argument('-student_only', action='store_true', help='test the student model only')
@@ -179,7 +179,8 @@ def evaluate(model_wo_ddp, data_loader, iou_types, device, device_ids, distribut
     return coco_evaluator
 
 
-def train(teacher_model, student_model, dataset_dict, src_ckpt_file_path, dst_ckpt_file_path, device, device_ids, distributed, config, args):
+def train(teacher_model, student_model, dataset_dict, src_ckpt_file_path, dst_ckpt_file_path,
+          device, device_ids, distributed, config, args):
     logger.info('Start training')
     train_config = config['train']
     lr_factor = args.world_size if distributed and args.adjust_lr else 1
