@@ -1,4 +1,4 @@
-Package Documentation
+sc2bench API
 =====
 
 

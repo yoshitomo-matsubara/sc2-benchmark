@@ -37,11 +37,11 @@ and it is different from "split learning".
 Check out the :doc:`usage` section for further information.
 
 .. toctree::
+   :maxdepth: 2
+   :caption: 📚 Overview
+
    usage
    package
-   api
-   :maxdepth: 2
-   :caption: Overview
 
 
 
