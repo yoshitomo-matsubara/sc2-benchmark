@@ -1,9 +1,10 @@
 import argparse
-import builtins as __builtin__
 import datetime
+import io
 import json
 import os
 import time
+from contextlib import redirect_stdout
 
 import torch
 from torch import distributed as dist
@@ -131,10 +132,6 @@ def evaluate(model_wo_ddp, data_loader, iou_types, device, device_ids, distribut
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
 
-    # Replace built-in print function with logger.info to log summary printed by pycocotools
-    builtin_print = __builtin__.print
-    __builtin__.print = log_info
-
     cpu_device = torch.device('cpu')
     model.eval()
     analyzable = check_if_analyzable(model_wo_ddp)
@@ -168,10 +165,9 @@ def evaluate(model_wo_ddp, data_loader, iou_types, device, device_ids, distribut
 
     # accumulate predictions from all images
     coco_evaluator.accumulate()
-    coco_evaluator.summarize()
-
-    # Revert print function
-    __builtin__.print = builtin_print
+    with redirect_stdout(io.StringIO()) as printed_message:
+        coco_evaluator.summarize()
+        logger.info(printed_message.getvalue())
 
     torch.set_num_threads(n_threads)
     if analyzable and model_wo_ddp.activated_analysis:
