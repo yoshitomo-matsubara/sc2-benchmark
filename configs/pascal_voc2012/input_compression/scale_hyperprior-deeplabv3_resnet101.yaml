@@ -4,28 +4,28 @@ datasets:
     _root: &root_dir '~/datasets'
     key: 'torchvision.datasets.VOCSegmentation'
     init:
-    kwargs:
-      root: *root_dir
-      image_set: 'val'
-      year: '2012'
-      download: True
-      transforms: !import_call
-        key: 'custom.transform.CustomCompose'
-        init:
-          kwargs:
-            transforms:
-              - !import_call
-                key: 'custom.transform.CustomRandomResize'
-                init:
-                  kwargs:
-                    min_size: 513
-                    max_size: 513
-              - !import_call
-                key: 'sc2bench.transforms.misc.CustomToTensor'
-                init:
-                  kwargs:
-                    converts_sample: True
-                    converts_target: True
+      kwargs:
+        root: *root_dir
+        image_set: 'val'
+        year: '2012'
+        download: True
+        transforms: !import_call
+          key: 'custom.transform.CustomCompose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'custom.transform.CustomRandomResize'
+                  init:
+                    kwargs:
+                      min_size: 513
+                      max_size: 513
+                - !import_call
+                  key: 'sc2bench.transforms.misc.CustomToTensor'
+                  init:
+                    kwargs:
+                      converts_sample: True
+                      converts_target: True
 
 models:
   model:
