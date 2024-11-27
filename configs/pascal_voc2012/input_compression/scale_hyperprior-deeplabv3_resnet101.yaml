@@ -17,9 +17,9 @@ datasets:
               - !import_call
                 key: 'custom.transform.CustomRandomResize'
                 init:
-                kwargs:
-                  min_size: 513
-                  max_size: 513
+                  kwargs:
+                    min_size: 513
+                    max_size: 513
               - !import_call
                 key: 'sc2bench.transforms.misc.CustomToTensor'
                 init:
