@@ -117,6 +117,7 @@ train:
       pin_memory: True
       drop_last: False
   model:
+    forward_proc: 'forward_batch_only'
     forward_hook:
       input: []
       output: ['entropy_bottleneck']

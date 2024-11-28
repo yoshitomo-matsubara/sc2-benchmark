@@ -129,6 +129,7 @@ train:
     teacher:
       sequential: ['patch_embed.backbone.stem', 'patch_embed.backbone.stages']
       frozen_modules: []
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: ['patch_embed.backbone.stages.0', 'patch_embed.backbone.stages.1', 'patch_embed.backbone.stages.2', 'patch_embed.backbone.stages.3']
@@ -138,6 +139,7 @@ train:
       adaptations:
       sequential: ['bottleneck_layer', 'patch_embed_pruned_stages']
       frozen_modules: ['patch_embed_pruned_stages']
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: ['bottleneck_layer', 'patch_embed_pruned_stages.1', 'patch_embed_pruned_stages.2', 'patch_embed_pruned_stages.3', 'bottleneck_layer.entropy_bottleneck', 'bottleneck_layer.gaussian_conditional']
@@ -261,6 +263,7 @@ train:
     teacher:
       sequential: []
       frozen_modules: []
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: []
@@ -270,6 +273,7 @@ train:
       adaptations:
       sequential: []
       frozen_modules: ['bottleneck_layer.g_a', 'bottleneck_layer.h_a', 'bottleneck_layer.h_s', 'bottleneck_layer.entropy_bottleneck', 'bottleneck_layer.gaussian_conditional']
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: []

@@ -126,6 +126,7 @@ train:
     teacher:
       sequential: ['stem', 's1', 's2', 's3', 's4']
       frozen_modules: []
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: ['s1', 's2', 's3', 's4']
@@ -135,6 +136,7 @@ train:
       adaptations:
       sequential: ['bottleneck_layer', 's2', 's3', 's4']
       frozen_modules: ['s2', 's3', 's4']
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: ['bottleneck_layer', 's2', 's3', 's4', 'bottleneck_layer.entropy_bottleneck']
@@ -251,6 +253,7 @@ train:
     teacher:
       sequential: []
       frozen_modules: []
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: []
@@ -260,6 +263,7 @@ train:
       adaptations:
       sequential: []
       frozen_modules: ['bottleneck_layer.encoder', 'bottleneck_layer.entropy_bottleneck']
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: []
