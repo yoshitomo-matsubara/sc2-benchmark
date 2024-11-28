@@ -117,8 +117,9 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.SequentialSampler'
         kwargs:
-      batch_size: 32
-      num_workers: 16
+      kwargs:
+        batch_size: 32
+        num_workers: 16
     teacher:
       sequential: ['conv1', 'bn1', 'relu', 'maxpool', 'layer1', 'layer2', 'layer3', 'layer4']
       frozen_modules: []
@@ -248,8 +249,9 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.SequentialSampler'
         kwargs:
-      batch_size: 32
-      num_workers: 16
+      kwargs:
+        batch_size: 32
+        num_workers: 16
     teacher:
       sequential: []
       frozen_modules: []

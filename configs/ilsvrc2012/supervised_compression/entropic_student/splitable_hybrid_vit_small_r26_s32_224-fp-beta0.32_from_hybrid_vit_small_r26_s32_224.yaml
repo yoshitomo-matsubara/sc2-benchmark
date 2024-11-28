@@ -112,8 +112,9 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.RandomSampler'
         kwargs:
-      batch_size: 64
-      num_workers: 16
+      kwargs:
+        batch_size: 64
+        num_workers: 16
       cache_output:
     val_data_loader:
       dataset_id: *imagenet_val
@@ -121,8 +122,9 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.SequentialSampler'
         kwargs:
-      batch_size: 32
-      num_workers: 16
+      kwargs:
+        batch_size: 32
+        num_workers: 16
     teacher:
       sequential: ['patch_embed.backbone.stem', 'patch_embed.backbone.stages']
       frozen_modules: []
@@ -236,8 +238,9 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.RandomSampler'
         kwargs:
-      batch_size: 128
-      num_workers: 16
+      kwargs:
+        batch_size: 128
+        num_workers: 16
       cache_output:
     val_data_loader:
       dataset_id: *imagenet_val
@@ -245,8 +248,9 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.SequentialSampler'
         kwargs:
-      batch_size: 32
-      num_workers: 16
+      kwargs:
+        batch_size: 32
+        num_workers: 16
     teacher:
       sequential: []
       frozen_modules: []

@@ -121,8 +121,9 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.SequentialSampler'
         kwargs:
-      batch_size: 32
-      num_workers: 16
+      kwargs:
+        batch_size: 32
+        num_workers: 16
     teacher:
       sequential: ['stem', 's1', 's2', 's3', 's4']
       frozen_modules: []

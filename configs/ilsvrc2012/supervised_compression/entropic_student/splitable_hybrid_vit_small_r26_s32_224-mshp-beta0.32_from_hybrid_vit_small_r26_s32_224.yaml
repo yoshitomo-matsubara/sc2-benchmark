@@ -122,8 +122,9 @@ train:
         class_or_func: !import_get
           key: 'torch.utils.data.SequentialSampler'
         kwargs:
-      batch_size: 32
-      num_workers: 16
+      kwargs:
+        batch_size: 32
+        num_workers: 16
     teacher:
       sequential: ['patch_embed.backbone.stem', 'patch_embed.backbone.stages']
       frozen_modules: []
