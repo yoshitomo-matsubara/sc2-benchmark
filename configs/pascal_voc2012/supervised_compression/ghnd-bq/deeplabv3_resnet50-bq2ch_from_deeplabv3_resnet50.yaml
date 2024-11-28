@@ -59,7 +59,7 @@ datasets:
                       min_size: 513
                       max_size: 513
                 - !import_call
-                  key: 'custom.transform.CustomToTensor'
+                  key: 'sc2bench.transforms.misc.CustomToTensor'
                   init:
                     kwargs:
                       converts_sample: True
@@ -164,6 +164,7 @@ train:
   teacher:
     adaptations:
     sequential: ['backbone']
+    forward_proc: 'forward_batch_only'
     forward_hook:
       input: []
       output: ['backbone.layer2', 'backbone.layer3', 'backbone.layer4']
@@ -173,12 +174,12 @@ train:
     adaptations:
     sequential: ['backbone']
     frozen_modules: ['backbone.layer3', 'backbone.layer4']
+    forward_proc: 'forward_batch_only'
     forward_hook:
       input: []
       output: ['backbone.layer2', 'backbone.layer3', 'backbone.layer4']
     wrapper: 'DistributedDataParallel'
     requires_grad: True
-  optimizer:
     key: 'Adam'
     kwargs:
       lr: 0.001

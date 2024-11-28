@@ -59,7 +59,7 @@ datasets:
                       min_size: 513
                       max_size: 513
                 - !import_call
-                  key: 'custom.transform.CustomToTensor'
+                  key: 'sc2bench.transforms.misc.CustomToTensor'
                   init:
                     kwargs:
                       converts_sample: True
@@ -145,6 +145,7 @@ train:
     teacher:
       adaptations:
       sequential: ['backbone']
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: ['backbone.layer2', 'backbone.layer3', 'backbone.layer4']
@@ -154,6 +155,7 @@ train:
       adaptations:
       sequential: ['backbone']
       frozen_modules: ['backbone.bottleneck_layer.encoder', 'backbone.bottleneck_layer.entropy_bottleneck', 'backbone.layer3', 'backbone.layer4']
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: ['backbone.layer2', 'backbone.layer3', 'backbone.layer4']
@@ -242,6 +244,7 @@ train:
       auxiliary_model_wrapper:
         key: 'EmptyModule'
         kwargs:
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: []
@@ -254,6 +257,7 @@ train:
       forward_hook:
         input: []
         output: []
+      forward_proc: 'forward_batch_only'
       wrapper: 'DistributedDataParallel'
       requires_grad: True
     optimizer:
@@ -274,14 +278,14 @@ train:
       key: 'poly_lr_scheduler'
       kwargs:
         num_iterations: !import_call
-        key: 'utils.dataset.get_num_iterations'
-        init:
-          kwargs:
-            dataset: *pascal_train
-            batch_size: *train_batch_size
-            world_size: 1
-        num_epochs: *num_epochs
-        power: 0.9
+          key: 'utils.dataset.get_num_iterations'
+          init:
+            kwargs:
+              dataset: *pascal_train
+              batch_size: *train_batch_size
+              world_size: 1
+          num_epochs: *num_epochs
+          power: 0.9
       scheduling_step: 1
   criterion:
     key: 'WeightedSumLoss'
