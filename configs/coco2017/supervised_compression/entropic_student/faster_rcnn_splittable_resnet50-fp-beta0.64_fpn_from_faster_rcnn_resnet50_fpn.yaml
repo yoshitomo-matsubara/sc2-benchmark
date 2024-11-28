@@ -2,7 +2,7 @@ dependencies:
   - name: 'custom'
 
 datasets:
-  &coco_train coco2017/train: !import_call
+  &coco_train coco2017/train: &coco_train_dataset !import_call
     _name: &dataset_name 'coco2017'
     _root: &root_dir !join ['~/datasets/', *dataset_name]
     key: 'coco.dataset.coco_dataset'
@@ -84,8 +84,13 @@ train:
       batch_sampler:
         key: 'GroupedBatchSampler'
         kwargs:
-          aspect_ratio_group_factor: 3
           batch_size: 6
+          group_ids: !import_call
+            key: 'custom.sampler.create_aspect_ratio_groups'
+            init:
+              kwargs:
+                dataset: *coco_train_dataset
+                aspect_ratio_group_factor: 3
       collate_fn: 'coco_collate_fn'
       kwargs:
         num_workers: 8
@@ -101,9 +106,9 @@ train:
         batch_size: 1
         num_workers: 8
     teacher:
-      forward_proc: 'forward_batch'
+      forward_proc: 'forward_batch_only'
       sequential: []
-      special:
+      auxiliary_model_wrapper:
         key: 'HeadRCNN'
         kwargs:
           head_rcnn:
@@ -115,10 +120,10 @@ train:
       wrapper: 'DataParallel'
       requires_grad: False
     student:
-      forward_proc: 'forward_batch'
+      forward_proc: 'forward_batch_only'
       adaptations:
       sequential: []
-      special:
+      auxiliary_model_wrapper:
         key: 'HeadRCNN'
         kwargs:
           head_rcnn:
@@ -221,15 +226,20 @@ train:
       batch_sampler:
         key: 'GroupedBatchSampler'
         kwargs:
-          aspect_ratio_group_factor: 3
           batch_size: 6
+          group_ids: !import_call
+            key: 'custom.sampler.create_aspect_ratio_groups'
+            init:
+              kwargs:
+                dataset: *coco_train_dataset
+                aspect_ratio_group_factor: 3
       collate_fn: 'coco_collate_fn'
       kwargs:
         num_workers: 8
       cache_output:
     teacher:
       forward_proc: 'forward_batch_target'
-      special:
+      auxiliary_model_wrapper:
         key: 'EmptyModule'
         kwargs:
       sequential: []

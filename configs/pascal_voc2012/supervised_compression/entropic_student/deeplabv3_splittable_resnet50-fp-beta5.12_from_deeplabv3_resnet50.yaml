@@ -239,7 +239,7 @@ train:
     teacher:
       adaptations:
       sequential: []
-      special:
+      auxiliary_model_wrapper:
         key: 'EmptyModule'
         kwargs:
       forward_hook:

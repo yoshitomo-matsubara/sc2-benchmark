@@ -2,7 +2,7 @@ dependencies:
   - name: 'custom'
 
 datasets:
-  &coco_train coco2017/train: !import_call
+  &coco_train coco2017/train: &coco_train_dataset !import_call
     _name: &dataset_name 'coco2017'
     _root: &root_dir !join ['~/datasets/', *dataset_name]
     key: 'coco.dataset.coco_dataset'
@@ -120,9 +120,9 @@ train:
       batch_size: 1
       num_workers: 8
   teacher:
-    forward_proc: 'forward_batch'
+    forward_proc: 'forward_batch_only'
     sequential: []
-    special:
+    auxiliary_model_wrapper:
       key: 'HeadRCNN'
       kwargs:
         head_rcnn:
@@ -134,10 +134,10 @@ train:
     wrapper: 'DataParallel'
     requires_grad: False
   student:
-    forward_proc: 'forward_batch'
+    forward_proc: 'forward_batch_only'
     adaptations:
     sequential: []
-    special:
+    auxiliary_model_wrapper:
       key: 'HeadRCNN'
       kwargs:
         head_rcnn:
