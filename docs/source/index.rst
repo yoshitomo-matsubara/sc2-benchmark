@@ -43,7 +43,11 @@ Check out the :doc:`usage` section for further information.
    usage
    package
 
+.. toctree::
+   :maxdepth: 2
+   :caption: 🧑🏻‍💻 Research
 
+   projects
 
 Reference
 *********
