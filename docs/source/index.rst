@@ -16,7 +16,8 @@ SC2: Supervised Compression for Split Computing
 This is the official documentation of `sc2bench <https://pypi.org/project/sc2bench/>`_ package and
 our TMLR paper, `"SC2 Benchmark: Supervised Compression for Split Computing" <https://openreview.net/forum?id=p28wv4G65d>`_.
 
-..  youtube:: uwwV_vAOvX4
+.. youtube:: uwwV_vAOvX4
+   :align: center
 
 
 As an intermediate option between local computing and edge computing (full offloading),
