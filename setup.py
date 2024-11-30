@@ -30,6 +30,6 @@ setup(
     ],
     extras_require={
         'test': ['pytest'],
-        'docs': ['sphinx', 'sphinx_rtd_theme']
+        'docs': ['sphinx', 'sphinx_rtd_theme', 'sphinxcontrib-youtube']
     }
 )
