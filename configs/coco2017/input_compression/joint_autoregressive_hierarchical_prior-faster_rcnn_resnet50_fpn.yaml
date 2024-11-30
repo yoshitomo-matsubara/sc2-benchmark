@@ -1,58 +1,55 @@
+dependencies:
+  - name: 'custom'
+
 datasets:
-  coco2017:
-    name: &dataset_name 'coco2017'
-    type: 'cocodetect'
-    root: &root_dir !join ['~/dataset/', *dataset_name]
-    splits:
-      val:
-        dataset_id: &coco_val !join [*dataset_name, '/val']
-        images: !join [*root_dir, '/val2017']
-        annotations: !join [*root_dir, '/annotations/instances_val2017.json']
+  &coco_val coco2017/val: !import_call
+    _name: &dataset_name 'coco2017'
+    _root: &root_dir !join ['~/datasets/', *dataset_name]
+    key: 'coco.dataset.coco_dataset'
+    init:
+      kwargs:
+        img_dir_path: !join [*root_dir, '/val2017']
+        ann_file_path: !join [*root_dir, '/annotations/instances_val2017.json']
         annotated_only: False
+        is_segment: False
 
 models:
   model:
-    name: 'InputCompressionDetectionModel'
-    params:
-      codec_params:
-        - type: 'BPGModule'
-          params:
-            encoder_path: '~/software/libbpg-0.9.8/bpgenc'
-            decoder_path: '~/software/libbpg-0.9.8/bpgdec'
-            quality: 50
-            returns_file_size: True
+    key: 'InputCompressionDetectionModel'
+    kwargs:
       analysis_config:
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
         analyzes_after_compress: True
       adaptive_pad_kwargs:
         fill: 0
         padding_mode: 'constant'
         factor: 128
-      pre_transform_params:
-      post_transform_params:
+      pre_transform:
+      post_transform:
       uses_cpu4compression_model: True
     compression_model:
-      name: 'mbt2018'
-      params:
+      key: 'mbt2018'
+      kwargs:
         pretrained: True
         quality: 8
         metric: 'mse'
-      ckpt: './resource/ckpt/input_compression/joint_autoregressive_hierarchical_prior.pt'
     detection_model:
-      name: 'fasterrcnn_resnet50_fpn'
-      params:
+      key: 'fasterrcnn_resnet50_fpn'
+      kwargs:
         pretrained: True
         progress: True
-        pretrained_backbone: True
-      ckpt: ''
 
 test:
   test_data_loader:
     dataset_id: *coco_val
-    random_sample: False
-    batch_size: 1
-    num_workers: 4
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
     collate_fn: 'coco_collate_fn'
+    kwargs:
+      batch_size: 1
+      num_workers: 4

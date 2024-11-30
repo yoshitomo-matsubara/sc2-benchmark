@@ -1,58 +1,78 @@
 datasets:
-  pascal_voc:
-    name: &dataset_name 'pascal_voc2012'
-    type: 'VOCSegmentation'
-    root: &root_dir '~/dataset'
-    splits:
-      train:
-        dataset_id: &pascal_train !join [*dataset_name, '/train']
-        params:
-          root: *root_dir
-          image_set: 'train'
-          year: '2012'
-          download: False
-          transforms_compose_cls: 'CustomCompose'
-          transforms_params:
-            - type: 'CustomRandomResize'
-              params:
-                min_size: 256
-                max_size: 1026
-            - type: 'CustomRandomHorizontalFlip'
-              params:
-                p: 0.5
-            - type: 'CustomRandomCrop'
-              params:
-                size: 513
-            - type: 'CustomToTensor'
-              params:
-            - &normalize
-              type: 'CustomNormalize'
-              params:
-                mean: [0.485, 0.456, 0.406]
-                std: [0.229, 0.224, 0.225]
-      val:
-        dataset_id: &pascal_val !join [*dataset_name, '/val']
-        params:
-          root: *root_dir
-          image_set: 'val'
-          year: '2012'
-          download: False
-          transforms_compose_cls: 'CustomCompose'
-          transforms_params: &val_transform
-            - type: 'CustomRandomResize'
-              params:
-                min_size: 513
-                max_size: 513
-            - type: 'CustomToTensor'
-              params:
-                converts_sample: True
-                converts_target: True
-            - *normalize
+  &pascal_train 'pascal_voc2012/train': !import_call
+    _name: &dataset_name 'pascal_voc2012'
+    _root: &root_dir '~/datasets'
+    key: 'torchvision.datasets.VOCSegmentation'
+    init:
+      kwargs:
+        root: *root_dir
+        image_set: 'train'
+        year: '2012'
+        download: True
+        transforms: !import_call
+          key: 'custom.transform.CustomCompose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'custom.transform.CustomRandomResize'
+                  init:
+                    kwargs:
+                      min_size: 256
+                      max_size: 1026
+                - !import_call
+                  key: 'custom.transform.CustomRandomHorizontalFlip'
+                  init:
+                    kwargs:
+                      p: 0.5
+                - !import_call
+                  key: 'custom.transform.CustomRandomCrop'
+                  init:
+                    kwargs:
+                      size: 513
+                - !import_call
+                  key: 'custom.transform.CustomToTensor'
+                  init:
+                - !import_call
+                  key: 'custom.transform.CustomNormalize'
+                  init:
+                    kwargs: &normalize_kwargs
+                      mean: [0.485, 0.456, 0.406]
+                      std: [0.229, 0.224, 0.225]
+  &pascal_val 'pascal_voc2012/val': !import_call
+    key: 'torchvision.datasets.VOCSegmentation'
+    init:
+      kwargs:
+        root: *root_dir
+        image_set: 'val'
+        year: '2012'
+        download: True
+        transforms: !import_call
+          key: 'custom.transform.CustomCompose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'custom.transform.CustomRandomResize'
+                  init:
+                    kwargs:
+                      min_size: 513
+                      max_size: 513
+                - !import_call
+                  key: 'sc2bench.transforms.misc.CustomToTensor'
+                  init:
+                    kwargs:
+                      converts_sample: True
+                      converts_target: True
+                - !import_call
+                  key: 'custom.transform.CustomNormalize'
+                  init:
+                    kwargs: *normalize_kwargs
 
 models:
   model:
-    name: 'deeplabv3_model'
-    params:
+    key: 'deeplabv3_model'
+    kwargs:
       pretrained: True
       pretrained_backbone_name: 'resnet50'
       num_classes: 21
@@ -65,30 +85,30 @@ models:
       analysis_config:
         analyzes_after_compress: True
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
       analyzable_layer_key: 'bottleneck_layer'
       backbone_config:
-        name: 'splittable_resnet'
-        params:
+        key: 'splittable_resnet'
+        kwargs:
           num_classes: 1000
           pretrained: True
           replace_stride_with_dilation: [False, True, True]
           bottleneck_config:
-            name: 'FPBasedResNetBottleneck'
-            params:
+            key: 'FPBasedResNetBottleneck'
+            kwargs:
               num_bottleneck_channels: 24
               num_target_channels: 256
           resnet_name: 'resnet50'
-          pre_transform_params:
+          pre_transform:
           skips_avgpool: True
           skips_fc: True
-        ckpt: './resource/ckpt/ilsvrc2012/supervised_compression/end-to-end/ilsvrc2012-splittable_resnet50-fp-beta1.024e-7.pt'
+        src_ckpt: './resource/ckpt/ilsvrc2012/supervised_compression/end-to-end/ilsvrc2012-splittable_resnet50-fp-beta1.024e-7.pt'
       start_ckpt_file_path:
     update_before_ckpt: True
     experiment: &student_experiment !join [*dataset_name, '-deeplabv3_splittable_resnet50-fp-beta1.024e-7']
-    ckpt: !join ['./resource/ckpt/pascal_voc2012/supervised_compression/end-to-end/', *student_experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/pascal_voc2012/supervised_compression/end-to-end/', *student_experiment, '.pt']
 
 train:
   log_freq: 1000
@@ -96,23 +116,32 @@ train:
   num_epochs: &num_epochs 50
   train_data_loader:
     dataset_id: *pascal_train
-    random_sample: True
-    batch_size: 8
-    num_workers: 16
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.RandomSampler'
+      kwargs:
     collate_fn: 'pascal_seg_collate_fn'
+    kwargs:
+      batch_size: &train_batch_size 8
+      num_workers: 16
     cache_output:
   val_data_loader:
     dataset_id: *pascal_val
-    random_sample: False
-    batch_size: 1
-    num_workers: 16
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
     collate_fn: 'pascal_seg_eval_collate_fn'
+    kwargs:
+      batch_size: 1
+      num_workers: 16
   teacher:
     adaptations:
     sequential: []
-    special:
-      type: 'EmptyModule'
-      params:
+    auxiliary_model_wrapper:
+      key: 'EmptyModule'
+      kwargs:
+    forward_proc: 'forward_batch_only'
     forward_hook:
       input: []
       output: []
@@ -122,50 +151,71 @@ train:
     adaptations:
     sequential: []
     frozen_modules: ['backbone.bottleneck_layer.encoder', 'backbone.bottleneck_layer.entropy_bottleneck']
+    forward_proc: 'forward_batch_only'
     forward_hook:
       input: []
       output: []
     wrapper: 'DistributedDataParallel'
     requires_grad: True
   optimizer:
-    type: 'SGD'
-    params:
+    key: 'SGD'
+    kwargs:
       lr: 0.0025
       momentum: 0.9
       weight_decay: 0.0001
-    module_wise_params:
+    module_wise_kwargs:
       - module: 'backbone'
-        params: {}
+        kwargs: {}
       - module: 'classifier'
-        params: {}
+        kwargs: {}
       - module: 'aux_classifier'
-        params:
+        kwargs:
           lr: 0.025
   scheduler:
-    type: 'poly_lr_scheduler'
-    params:
-      num_iterations: None
+    key: 'poly_lr_scheduler'
+    kwargs:
+      num_iterations: !import_call
+        key: 'utils.dataset.get_num_iterations'
+        init:
+          kwargs:
+            dataset: *pascal_train
+            batch_size: *train_batch_size
+            world_size: 1
       num_epochs: *num_epochs
       power: 0.9
     scheduling_step: 1
   criterion:
-    type: 'GeneralizedCustomLoss'
-    func2extract_org_loss: 'extract_simple_org_loss_dict'
-    org_term:
-      criterion:
-        type: 'CrossEntropyLoss'
-        params:
-          reduction: 'mean'
-          ignore_index: 255
-      factor:
-        out: 1.0
-        aux: 0.5
-    sub_terms:
+    key: 'WeightedSumLoss'
+    kwargs:
+      sub_terms:
+        ce:
+          criterion:
+            key: 'CrossEntropyLoss'
+            kwargs:
+              reduction: 'mean'
+              ignore_index: 255
+          criterion_wrapper:
+            key: 'DictLossWrapper'
+            kwargs:
+              input:
+                is_from_teacher: False
+                module_path: '.'
+                io: 'output'
+              target:
+                uses_label: True
+              weights:
+                out: 1.0
+                aux: 0.5
+          weight: 1.0
 
 test:
   test_data_loader:
     dataset_id: *pascal_val
-    random_sample: False
-    batch_size: 1
-    num_workers: 16
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
     collate_fn: 'pascal_seg_eval_collate_fn'
+    kwargs:
+      batch_size: 1
+      num_workers: 16

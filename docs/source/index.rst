@@ -16,6 +16,10 @@ SC2: Supervised Compression for Split Computing
 This is the official documentation of `sc2bench <https://pypi.org/project/sc2bench/>`_ package and
 our TMLR paper, `"SC2 Benchmark: Supervised Compression for Split Computing" <https://openreview.net/forum?id=p28wv4G65d>`_.
 
+.. youtube:: uwwV_vAOvX4
+   :align: center
+
+
 As an intermediate option between local computing and edge computing (full offloading),
 **split computing** has been attracting considerable attention from the research communities.
 
@@ -37,13 +41,17 @@ and it is different from "split learning".
 Check out the :doc:`usage` section for further information.
 
 .. toctree::
+   :maxdepth: 2
+   :caption: 📚 Overview
+
    usage
    package
-   api
+
+.. toctree::
    :maxdepth: 2
-   :caption: Overview
+   :caption: 🧑🏻‍💻 Research
 
-
+   projects
 
 Reference
 *********
@@ -59,8 +67,7 @@ Reference
    }
 
 
-
-Indices and tables
+Indices and Tables
 ******************
 
 * :ref:`genindex`

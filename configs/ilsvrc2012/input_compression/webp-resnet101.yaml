@@ -1,55 +1,80 @@
 datasets:
-  ilsvrc2012:
-    name: &dataset_name 'ilsvrc2012'
-    type: 'ImageFolder'
-    root: &root_dir !join ['~/dataset/', *dataset_name]
-    splits:
-      val:
-        dataset_id: &imagenet_val !join [*dataset_name, '/val']
-        params:
-          root: !join [*root_dir, '/val']
-          transform_params:
-            - type: 'Resize'
-              params:
-                size: 256
-            - type: 'CenterCrop'
-              params:
-                size: [224, 224]
+  &imagenet_val ilsvrc2012/val: !import_call
+    _name: &dataset_name 'ilsvrc2012'
+    _root: &root_dir !join ['~/datasets/', *dataset_name]
+    key: 'torchvision.datasets.ImageFolder'
+    init:
+      kwargs:
+        root: !join [ *root_dir, '/val' ]
+        transform: !import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'torchvision.transforms.Resize'
+                  init:
+                    kwargs:
+                      size: 256
+                - !import_call
+                  key: 'torchvision.transforms.CenterCrop'
+                  init:
+                    kwargs:
+                      size: [224, 224]
 
 models:
   model:
-    name: 'CodecInputCompressionClassifier'
-    params:
-      codec_params:
-        - type: 'PILImageModule'
-          params:
-            format: 'WEBP'
-            quality: 90
-            returns_file_size: True
-      post_transform_params:
-        - type: 'ToTensor'
-          params:
-        - type: 'Normalize'
-          params:
-            mean: [0.485, 0.456, 0.406]
-            std: [0.229, 0.224, 0.225]
+    key: 'CodecInputCompressionClassifier'
+    kwargs:
+      codec_encoder_decoder: !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'sc2bench.transforms.codec.PILImageModule'
+                init:
+                  kwargs:
+                    format: 'WEBP'
+                    quality: 90
+                    returns_file_size: True
+      post_transform: !import_call
+        key: 'torchvision.transforms.Compose'
+        init:
+          kwargs:
+            transforms:
+              - !import_call
+                key: 'torchvision.transforms.ToTensor'
+                init:
+              - !import_call
+                key: 'torchvision.transforms.Normalize'
+                init:
+                  kwargs:
+                    mean: [0.485, 0.456, 0.406]
+                    std: [0.229, 0.224, 0.225]
       analysis_config:
         analyzer_configs:
-          - type: 'FileSizeAccumulator'
-            params:
+          - key: 'FileSizeAccumulator'
+            kwargs:
               unit: 'KB'
     classification_model:
-      name: &model_name 'resnet101'
-      params:
+
+      key: 'resnet101'
+      _weights: &model_weights_enum !import_get
+        key: 'torchvision.models.resnet.ResNet101_Weights'
+      kwargs:
         num_classes: 1000
-        pretrained: True
-      experiment: &experiment !join [*dataset_name, '-', *model_name]
-      ckpt: !join ['./resource/ckpt/', *experiment, '.pt']
+        weights: !getattr [*model_weights_enum, 'IMAGENET1K_V1']
 
 test:
   test_data_loader:
     dataset_id: *imagenet_val
-    random_sample: False
-    batch_size: 1
-    num_workers: 16
     collate_fn: 'default_collate_w_pil'
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
+    kwargs:
+      batch_size: 1
+      num_workers: 16
+      drop_last: False

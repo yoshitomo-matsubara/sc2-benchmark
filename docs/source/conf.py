@@ -37,7 +37,8 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.viewcode',
-    'sphinx_rtd_theme'
+    'sphinx_rtd_theme',
+    'sphinxcontrib.youtube'
 ]
 autodoc_member_order = 'bysource'
 highlight_language = 'python'

@@ -1,7 +1,6 @@
 from torchdistill.common.main_util import load_ckpt
 from torchdistill.models.official import get_object_detection_model
-from torchdistill.models.registry import get_model
-from torchdistill.models.registry import register_model_class, register_model_func
+from torchdistill.models.registry import get_model, register_model
 
 from sc2bench.models.detection.base import check_if_updatable_detection_model
 
@@ -19,7 +18,7 @@ def register_detection_model_class(cls):
     :rtype: class
     """
     DETECTION_MODEL_CLASS_DICT[cls.__name__] = cls
-    register_model_class(cls)
+    register_model(cls)
     return cls
 
 
@@ -33,7 +32,7 @@ def register_detection_model_func(func):
     :rtype: typing.Callable
     """
     DETECTION_MODEL_FUNC_DICT[func.__name__] = func
-    register_model_func(func)
+    register_model(func)
     return func
 
 
@@ -68,17 +67,18 @@ def load_detection_model(model_config, device, strict=True):
     :rtype: nn.Module
     """
     model = get_object_detection_model(model_config)
-    model_name = model_config['name']
+    model_name = model_config['key']
     if model is None:
-        model = get_detection_model(model_name, **model_config['params'])
+        model = get_detection_model(model_name, **model_config['kwargs'])
 
     if model is None:
         repo_or_dir = model_config.get('repo_or_dir', None)
-        model = get_model(model_name, repo_or_dir, **model_config['params'])
+        model = get_model(model_name, repo_or_dir, **model_config['kwargs'])
 
     if model_config.get('update_before_ckpt', False) and check_if_updatable_detection_model(model):
         model.update()
 
-    ckpt_file_path = model_config['ckpt']
-    load_ckpt(ckpt_file_path, model=model, strict=strict)
+    src_ckpt_file_path = model_config.get('src_ckpt', None)
+    if src_ckpt_file_path is not None:
+        load_ckpt(src_ckpt_file_path, model=model, strict=strict)
     return model.to(device)

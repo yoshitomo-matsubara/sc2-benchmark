@@ -1,75 +1,105 @@
+dependencies:
+  - name: 'sc2bench.models'
+  - name: 'sc2bench.transforms'
+  - name: 'sc2bench.loss'
+
 datasets:
-  ilsvrc2012:
-    name: &dataset_name 'ilsvrc2012'
-    type: 'ImageFolder'
-    root: &root_dir !join ['~/dataset/', *dataset_name]
-    splits:
-      train:
-        dataset_id: &imagenet_train !join [*dataset_name, '/train']
-        params:
-          root: !join [*root_dir, '/train']
-          transform_params:
-            - type: 'WrappedRandomResizedCrop'
-              params:
-                size: &input_size [224, 224]
-                interpolation: 'bicubic'
-            - type: 'RandomHorizontalFlip'
-              params:
-                p: 0.5
-            - &totensor
-              type: 'ToTensor'
-              params:
-            - &normalize
-              type: 'Normalize'
-              params:
-                mean: [0.485, 0.456, 0.406]
-                std: [0.229, 0.224, 0.225]
-      val:
-        dataset_id: &imagenet_val !join [*dataset_name, '/val']
-        params:
-          root: !join [*root_dir, '/val']
-          transform_params:
-            - type: 'WrappedResize'
-              params:
-                size: 256
-                interpolation: 'bicubic'
-            - type: 'CenterCrop'
-              params:
-                size: *input_size
-            - *totensor
-            - *normalize
+  &imagenet_train ilsvrc2012/train: !import_call
+    _name: &dataset_name 'ilsvrc2012'
+    _root: &root_dir !join ['~/datasets/', *dataset_name]
+    key: 'torchvision.datasets.ImageFolder'
+    init:
+      kwargs:
+        root: !join [*root_dir, '/train']
+        transform: !import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'torchvision.transforms.RandomResizedCrop'
+                  init:
+                    kwargs:
+                      size: &input_size [224, 224]
+                      interpolation: !getattr
+                        - !import_get
+                          key: 'torchvision.transforms.functional.InterpolationMode'
+                        - 'BICUBIC'
+                - !import_call
+                  key: 'torchvision.transforms.RandomHorizontalFlip'
+                  init:
+                    kwargs:
+                      p: 0.5
+                - !import_call
+                  key: 'torchvision.transforms.ToTensor'
+                  init:
+                - !import_call
+                  key: 'torchvision.transforms.Normalize'
+                  init:
+                    kwargs: &normalize_kwargs
+                      mean: [0.485, 0.456, 0.406]
+                      std: [0.229, 0.224, 0.225]
+  &imagenet_val ilsvrc2012/val: !import_call
+    key: 'torchvision.datasets.ImageFolder'
+    init:
+      kwargs:
+        root: !join [*root_dir, '/val']
+        transform: !import_call
+          key: 'torchvision.transforms.Compose'
+          init:
+            kwargs:
+              transforms:
+                - !import_call
+                  key: 'torchvision.transforms.Resize'
+                  init:
+                    kwargs:
+                      size: 256
+                      interpolation: !getattr
+                        - !import_get
+                          key: 'torchvision.transforms.functional.InterpolationMode'
+                        - 'BICUBIC'
+                - !import_call
+                  key: 'torchvision.transforms.CenterCrop'
+                  init:
+                    kwargs:
+                      size: *input_size
+                - !import_call
+                  key: 'torchvision.transforms.ToTensor'
+                  init:
+                - !import_call
+                  key: 'torchvision.transforms.Normalize'
+                  init:
+                    kwargs: *normalize_kwargs
 
 models:
   teacher_model:
-    name: &teacher_model_name 'regnety_064'
-    params:
+    key: &teacher_model_name 'regnety_064'
+    kwargs:
       num_classes: 1000
       pretrained: True
-    experiment: &teacher_experiment !join [*dataset_name, '-', *teacher_model_name]
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/teacher/', *teacher_experiment, '.pt']
   student_model:
-    name: &student_model_name 'splittable_regnet'
-    params:
+    key: &student_model_name 'splittable_regnet'
+    kwargs:
       num_classes: 1000
       pretrained: True
       bottleneck_config:
-        name: 'MSHPBasedResNetBottleneck'
-        params:
+        key: 'MSHPBasedResNetBottleneck'
+        kwargs:
           num_bottleneck_channels: &bch 64
           num_latent_channels: 16
           g_a_channel_sizes: [3, *bch, *bch, *bch]
           g_s_channel_sizes: [*bch, 288, 144, 144]
       regnet_name: *teacher_model_name
-      pre_transform_params:
+      pre_transform:
       skips_head: False
       analysis_config:
         analyzes_after_compress: True
         analyzer_configs:
-          - type: 'FileSizeAnalyzer'
-            params:
+          - key: 'FileSizeAnalyzer'
+            kwargs:
               unit: 'KB'
     experiment: &student_experiment !join [*dataset_name, '-', *student_model_name, 'y6.4gf-mshp-beta2.56_from_regnety6.4gf']
-    ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/', *student_experiment, '.pt']
+    dst_ckpt: !join ['./resource/ckpt/ilsvrc2012/supervised_compression/entropic_student/', *student_experiment, '.pt']
 
 train:
   log_freq: 1000
@@ -78,18 +108,27 @@ train:
     num_epochs: *epoch_to_update
     train_data_loader:
       dataset_id: *imagenet_train
-      random_sample: True
-      batch_size: 64
-      num_workers: 16
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.RandomSampler'
+        kwargs:
+      kwargs:
+        batch_size: 64
+        num_workers: 16
       cache_output:
     val_data_loader:
       dataset_id: *imagenet_val
-      random_sample: False
-      batch_size: 32
-      num_workers: 16
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.SequentialSampler'
+        kwargs:
+      kwargs:
+        batch_size: 32
+        num_workers: 16
     teacher:
       sequential: ['stem', 's1', 's2', 's3', 's4']
       frozen_modules: []
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: ['s1', 's2', 's3', 's4']
@@ -99,115 +138,131 @@ train:
       adaptations:
       sequential: ['bottleneck_layer', 's2', 's3', 's4']
       frozen_modules: ['s2', 's3', 's4']
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: ['bottleneck_layer', 's2', 's3', 's4', 'bottleneck_layer.entropy_bottleneck', 'bottleneck_layer.gaussian_conditional']
       wrapper: 'DistributedDataParallel'
       requires_grad: True
     optimizer:
-      type: 'Adam'
-      params:
+      key: 'Adam'
+      kwargs:
         lr: 0.001
     scheduler:
-      type: 'MultiStepLR'
-      params:
+      key: 'MultiStepLR'
+      kwargs:
         milestones: [5, 8]
         gamma: 0.1
     criterion:
-      type: 'GeneralizedCustomLoss'
-      org_term:
-        factor: 0.0
-      sub_terms:
-        s1:
-          criterion:
-            type: 'MSELoss'
-            params:
-              reduction: 'sum'
-          params:
-            input:
-              is_from_teacher: False
-              module_path: 'bottleneck_layer'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 's1'
-              io: 'output'
-          factor: 1.0
-        s2:
-          criterion:
-            type: 'MSELoss'
-            params:
-              reduction: 'sum'
-          params:
-            input:
-              is_from_teacher: False
-              module_path: 's2'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 's2'
-              io: 'output'
-          factor: 1.0
-        s3:
-          criterion:
-            type: 'MSELoss'
-            params:
-              reduction: 'sum'
-          params:
-            input:
-              is_from_teacher: False
-              module_path: 's3'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 's3'
-              io: 'output'
-          factor: 1.0
-        s4:
-          criterion:
-            type: 'MSELoss'
-            params:
-              reduction: 'sum'
-          params:
-            input:
-              is_from_teacher: False
-              module_path: 's4'
-              io: 'output'
-            target:
-              is_from_teacher: True
-              module_path: 's4'
-              io: 'output'
-          factor: 1.0
-        bpp_entropy:
-          criterion:
-            type: 'BppLoss'
-            params:
-              entropy_module_path: 'bottleneck_layer.entropy_bottleneck'
-              reduction: 'sum'
-          factor: 2.56
-        bpp_gaussian:
-          criterion:
-            type: 'BppLoss'
-            params:
-              entropy_module_path: 'bottleneck_layer.gaussian_conditional'
-              reduction: 'sum'
-          factor: 2.56
+      key: 'WeightedSumLoss'
+      kwargs:
+        sub_terms:
+          s1:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 'bottleneck_layer'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 's1'
+                  io: 'output'
+            weight: 1.0
+          s2:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 's2'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 's2'
+                  io: 'output'
+            weight: 1.0
+          s3:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 's3'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 's3'
+                  io: 'output'
+            weight: 1.0
+          s4:
+            criterion:
+              key: 'MSELoss'
+              kwargs:
+                reduction: 'sum'
+            criterion_wrapper:
+              key: 'SimpleLossWrapper'
+              kwargs:
+                input:
+                  is_from_teacher: False
+                  module_path: 's4'
+                  io: 'output'
+                target:
+                  is_from_teacher: True
+                  module_path: 's4'
+                  io: 'output'
+            weight: 1.0
+          bpp_entropy:
+            criterion:
+              key: 'BppLoss'
+              kwargs:
+                entropy_module_path: 'bottleneck_layer.entropy_bottleneck'
+                reduction: 'sum'
+            weight: 2.56
+          bpp_gaussian:
+            criterion:
+              key: 'BppLoss'
+              kwargs:
+                entropy_module_path: 'bottleneck_layer.gaussian_conditional'
+                reduction: 'sum'
+            weight: 2.56
   stage2:
     num_epochs: 10
     train_data_loader:
       dataset_id: *imagenet_train
-      random_sample: True
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.RandomSampler'
+        kwargs:
       batch_size: 128
       num_workers: 16
       cache_output:
     val_data_loader:
       dataset_id: *imagenet_val
-      random_sample: False
-      batch_size: 32
-      num_workers: 16
+      sampler:
+        class_or_func: !import_get
+          key: 'torch.utils.data.SequentialSampler'
+        kwargs:
+      kwargs:
+        batch_size: 32
+        num_workers: 16
     teacher:
       sequential: []
       frozen_modules: []
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: []
@@ -217,37 +272,48 @@ train:
       adaptations:
       sequential: []
       frozen_modules: ['bottleneck_layer.g_a', 'bottleneck_layer.h_a', 'bottleneck_layer.h_s', 'bottleneck_layer.entropy_bottleneck', 'bottleneck_layer.gaussian_conditional']
+      forward_proc: 'forward_batch_only'
       forward_hook:
         input: []
         output: []
       wrapper: 'DistributedDataParallel'
       requires_grad: True
     optimizer:
-      type: 'SGD'
-      params:
+      key: 'SGD'
+      kwargs:
         lr: 0.001
         momentum: 0.9
         weight_decay: 0.0005
     scheduler:
-      type: 'MultiStepLR'
-      params:
+      key: 'MultiStepLR'
+      kwargs:
         milestones: [5]
         gamma: 0.1
     criterion:
-      type: 'GeneralizedCustomLoss'
-      org_term:
-        criterion:
-          type: 'KDLoss'
-          params:
-            temperature: 1.0
-            alpha: 0.5
-            reduction: 'batchmean'
-        factor: 1.0
-      sub_terms:
+      key: 'WeightedSumLoss'
+      kwargs:
+        sub_terms:
+          kd:
+            criterion:
+              key: 'KDLoss'
+              kwargs:
+                student_module_path: '.'
+                student_module_io: 'output'
+                teacher_module_path: '.'
+                teacher_module_io: 'output'
+                temperature: 1.0
+                alpha: 0.5
+                reduction: 'batchmean'
+            weight: 1.0
 
 test:
   test_data_loader:
     dataset_id: *imagenet_val
-    random_sample: False
-    batch_size: 1
-    num_workers: 16
+    sampler:
+      class_or_func: !import_get
+        key: 'torch.utils.data.SequentialSampler'
+      kwargs:
+    kwargs:
+      batch_size: 1
+      num_workers: 16
+      drop_last: False

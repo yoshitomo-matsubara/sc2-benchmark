@@ -17,8 +17,8 @@ for quality in $(seq ${MIN_QUALITY} ${STEP_SIZE} ${MAX_QUALITY});
 do
   sed -i "s/quality:.*/quality: ${quality}/g" configs/coco2017/input_compression/${BASE_NAME}.yaml
   python script/task/object_detection.py \
-  --config configs/coco2017/input_compression/${BASE_NAME}.yaml \
-  --log log/${FORMAT_NAME}_compression/${BASE_NAME}-quality${quality}.txt -student_only -test_only -no_dp_eval
+    --config configs/coco2017/input_compression/${BASE_NAME}.yaml \
+    --run_log log/${FORMAT_NAME}_compression/${BASE_NAME}-quality${quality}.txt -student_only -test_only -no_dp_eval
 done
 
 sed -i "s/quality:.*/quality:/g" configs/coco2017/input_compression/${BASE_NAME}.yaml

@@ -12,7 +12,7 @@ do
   json_str+=${quality}
   json_str+='}}}}}'
   python script/task/object_detection.py \
-  --config configs/coco2017/input_compression/${BASE_NAME}.yaml \
-  --log log/input_compression/${BASE_NAME}-quality${quality}.txt \
-  --json "${json_str}" -student_only -test_only -no_dp_eval
+    --config configs/coco2017/input_compression/${BASE_NAME}.yaml \
+    --run_log log/input_compression/${BASE_NAME}-quality${quality}.txt \
+    --json "${json_str}" -student_only -test_only -no_dp_eval
 done

@@ -1,7 +1,6 @@
 from typing import List, Tuple, Dict, Optional
 
 from torch import Tensor
-from torchdistill.datasets.util import build_transform
 from torchvision.models.detection.image_list import ImageList
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.transforms.functional import to_pil_image, to_tensor, crop
@@ -18,35 +17,35 @@ class RCNNTransformWithCompression(GeneralizedRCNNTransform, AnalyzableModule):
     :type transform: nn.Module
     :param device: torch device
     :type device: torch.device or str
-    :param codec_params: codec parameters
-    :type codec_params: dict
+    :param codec_encoder_decoder: transform sequence configuration for codec
+    :type codec_encoder_decoder: nn.Module
     :param analyzer_configs: list of analysis configurations
     :type analyzer_configs: list[dict]
     :param analyzes_after_compress: run analysis with `analyzer_configs` if True
     :type analyzes_after_compress: bool
     :param compression_model: compression model
     :type compression_model: nn.Module or None
-    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `comoression_model`
+    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `compression_model`
     :type uses_cpu4compression_model: bool
-    :param pre_transform_params: pre-transform parameters
-    :type pre_transform_params: dict or None
-    :param post_transform_params: post-transform parameters
-    :type post_transform_params: dict or None
+    :param pre_transform: pre-transform
+    :type pre_transform: nn.Module or None
+    :param post_transform: post-transform
+    :type post_transform: nn.Module or None
     :param adaptive_pad_kwargs: keyword arguments for AdaptivePad
     :type adaptive_pad_kwargs: dict or None
     """
     # Referred to https://github.com/pytorch/vision/blob/main/torchvision/models/detection/transform.py
-    def __init__(self, transform, device, codec_params, analyzer_configs, analyzes_after_compress=False,
-                 compression_model=None, uses_cpu4compression_model=False, pre_transform_params=None,
-                 post_transform_params=None, adaptive_pad_kwargs=None):
+    def __init__(self, transform, device, codec_encoder_decoder, analyzer_configs, analyzes_after_compress=False,
+                 compression_model=None, uses_cpu4compression_model=False, pre_transform=None,
+                 post_transform=None, adaptive_pad_kwargs=None):
         GeneralizedRCNNTransform.__init__(self, transform.min_size, transform.max_size,
                                           transform.image_mean, transform.image_std)
         AnalyzableModule.__init__(self, analyzer_configs)
         self.device = device
-        self.codec_encoder_decoder = build_transform(codec_params)
+        self.codec_encoder_decoder = codec_encoder_decoder
         self.analyzes_after_compress = analyzes_after_compress
-        self.pre_transform = build_transform(pre_transform_params)
-        self.post_transform = build_transform(post_transform_params)
+        self.pre_transform = pre_transform
+        self.post_transform = post_transform
         if uses_cpu4compression_model:
             compression_model = compression_model.cpu()
 

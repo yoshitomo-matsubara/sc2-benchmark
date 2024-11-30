@@ -23,7 +23,7 @@ The following examples use ResNet-50 as a reference model. More examples are ava
 for bch in 1 2 3 6 9 12; do
   python script/task/image_classification.py -student_only \
     --config configs/ilsvrc2012/supervised_compression/ghnd-bq/resnet50-bq${bch}ch_from_resnet50.yaml \
-    --log log/ilsvrc2012/supervised_compression/ghnd-bq/resnet50-bq${bch}ch_from_resnet50.txt
+    --run_log log/ilsvrc2012/supervised_compression/ghnd-bq/resnet50-bq${bch}ch_from_resnet50.txt
 done
 ```
 
@@ -32,7 +32,7 @@ done
 for beta in 1.28e-8 1.024e-7 2.048e-7 8.192e-7 3.2768e-6; do 
   python script/task/image_classification.py \
     --config configs/ilsvrc2012/supervised_compression/end-to-end/splitable_resnet50-fp-beta${beta}.yaml \
-    --log log/ilsvrc2012/supervised_compression/end-to-end/splitable_resnet50-fp-beta${beta}.txt
+    --run_log log/ilsvrc2012/supervised_compression/end-to-end/splitable_resnet50-fp-beta${beta}.txt
 done
 ```
 
@@ -41,7 +41,7 @@ done
 for beta in 0.08 0.16 0.32 0.64 1.28 2.56 5.12; do 
   python script/task/image_classification.py -student_only \
     --config configs/ilsvrc2012/supervised_compression/entropic_student/splitable_resnet50-fp-beta${beta}_from_resnet50.yaml \
-    --log log/ilsvrc2012/supervised_compression/entropic_student/splitable_resnet50-fp-beta${beta}_from_resnet50.txt
+    --run_log log/ilsvrc2012/supervised_compression/entropic_student/splitable_resnet50-fp-beta${beta}_from_resnet50.txt
 done
 ```
 
@@ -56,7 +56,7 @@ The following examples use Faster R-CNN with ResNet-50 and FPN as a reference mo
 for bch in 1 2 3 6 9 12; do
   python script/task/object_detection.py -student_only \
     --config configs/coco2017/supervised_compression/ghnd-bq/faster_rcnn_splittable_resnet50-bq${bch}ch_fpn_from_faster_rcnn_resnet50_fpn.yaml \
-    --log log/coco2017/supervised_compression/ghnd-bq/faster_rcnn_splittable_resnet50-bq${bch}ch_fpn_from_faster_rcnn_resnet50_fpn.txt
+    --run_log log/coco2017/supervised_compression/ghnd-bq/faster_rcnn_splittable_resnet50-bq${bch}ch_fpn_from_faster_rcnn_resnet50_fpn.txt
 done
 ```
 
@@ -65,7 +65,7 @@ done
 for beta in 1.28e-8 1.024e-7 2.048e-7 8.192e-7 3.2768e-6; do 
   python script/task/object_detection.py \
     --config configs/coco2017/supervised_compression/end-to-end/faster_rcnn_splittable_resnet50-fp-beta${beta}_fpn.yaml \
-    --log log/coco2017/supervised_compression/end-to-end/faster_rcnn_splittable_resnet50-fp-beta${beta}_fpn.txt
+    --run_log log/coco2017/supervised_compression/end-to-end/faster_rcnn_splittable_resnet50-fp-beta${beta}_fpn.txt
 done
 ```
 
@@ -74,7 +74,7 @@ done
 for beta in 0.08 0.16 0.32 0.64 1.28 2.56 5.12; do 
   python script/task/object_detection.py -student_only \
     --config configs/coco2017/supervised_compression/entropic_student/faster_rcnn_splittable_resnet50-fp-beta${beta}_fpn_from_faster_rcnn_resnet50_fpn.yaml \
-    --log log/coco2017/supervised_compression/entropic_student/faster_rcnn_splittable_resnet50-fp-beta${beta}_fpn_from_faster_rcnn_resnet50_fpn.txt
+    --run_log log/coco2017/supervised_compression/entropic_student/faster_rcnn_splittable_resnet50-fp-beta${beta}_fpn_from_faster_rcnn_resnet50_fpn.txt
 done
 ```
 
@@ -89,7 +89,7 @@ The following examples use DeepLabv3 with ResNet-50 as a reference model.
 for bch in 1 2 3 6 9 12; do
   python script/task/semantic_segmentation.py -student_only \
     --config configs/pascal_voc2012/supervised_compression/ghnd-bq/deeplabv3_resnet50-bq${bch}ch_from_deeplabv3_resnet50.yaml \
-    --log log/pascal_voc2012/supervised_compression/ghnd-bq/deeplabv3_resnet50-bq${bch}ch_from_deeplabv3_resnet50.txt
+    --run_log log/pascal_voc2012/supervised_compression/ghnd-bq/deeplabv3_resnet50-bq${bch}ch_from_deeplabv3_resnet50.txt
 done
 ```
 
@@ -98,7 +98,7 @@ done
 for beta in 1.28e-8 1.024e-7 2.048e-7 8.192e-7 3.2768e-6; do 
   python script/task/semantic_segmentation.py \
     --config configs/pascal_voc2012/supervised_compression/end-to-end/deeplabv3_splittable_resnet50-fp-beta${beta}.yaml \
-    --log log/pascal_voc2012/supervised_compression/end-to-end/deeplabv3_splittable_resnet50-fp-beta${beta}.txt
+    --run_log log/pascal_voc2012/supervised_compression/end-to-end/deeplabv3_splittable_resnet50-fp-beta${beta}.txt
 done
 ```
 
@@ -107,6 +107,6 @@ done
 for beta in 0.16 0.32 0.64 1.28 2.56 5.12; do 
   python script/task/semantic_segmentation.py -student_only \
     --config configs/pascal_voc2012/supervised_compression/entropic_student/deeplabv3_splittable_resnet50-fp-beta${beta}_from_deeplabv3_resnet50.yaml \
-    --log log/pascal_voc2012/supervised_compression/entropic_student/deeplabv3_splittable_resnet50-fp-beta${beta}_from_deeplabv3_resnet50.txt
+    --run_log log/pascal_voc2012/supervised_compression/entropic_student/deeplabv3_splittable_resnet50-fp-beta${beta}_from_deeplabv3_resnet50.txt
 done
 ```

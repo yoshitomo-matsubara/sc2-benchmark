@@ -2,7 +2,7 @@ import torch
 from torch.hub import load_state_dict_from_url
 from torchdistill.common.main_util import load_ckpt
 from torchvision.models.detection._utils import overwrite_eps
-from torchvision.models.detection.faster_rcnn import FasterRCNN, model_urls as faster_rcnn_model_urls
+from torchvision.models.detection.faster_rcnn import FasterRCNN
 from torchvision.models.detection.generalized_rcnn import GeneralizedRCNN
 from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops.feature_pyramid_network import LastLevelMaxPool
@@ -12,6 +12,14 @@ from .registry import register_detection_model_func
 from ..backbone import check_if_updatable
 from ..registry import load_classification_model
 from ...analysis import check_if_analyzable
+
+MODEL_URL_DICT = {
+    'fasterrcnn_resnet50_fpn_coco': 'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth',
+    'fasterrcnn_resnet50_fpn_v2_coco': 'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_v2_coco-dd69338a.pth',
+    'fasterrcnn_mobilenet_v3_large_fp': 'https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth',
+    'fasterrcnn_mobilenet_v3_large_320_fpn': 'https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth',
+
+}
 
 
 class BaseRCNN(GeneralizedRCNN, UpdatableDetectionModel):
@@ -165,7 +173,7 @@ def _process_torchvision_pretrained_weights(model, pretrained_backbone_name, pro
     elif pretrained_backbone_name == 'mobilenet_v3_large':
         base_backbone_name = 'mobilenet_v3_large'
     state_dict = \
-        load_state_dict_from_url(faster_rcnn_model_urls['fasterrcnn_{}_fpn_coco'.format(base_backbone_name)],
+        load_state_dict_from_url(MODEL_URL_DICT['fasterrcnn_{}_fpn_coco'.format(base_backbone_name)],
                                  progress=progress)
     model.load_state_dict(state_dict, strict=False)
     if pretrained_backbone_name == 'resnet50':
@@ -205,7 +213,7 @@ def faster_rcnn_model(backbone_config, pretrained=True, pretrained_backbone_name
     if analysis_config is None:
         analysis_config = dict()
 
-    backbone_config['params']['norm_layer'] = misc_nn_ops.FrozenBatchNorm2d
+    backbone_config['kwargs']['norm_layer'] = misc_nn_ops.FrozenBatchNorm2d
     backbone = load_classification_model(backbone_config, torch.device('cpu'), False, strict=False)
 
     rcnn_model = create_faster_rcnn_fpn(backbone, num_classes=num_classes, **backbone_fpn_kwargs, **kwargs)

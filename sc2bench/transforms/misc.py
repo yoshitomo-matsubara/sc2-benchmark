@@ -6,8 +6,7 @@ from PIL.Image import Image
 from torch import nn
 from torch.utils.data._utils.collate import np_str_obj_array_pattern, default_collate_err_msg_format
 from torchdistill.common import tensor_util
-from torchdistill.datasets.collator import register_collate_func
-from torchdistill.datasets.transform import register_transform_class
+from torchdistill.datasets.registry import register_collate_func, register_transform
 from torchvision.transforms import functional as F
 from torchvision.transforms.functional import pad
 
@@ -24,7 +23,7 @@ def register_misc_transform_module(cls):
     :rtype: class
     """
     MISC_TRANSFORM_MODULE_DICT[cls.__name__] = cls
-    register_transform_class(cls)
+    register_transform(cls)
     return cls
 
 
@@ -46,8 +45,8 @@ def default_collate_w_pil(batch):
             # If we're in a background process, concatenate directly into a
             # shared memory tensor to avoid an extra copy
             numel = sum(x.numel() for x in batch)
-            storage = elem.storage()._new_shared(numel)
-            out = elem.new(storage)
+            storage = elem._typed_storage()._new_shared(numel, device=elem.device)
+            out = elem.new(storage).resize_(len(batch), *list(elem.size()))
         return torch.stack(batch, 0, out=out)
     elif elem_type.__module__ == 'numpy' and elem_type.__name__ != 'str_' \
             and elem_type.__name__ != 'string_':

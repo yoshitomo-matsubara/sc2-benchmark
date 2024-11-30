@@ -9,7 +9,7 @@ from compressai.transforms.functional import rgb2ycbcr, ycbcr2rgb
 from compressai.utils.bench.codecs import run_command
 from torch import nn
 from torchdistill.common import file_util
-from torchdistill.datasets.transform import register_transform_class
+from torchdistill.datasets.registry import register_transform
 from torchvision.transforms import RandomResizedCrop, Resize
 from torchvision.transforms.functional import InterpolationMode, to_pil_image, to_tensor
 
@@ -34,7 +34,7 @@ def register_codec_transform_module(cls):
     :rtype: class
     """
     CODEC_TRANSFORM_MODULE_DICT[cls.__name__] = cls
-    register_transform_class(cls)
+    register_transform(cls)
     return cls
 
 
