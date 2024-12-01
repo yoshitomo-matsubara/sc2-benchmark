@@ -56,6 +56,7 @@ import sphinx_rtd_theme
 html_theme = 'sphinx_rtd_theme'
 
 html_theme_options = {
+    'analytics_id': 'G-39T9X4DN85',
     'display_version': True,
     'style_external_links': True
 }
