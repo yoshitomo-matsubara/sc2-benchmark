@@ -6,7 +6,7 @@ Projects
    :maxdepth: 2
    :caption: Overview
 
-This page is a showcase of OSS (open source software) and papers which have used **torchdistill** in the projects.
+This page is a showcase of OSS (open source software) and papers which have used **sc2bench** in the projects.
 If your work is built on **sc2bench**, start `a "Show and tell" discussion at GitHub <https://github.com/yoshitomo-matsubara/sc2-benchmark/discussions/new?category=show-and-tell>`_.
 
 
