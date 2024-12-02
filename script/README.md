@@ -14,10 +14,10 @@ wget ${VAL_DATASET_URL} ./
 ### 1.2 Untar and extract files
 ```shell
 # Go to the root of this repository
-mkdir ~/dataset/ilsvrc2012/{train,val} -p
-mv ILSVRC2012_img_train.tar ~/dataset/ilsvrc2012/train/
-mv ILSVRC2012_img_val.tar ~/dataset/ilsvrc2012/val/
-cd ~/dataset/ilsvrc2012/train/
+mkdir ~/datasets/ilsvrc2012/{train,val} -p
+mv ILSVRC2012_img_train.tar ~/datasets/ilsvrc2012/train/
+mv ILSVRC2012_img_val.tar ~/datasets/ilsvrc2012/val/
+cd ~/datasets/ilsvrc2012/train/
 tar -xvf ILSVRC2012_img_train.tar
 mv ILSVRC2012_img_train.tar ../
 for f in *.tar; do
@@ -29,8 +29,8 @@ rm -r *.tar
 cd ../../../../
 
 wget https://raw.githubusercontent.com/soumith/imagenetloader.torch/master/valprep.sh
-mv valprep.sh ~/dataset/ilsvrc2012/val/
-cd ~/dataset/ilsvrc2012/val/
+mv valprep.sh ~/datasets/ilsvrc2012/val/
+cd ~/datasets/ilsvrc2012/val/
 tar -xvf ILSVRC2012_img_val.tar
 mv ILSVRC2012_img_val.tar ../
 sh valprep.sh
@@ -50,11 +50,11 @@ wget http://images.cocodataset.org/annotations/annotations_trainval2017.zip ./
 ### 2.2 Unzip and extract files
 ```shell
 # Go to the root of this repository
-mkdir ~/dataset/coco2017/ -p
-mv train2017.zip ~/dataset/coco2017/
-mv val2017.zip ~/dataset/coco2017/
-mv annotations_trainval2017.zip ~/dataset/coco2017/
-cd ~/dataset/coco2017/
+mkdir ~/datasets/coco2017/ -p
+mv train2017.zip ~/datasets/coco2017/
+mv val2017.zip ~/datasets/coco2017/
+mv annotations_trainval2017.zip ~/datasets/coco2017/
+cd ~/datasets/coco2017/
 unzip train2017.zip
 unzip val2017.zip
 unzip annotations_trainval2017.zip
@@ -73,9 +73,9 @@ wget http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar
 ### 3.2 Untar and extract files
 ```shell
 # Go to the root of this repository
-mkdir ~/dataset/ -p
-mv VOCtrainval_11-May-2012.tar ~/dataset/
-cd ~/dataset/
+mkdir ~/datasets/ -p
+mv VOCtrainval_11-May-2012.tar ~/datasets/
+cd ~/datasets/
 tar -xvf ILSVRC2012_img_val.tar
 cd ../../
 ```
