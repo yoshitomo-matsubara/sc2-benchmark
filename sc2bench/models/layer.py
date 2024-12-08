@@ -106,7 +106,7 @@ class SimpleBottleneck(nn.Module):
 
 
 @register_layer_func
-def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=7, output_channel=256,
+def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
                              compressor_transform=None, decompressor_transform=None):
     """
     Builds a bottleneck layer ResNet-based encoder and decoder (24 layers in total).
