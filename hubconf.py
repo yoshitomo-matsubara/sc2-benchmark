@@ -9,8 +9,8 @@ def custom_resnet50(bottleneck_channel=12, bottleneck_idx=7, compressor=None, de
         'kwargs': {
             'bottleneck_channel': bottleneck_channel,
             'bottleneck_idx': bottleneck_idx,
-            'compressor': compressor,
-            'decompressor': decompressor,
+            'compressor_transform': compressor,
+            'decompressor_transform': decompressor,
         }
     }
     return splittable_resnet(bottleneck_layer_config, resnet_name='resnet50',
@@ -23,8 +23,8 @@ def custom_resnet101(bottleneck_channel=12, bottleneck_idx=7, compressor=None, d
         'kwargs': {
             'bottleneck_channel': bottleneck_channel,
             'bottleneck_idx': bottleneck_idx,
-            'compressor': compressor,
-            'decompressor': decompressor,
+            'compressor_transform': compressor,
+            'decompressor_transform': decompressor,
         }
     }
     return splittable_resnet(bottleneck_layer_config, resnet_name='resnet101',
@@ -37,8 +37,8 @@ def custom_resnet152(bottleneck_channel=12, bottleneck_idx=7, compressor=None, d
         'kwargs': {
             'bottleneck_channel': bottleneck_channel,
             'bottleneck_idx': bottleneck_idx,
-            'compressor': compressor,
-            'decompressor': decompressor,
+            'compressor_transform': compressor,
+            'decompressor_transform': decompressor,
         }
     }
     return splittable_resnet(bottleneck_layer_config, resnet_name='resnet152',
@@ -55,8 +55,8 @@ def custom_densenet169(bottleneck_channel=12, bottleneck_idx=7, compressor=None,
         'kwargs': {
             'bottleneck_channel': bottleneck_channel,
             'bottleneck_idx': bottleneck_idx,
-            'compressor': compressor,
-            'decompressor': decompressor,
+            'compressor_transform': compressor,
+            'decompressorv': decompressor,
         }
     }
     return splittable_densenet(bottleneck_layer_config, densenet_name='densenet169',
@@ -74,8 +74,8 @@ def custom_densenet201(bottleneck_channel=12, bottleneck_idx=7, compressor=None,
         'kwargs': {
             'bottleneck_channel': bottleneck_channel,
             'bottleneck_idx': bottleneck_idx,
-            'compressor': compressor,
-            'decompressor': decompressor,
+            'compressor_transform': compressor,
+            'decompressor_transform': decompressor,
         }
     }
     return splittable_densenet(bottleneck_layer_config, densenet_name='densenet201',
@@ -96,8 +96,8 @@ def custom_inception_v3(bottleneck_channel=12, bottleneck_idx=7, compressor=None
         'kwargs': {
             'bottleneck_channel': bottleneck_channel,
             'bottleneck_idx': bottleneck_idx,
-            'compressor': compressor,
-            'decompressor': decompressor,
+            'compressor_transform': compressor,
+            'decompressor_transform': decompressor,
         }
     }
     return splittable_inception_v3(bottleneck_layer_config, short_module_names=short_module_names,
