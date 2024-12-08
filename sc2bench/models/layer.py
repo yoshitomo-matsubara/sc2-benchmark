@@ -154,7 +154,7 @@ def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
 
 
 @register_layer_func
-def larger_densenet_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
+def larger_densenet_bottleneck(bottleneck_channel=12, bottleneck_idx=8,
                                compressor_transform=None, decompressor_transform=None):
     """
     Builds a bottleneck layer DenseNet-based encoder and decoder (23 layers in total).
@@ -248,8 +248,8 @@ def inception_v3_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
 
 
 @register_layer_func
-def smaller_resnet_layer1_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
-                                     compressor_transform=None, decompressor_transform=None):
+def smaller_resnet_layer1_bottleneck(bottleneck_channel=12, bottleneck_idx=8,
+                                     compressor_transform=None, decompressor_transform=None, **kwargs):
     """
     Builds a bottleneck layer ResNet-based encoder and decoder (20 layers in total).
 
@@ -296,8 +296,8 @@ def smaller_resnet_layer1_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
 
 
 @register_layer_func
-def larger_resnet_layer1_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
-                                    compressor_transform=None, decompressor_transform=None):
+def larger_resnet_layer1_bottleneck(bottleneck_channel=12, bottleneck_idx=8,
+                                    compressor_transform=None, decompressor_transform=None, **kwargs):
     """
     Builds a bottleneck layer ResNet-based encoder and decoder (20 layers in total).
 

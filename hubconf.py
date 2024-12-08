@@ -1,5 +1,3 @@
-from models.layer import smaller_resnet_layer1_bottleneck, larger_resnet_layer1_bottleneck
-
 dependencies = ['torch', 'torchvision', 'compressai', 'timm']
 
 from torch.hub import load_state_dict_from_url
@@ -12,6 +10,7 @@ from torchvision.ops import MultiScaleRoIAlign
 from torchvision.ops import misc as misc_nn_ops
 
 from sc2bench.models.backbone import splittable_resnet, splittable_densenet, splittable_inception_v3
+from sc2bench.models.layer import smaller_resnet_layer1_bottleneck, larger_resnet_layer1_bottleneck
 
 
 def custom_resnet50(bottleneck_channel=12, bottleneck_idx=7, compressor=None, decompressor=None,
@@ -139,17 +138,16 @@ def custom_inception_v3(bottleneck_channel=12, bottleneck_idx=7, compressor=None
                                    skips_avgpool=False, skips_dropout=False, skips_fc=False, **kwargs)
 
 
-def custom_resnet_fpn_backbone(backbone_key, bottleneck_channel, bottleneck_idx, compressor=None, decompressor=None,
+def custom_resnet_fpn_backbone(backbone_key, layer1, compressor=None, decompressor=None,
                                weights=None, trainable_backbone_layers=4, returned_layers=None,
-                               norm_layer=misc_nn_ops.FrozenBatchNorm2d):
+                               norm_layer=misc_nn_ops.FrozenBatchNorm2d, **kwargs):
     if returned_layers is None:
         returned_layers = [1, 2, 3, 4]
 
-    layer1 = None
     if backbone_key in {'custom_resnet18', 'custom_resnet34'}:
-        layer1 = smaller_resnet_layer1_bottleneck(bottleneck_channel, bottleneck_idx, compressor, decompressor)
+        layer1 = smaller_resnet_layer1_bottleneck(**layer1)
     elif backbone_key in {'custom_resnet50', 'custom_resnet101', 'custom_resnet152'}:
-        layer1 = larger_resnet_layer1_bottleneck(bottleneck_channel, bottleneck_idx, compressor, decompressor)
+        layer1 = larger_resnet_layer1_bottleneck(**layer1)
 
     prefix = 'custom_'
     start_idx = backbone_key.find(prefix) + len(prefix)
