@@ -106,7 +106,7 @@ class SimpleBottleneck(nn.Module):
 
 
 @register_layer_func
-def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=12, output_channel=256,
+def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=7, output_channel=256,
                              compressor_transform=None, decompressor_transform=None):
     """
     Builds a bottleneck layer ResNet-based encoder and decoder (24 layers in total).
@@ -133,26 +133,22 @@ def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=12, output_ch
         nn.BatchNorm2d(64),
         nn.ReLU(inplace=True),
         nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        nn.Conv2d(64, 64, kernel_size=2, padding=1, bias=False),
         nn.BatchNorm2d(64),
-        nn.Conv2d(64, 256, kernel_size=2, padding=1, bias=False),
-        nn.BatchNorm2d(256),
         nn.ReLU(inplace=True),
-        nn.Conv2d(256, 64, kernel_size=2, padding=1, bias=False),
-        nn.BatchNorm2d(64),
-        nn.Conv2d(64, bottleneck_channel, kernel_size=2, padding=1, bias=False),
+        nn.Conv2d(64, bottleneck_channel, kernel_size=2, stride=2, padding=1, bias=False),
         nn.BatchNorm2d(bottleneck_channel),
         nn.ReLU(inplace=True),
-        nn.Conv2d(bottleneck_channel, 64, kernel_size=2, bias=False),
-        nn.BatchNorm2d(64),
-        nn.Conv2d(64, 128, kernel_size=2, bias=False),
-        nn.BatchNorm2d(128),
+        nn.Conv2d(bottleneck_channel, 512, kernel_size=2, stride=1, padding=1, bias=False),
+        nn.BatchNorm2d(512),
         nn.ReLU(inplace=True),
-        nn.Conv2d(128, output_channel, kernel_size=2, bias=False),
-        nn.BatchNorm2d(output_channel),
-        nn.Conv2d(output_channel, output_channel, kernel_size=2, bias=False),
-        nn.BatchNorm2d(output_channel),
-        nn.ReLU(inplace=True)
+        nn.Conv2d(512, 512, kernel_size=2, stride=1, padding=1, bias=False),
+        nn.BatchNorm2d(512),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(512, 512, kernel_size=2, stride=1, bias=False),
+        nn.BatchNorm2d(512),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(512, 512, kernel_size=2, stride=1, bias=False),
+        nn.AvgPool2d(kernel_size=2, stride=1)
     ]
     encoder = nn.Sequential(*modules[:bottleneck_idx])
     decoder = nn.Sequential(*modules[bottleneck_idx:])
