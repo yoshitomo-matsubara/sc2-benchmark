@@ -654,7 +654,7 @@ class SplittableHybridViT(UpdatableBackbone):
 @register_backbone_func
 def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, skips_avgpool=True, skips_fc=True,
                       pre_transform=None, analysis_config=None, org_model_ckpt_file_path_or_url=None,
-                      org_ckpt_strict=True, **resnet_kwargs):
+                      org_ckpt_strict=True, short_module_names=None, **resnet_kwargs):
     """
     Builds ResNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck,
     and decoder.
@@ -677,6 +677,8 @@ def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, 
     :type org_model_ckpt_file_path_or_url: str or None
     :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original ResNet model’s `state_dict()` function
     :type org_ckpt_strict: bool
+    :param short_module_names: child module names of "ResNet" to use
+    :type short_module_names: list
     :return: splittable ResNet model
     :rtype: SplittableResNet
     """
@@ -689,7 +691,7 @@ def splittable_resnet(bottleneck_config, resnet_name='resnet50', inplanes=None, 
     if org_model_ckpt_file_path_or_url is not None:
         load_ckpt(org_model_ckpt_file_path_or_url, model=resnet_model, strict=org_ckpt_strict)
     return SplittableResNet(bottleneck_layer, resnet_model, inplanes, skips_avgpool, skips_fc,
-                            pre_transform, analysis_config)
+                            pre_transform, analysis_config, short_module_names=short_module_names)
 
 
 @register_backbone_func
