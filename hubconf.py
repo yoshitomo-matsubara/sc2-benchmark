@@ -18,8 +18,8 @@ def custom_resnet50(bottleneck_channel=12, bottleneck_idx=7, compressor=None, de
         }
     }
     short_module_name_set = set(short_module_names)
-    skips_avgpool = 'avgpool' in short_module_name_set
-    skips_fc = 'fc' in short_module_name_set
+    skips_avgpool = 'avgpool' not in short_module_name_set
+    skips_fc = 'fc' not in short_module_name_set
     return splittable_resnet(bottleneck_layer_config, resnet_name='resnet50',
                              skips_avgpool=skips_avgpool, skips_fc=skips_fc, short_module_names=short_module_names,
                              **kwargs)
@@ -40,8 +40,8 @@ def custom_resnet101(bottleneck_channel=12, bottleneck_idx=7, compressor=None, d
         }
     }
     short_module_name_set = set(short_module_names)
-    skips_avgpool = 'avgpool' in short_module_name_set
-    skips_fc = 'fc' in short_module_name_set
+    skips_avgpool = 'avgpool' not in short_module_name_set
+    skips_fc = 'fc' not in short_module_name_set
     return splittable_resnet(bottleneck_layer_config, resnet_name='resnet101',
                              skips_avgpool=skips_avgpool, skips_fc=skips_fc, short_module_names=short_module_names,
                              **kwargs)
@@ -62,8 +62,8 @@ def custom_resnet152(bottleneck_channel=12, bottleneck_idx=7, compressor=None, d
         }
     }
     short_module_name_set = set(short_module_names)
-    skips_avgpool = 'avgpool' in short_module_name_set
-    skips_fc = 'fc' in short_module_name_set
+    skips_avgpool = 'avgpool' not in short_module_name_set
+    skips_fc = 'fc' not in short_module_name_set
     return splittable_resnet(bottleneck_layer_config, resnet_name='resnet152',
                              skips_avgpool=skips_avgpool, skips_fc=skips_fc, short_module_names=short_module_names,
                              **kwargs)
