@@ -196,10 +196,12 @@ class SplittableResNet(UpdatableBackbone):
     :type pre_transform: nn.Module or None
     :param analysis_config: analysis configuration
     :type analysis_config: dict or None
+    :param short_module_names: child module names of "ResNet" to use
+    :type short_module_names: list
     """
     # Referred to the ResNet implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py
     def __init__(self, bottleneck_layer, resnet_model, inplanes=None, skips_avgpool=True, skips_fc=True,
-                 pre_transform=None, analysis_config=None):
+                 pre_transform=None, analysis_config=None, short_module_names=None):
         if analysis_config is None:
             analysis_config = dict()
 
@@ -207,9 +209,10 @@ class SplittableResNet(UpdatableBackbone):
         self.pre_transform = pre_transform
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
         self.bottleneck_layer = bottleneck_layer
-        self.layer2 = resnet_model.layer2
-        self.layer3 = resnet_model.layer3
-        self.layer4 = resnet_model.layer4
+        short_module_name_set = set() if short_module_names is None else set(short_module_names)
+        self.layer2 = resnet_model.layer2 if 'layer2' in short_module_name_set else None
+        self.layer3 = resnet_model.layer3 if 'layer3' in short_module_name_set else None
+        self.layer4 = resnet_model.layer4 if 'layer4' in short_module_name_set else None
         self.avgpool = None if skips_avgpool \
             else resnet_model.global_pool if hasattr(resnet_model, 'global_pool') else resnet_model.avgpool
         self.fc = None if skips_fc else resnet_model.fc
@@ -227,9 +230,15 @@ class SplittableResNet(UpdatableBackbone):
         else:
             x = self.bottleneck_layer(x)
 
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        if self.layer2 is not None:
+            x = self.layer2(x)
+
+        if self.layer3 is not None:
+            x = self.layer3(x)
+
+        if self.layer4 is not None:
+            x = self.layer4(x)
+
         if self.avgpool is None:
             return x
 
