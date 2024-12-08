@@ -125,4 +125,4 @@ def custom_inception_v3(bottleneck_channel=12, bottleneck_idx=7, compressor=None
         }
     }
     return splittable_inception_v3(bottleneck_layer_config, short_module_names=short_module_names,
-                                   skips_avgpool=False, skips_fc=False, **kwargs)
+                                   skips_avgpool=False, skips_dropout=False, skips_fc=False, **kwargs)
