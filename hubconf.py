@@ -3,7 +3,11 @@ dependencies = ['torch', 'torchvision', 'compressai', 'timm']
 from sc2bench.models.backbone import splittable_resnet, splittable_densenet, splittable_inception_v3
 
 
-def custom_resnet50(bottleneck_channel=12, bottleneck_idx=7, compressor=None, decompressor=None, **kwargs):
+def custom_resnet50(bottleneck_channel=12, bottleneck_idx=7, compressor=None, decompressor=None,
+                    short_module_names=None, **kwargs):
+    if short_module_names is None:
+        short_module_names = ['layer3', 'layer4', 'avgpool', 'fc']
+
     bottleneck_layer_config = {
         'key': 'larger_resnet_bottleneck',
         'kwargs': {
@@ -13,11 +17,19 @@ def custom_resnet50(bottleneck_channel=12, bottleneck_idx=7, compressor=None, de
             'decompressor_transform': decompressor,
         }
     }
+    short_module_name_set = set(short_module_names)
+    skips_avgpool = 'avgpool' in short_module_name_set
+    skips_fc = 'fc' in short_module_name_set
     return splittable_resnet(bottleneck_layer_config, resnet_name='resnet50',
-                             skips_avgpool=False, skips_fc=False, **kwargs)
+                             skips_avgpool=skips_avgpool, skips_fc=skips_fc, short_module_names=short_module_names,
+                             **kwargs)
 
 
-def custom_resnet101(bottleneck_channel=12, bottleneck_idx=7, compressor=None, decompressor=None, **kwargs):
+def custom_resnet101(bottleneck_channel=12, bottleneck_idx=7, compressor=None, decompressor=None,
+                     short_module_names=None, **kwargs):
+    if short_module_names is None:
+        short_module_names = ['layer3', 'layer4', 'avgpool', 'fc']
+
     bottleneck_layer_config = {
         'key': 'larger_resnet_bottleneck',
         'kwargs': {
@@ -27,8 +39,12 @@ def custom_resnet101(bottleneck_channel=12, bottleneck_idx=7, compressor=None, d
             'decompressor_transform': decompressor,
         }
     }
+    short_module_name_set = set(short_module_names)
+    skips_avgpool = 'avgpool' in short_module_name_set
+    skips_fc = 'fc' in short_module_name_set
     return splittable_resnet(bottleneck_layer_config, resnet_name='resnet101',
-                             skips_avgpool=False, skips_fc=False, **kwargs)
+                             skips_avgpool=skips_avgpool, skips_fc=skips_fc, short_module_names=short_module_names,
+                             **kwargs)
 
 
 def custom_resnet152(bottleneck_channel=12, bottleneck_idx=7, compressor=None, decompressor=None, **kwargs):
