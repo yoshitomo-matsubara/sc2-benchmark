@@ -113,14 +113,12 @@ def larger_resnet_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
 
     Compatible with ResNet-50, -101, and -152.
 
-    Yoshitomo Matsubara, Marco Levorato: `"Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks" <https://arxiv.org/abs/2007.15818>`_ @ ICPR 2020 (2021)
+    Yoshitomo Matsubara, Davide Callegaro, Sabur Baidya, Marco Levorato, Sameer Singh: `"Head Network Distillation: Splitting Distilled Deep Neural Networks for Resource-constrained Edge Computing Systems" <https://ieeexplore.ieee.org/document/9265295>`_ @ IEEE Access (2020)
 
     :param bottleneck_channel: number of channels for the bottleneck point
     :type bottleneck_idx: int
     :param bottleneck_idx: number of the first layers to be used as an encoder (the remaining layers are for decoder)
     :type bottleneck_idx: int
-    :param output_channel: number of output channels for decoder's output
-    :type output_channel: int
     :param compressor_transform: compressor transform
     :type compressor_transform: nn.Module or None
     :param decompressor_transform: decompressor transform
@@ -243,6 +241,102 @@ def inception_v3_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
         nn.ReLU(inplace=True),
         nn.Conv2d(256, 192, kernel_size=2, stride=1, bias=False),
         nn.AvgPool2d(kernel_size=2, stride=1)
+    ]
+    encoder = nn.Sequential(*modules[:bottleneck_idx])
+    decoder = nn.Sequential(*modules[bottleneck_idx:])
+    return SimpleBottleneck(encoder, decoder, compressor_transform, decompressor_transform)
+
+
+@register_layer_func
+def smaller_resnet_layer1_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
+                                     compressor_transform=None, decompressor_transform=None):
+    """
+    Builds a bottleneck layer ResNet-based encoder and decoder (20 layers in total).
+
+    Compatible with the first layers of ResNet-18 and -34 until layer1.
+
+    Yoshitomo Matsubara, Marco Levorato: `"Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks" <https://arxiv.org/abs/2007.15818>`_ @ ICPR 2020 (2021)
+
+    :param bottleneck_channel: number of channels for the bottleneck point
+    :type bottleneck_idx: int
+    :param bottleneck_idx: number of the first layers to be used as an encoder (the remaining layers are for decoder)
+    :type bottleneck_idx: int
+    :param compressor_transform: compressor transform
+    :type compressor_transform: nn.Module or None
+    :param decompressor_transform: decompressor transform
+    :type decompressor_transform: nn.Module or None
+    :return: bottleneck layer consisting of encoder and decoder
+    :rtype: SimpleBottleneck
+    """
+    modules = [
+        nn.Conv2d(64, 64, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, 256, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(256),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(256, 64, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, bottleneck_channel, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(bottleneck_channel),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(bottleneck_channel, 64, kernel_size=2, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, 128, kernel_size=2, bias=False),
+        nn.BatchNorm2d(128),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(128, 64, kernel_size=2, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, 64, kernel_size=2, bias=False),
+        nn.BatchNorm2d(64),
+        nn.ReLU(inplace=True)
+    ]
+    encoder = nn.Sequential(*modules[:bottleneck_idx])
+    decoder = nn.Sequential(*modules[bottleneck_idx:])
+    return SimpleBottleneck(encoder, decoder, compressor_transform, decompressor_transform)
+
+
+@register_layer_func
+def larger_resnet_layer1_bottleneck(bottleneck_channel=12, bottleneck_idx=7,
+                                    compressor_transform=None, decompressor_transform=None):
+    """
+    Builds a bottleneck layer ResNet-based encoder and decoder (20 layers in total).
+
+    Compatible with the first layers of ResNet-50, -101, and -152 until layer1.
+
+    Yoshitomo Matsubara, Marco Levorato: `"Neural Compression and Filtering for Edge-assisted Real-time Object Detection in Challenged Networks" <https://arxiv.org/abs/2007.15818>`_ @ ICPR 2020 (2021)
+
+    :param bottleneck_channel: number of channels for the bottleneck point
+    :type bottleneck_idx: int
+    :param bottleneck_idx: number of the first layers to be used as an encoder (the remaining layers are for decoder)
+    :type bottleneck_idx: int
+    :param compressor_transform: compressor transform
+    :type compressor_transform: nn.Module or None
+    :param decompressor_transform: decompressor transform
+    :type decompressor_transform: nn.Module or None
+    :return: bottleneck layer consisting of encoder and decoder
+    :rtype: SimpleBottleneck
+    """
+    modules = [
+        nn.Conv2d(64, 64, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, 256, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(256),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(256, 64, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, bottleneck_channel, kernel_size=2, padding=1, bias=False),
+        nn.BatchNorm2d(bottleneck_channel),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(bottleneck_channel, 64, kernel_size=2, bias=False),
+        nn.BatchNorm2d(64),
+        nn.Conv2d(64, 128, kernel_size=2, bias=False),
+        nn.BatchNorm2d(128),
+        nn.ReLU(inplace=True),
+        nn.Conv2d(128, 256, kernel_size=2, bias=False),
+        nn.BatchNorm2d(256),
+        nn.Conv2d(256, 256, kernel_size=2, bias=False),
+        nn.BatchNorm2d(256),
+        nn.ReLU(inplace=True)
     ]
     encoder = nn.Sequential(*modules[:bottleneck_idx])
     decoder = nn.Sequential(*modules[bottleneck_idx:])
