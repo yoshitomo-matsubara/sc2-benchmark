@@ -80,7 +80,7 @@ def custom_densenet169(bottleneck_channel=12, bottleneck_idx=7, compressor=None,
             'bottleneck_channel': bottleneck_channel,
             'bottleneck_idx': bottleneck_idx,
             'compressor_transform': compressor,
-            'decompressorv': decompressor,
+            'decompressor_transform': decompressor,
         }
     }
     return splittable_densenet(bottleneck_layer_config, densenet_name='densenet169',
@@ -125,4 +125,4 @@ def custom_inception_v3(bottleneck_channel=12, bottleneck_idx=7, compressor=None
         }
     }
     return splittable_inception_v3(bottleneck_layer_config, short_module_names=short_module_names,
-                                   skips_avgpool=False, skips_classifier=False, **kwargs)
+                                   skips_avgpool=False, skips_fc=False, **kwargs)
