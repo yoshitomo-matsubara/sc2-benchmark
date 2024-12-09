@@ -1,5 +1,5 @@
 datasets:
-  &pascal_train 'pascal_voc2012/train': !import_call
+  &pascal_train 'pascal_voc2012/train': &pascal_train_dataset !import_call
     _name: &dataset_name 'pascal_voc2012'
     _root: &root_dir '~/datasets'
     key: 'torchvision.datasets.VOCSegmentation'
