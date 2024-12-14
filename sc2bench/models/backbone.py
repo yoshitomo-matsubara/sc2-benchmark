@@ -205,11 +205,15 @@ class SplittableResNet(UpdatableBackbone):
         if analysis_config is None:
             analysis_config = dict()
 
+        if short_module_names is None:
+            short_module_name_set = {'layer2', 'layer3', 'layer4'}
+        elif isinstance(short_module_names, (list, tuple)):
+            short_module_name_set = set(short_module_names)
+
         super().__init__(analysis_config.get('analyzer_configs', list()))
         self.pre_transform = pre_transform
         self.analyzes_after_compress = analysis_config.get('analyzes_after_compress', False)
         self.bottleneck_layer = bottleneck_layer
-        short_module_name_set = set() if short_module_names is None else set(short_module_names)
         self.layer2 = resnet_model.layer2 if 'layer2' in short_module_name_set else None
         self.layer3 = resnet_model.layer3 if 'layer3' in short_module_name_set else None
         self.layer4 = resnet_model.layer4 if 'layer4' in short_module_name_set else None
