@@ -23,7 +23,8 @@ copyright = '2023, Yoshitomo Matsubara'
 author = 'Yoshitomo Matsubara'
 
 # The full version, including alpha/beta/rc tags
-version = 'v0.0.3'
+import sc2bench
+version = 'v' + sc2bench.__version__
 release = version
 
 
