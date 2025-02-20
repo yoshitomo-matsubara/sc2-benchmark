@@ -12,29 +12,6 @@ If your work is built on **sc2bench**, start `a "Show and tell" discussion at Gi
 
 Papers
 *****
-Resilience of Entropy Model in Distributed Neural Networks
-----
-* Author(s): Milin Zhang, Mohammad Abdi, Shahriar Rifat, and Francesco Restuccia
-* Venue: ECCV 2024
-* PDF: `Paper <https://arxiv.org/abs/2403.00942>`_
-* Code: `GitHub <https://github.com/Restuccia-Group/EntropyR>`_
-
-**Abstract**: Distributed deep neural networks (DNNs) have emerged as
-a key technique to reduce communication overhead without sacrificing
-performance in edge computing systems. Recently, entropy coding has
-been introduced to further reduce the communication overhead. The key
-idea is to train the distributed DNN jointly with an entropy model,
-which is used as side information during inference time to adaptively
-encode latent representations into bit streams with variable length. To
-the best of our knowledge, the resilience of entropy models is yet to be
-investigated. As such, in this paper we formulate and investigate the
-resilience of entropy models to intentional interference (e.g., adversarial attacks) and unintentional interference (e.g., weather changes and
-motion blur). Through an extensive experimental campaign with 3 different DNN architectures, 2 entropy models and 4 rate-distortion tradeoff factors, we demonstrate that the entropy attacks can increase the
-communication overhead by up to 95%. By separating compression features in frequency and spatial domain, we propose a new defense mechanism that can reduce the transmission overhead of the attacked input
-by about 9% compared to unperturbed data, with only about 2% accuracy loss. Importantly, the proposed defense mechanism is a standalone
-approach which can be applied in conjunction with approaches such as
-adversarial training to further improve robustness. Code is available at
-https://github.com/Restuccia-Group/EntropyR.
 
 A Multi-task Supervised Compression Model for Split Computing
 ----
@@ -72,6 +49,32 @@ compression optimized for machine interpretability. We introduce a novel framewo
 models and extensively evaluate our method in an environment reflecting the asymmetric resource distribution between edge
 devices and servers. Our method achieves 60% lower bitrate than a state-of-the-art SC method without decreasing accuracy
 and is up to 16x faster than offloading with existing codec standards.
+
+
+Resilience of Entropy Model in Distributed Neural Networks
+----
+* Author(s): Milin Zhang, Mohammad Abdi, Shahriar Rifat, Francesco Restuccia
+* Venue: ECCV 2024
+* PDF: `Paper <https://www.ecva.net/papers/eccv_2024/papers_ECCV/papers/03193.pdf>`_
+* Code: `GitHub <https://github.com/Restuccia-Group/EntropyR>`_
+
+**Abstract**: Distributed deep neural networks (DNNs) have emerged as
+a key technique to reduce communication overhead without sacrificing
+performance in edge computing systems. Recently, entropy coding has
+been introduced to further reduce the communication overhead. The key
+idea is to train the distributed DNN jointly with an entropy model,
+which is used as side information during inference time to adaptively
+encode latent representations into bit streams with variable length. To
+the best of our knowledge, the resilience of entropy models is yet to be
+investigated. As such, in this paper we formulate and investigate the
+resilience of entropy models to intentional interference (e.g., adversarial attacks) and unintentional interference
+(e.g., weather changes and motion blur). Through an extensive experimental campaign with 3 different DNN architectures,
+2 entropy models and 4 rate-distortion tradeoff factors, we demonstrate that the entropy attacks can increase the
+communication overhead by up to 95%. By separating compression features in frequency and spatial domain, we propose
+a new defense mechanism that can reduce the transmission overhead of the attacked input by about 9% compared to
+unperturbed data, with only about 2% accuracy loss. Importantly, the proposed defense mechanism is a standalone
+approach which can be applied in conjunction with approaches such as adversarial training to further improve robustness.
+Code is available at https://github.com/Restuccia-Group/EntropyR.
 
 
 SC2 Benchmark: Supervised Compression for Split Computing
