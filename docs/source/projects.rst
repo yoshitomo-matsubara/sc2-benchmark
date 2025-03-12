@@ -13,6 +13,15 @@ If your work is built on **sc2bench**, start `a "Show and tell" discussion at Gi
 Papers
 *****
 
+A novel middleware for adaptive and efficient split computing for real-time object detection
+----
+* Author(s): Matteo Mendula, Paolo Bellavista, Marco Levorato, Sharon Ladron de Guevara Contreras
+* Venue: Pervasive and Mobile Computing Journal
+* PDF: `Paper <https://www.sciencedirect.com/science/article/pii/S1574119225000173?via%3Dihub>`_
+* Dataset: `GitHub <https://github.com/MatteoMendula/FurciferDataset>`_
+
+Real-world applications requiring real-time responsiveness frequently rely on energy-intensive and compute-heavy neural network algorithms. Strategies include deploying distributed and optimized Deep Neural Networks on mobile devices, which can lead to considerable energy consumption and degraded performance, or offloading larger models to edge servers, which requires low-latency wireless channels. Here we present Furcifer, a novel middleware that autonomously adjusts the computing strategy (i.e., local computing, edge computing, or split computing) based on context conditions. Utilizing container-based services and low-complexity predictors that generalize across environments, Furcifer supports supervised compression as a viable alternative to pure local or remote processing in real-time environments. An extensive set of experiments coversdiverse scenarios, including both stable and highly dynamic channel environments with unpredictable changes in connection quality and load. In moderate-varying scenarios, Furcifer demonstrates significant benefits: achieving a 2x reduction in energy consumption, a 30% higher mean Average Precision score compared to local computing, and a three-fold FPS increase over static offloading. In highly dynamic environments with unreliable connectivity and rapid increases in concurrent clients, Furcifer’s predictive capabilities preserves up to 30% energy, achieving a 16% higher accuracy rate, and completing 80% more frame inferences compared to pure local computing and approaches without trend forecasting, respectively.
+
 A Multi-task Supervised Compression Model for Split Computing
 ----
 * Author(s): Yoshitomo Matsubara, Matteo Mendula, Marco Levorato
