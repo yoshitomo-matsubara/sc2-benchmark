@@ -1,0 +1,385 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.analysis &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Projects" href="../projects.html" />
+    <link rel="prev" title="sc2bench.loss" href="loss.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../package.html">sc2bench API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="models.html">sc2bench.models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transform.html">sc2bench.transform</a></li>
+<li class="toctree-l2"><a class="reference internal" href="common.html">sc2bench.common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loss.html">sc2bench.loss</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">sc2bench.analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench.analysis.register_analysis_class"><code class="docutils literal notranslate"><span class="pre">register_analysis_class()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench.analysis.AnalyzableModule"><code class="docutils literal notranslate"><span class="pre">AnalyzableModule</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.AnalyzableModule.forward"><code class="docutils literal notranslate"><span class="pre">AnalyzableModule.forward()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.AnalyzableModule.activate_analysis"><code class="docutils literal notranslate"><span class="pre">AnalyzableModule.activate_analysis()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.AnalyzableModule.deactivate_analysis"><code class="docutils literal notranslate"><span class="pre">AnalyzableModule.deactivate_analysis()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.AnalyzableModule.analyze"><code class="docutils literal notranslate"><span class="pre">AnalyzableModule.analyze()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.AnalyzableModule.summarize"><code class="docutils literal notranslate"><span class="pre">AnalyzableModule.summarize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.AnalyzableModule.clear_analysis"><code class="docutils literal notranslate"><span class="pre">AnalyzableModule.clear_analysis()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench.analysis.BaseAnalyzer"><code class="docutils literal notranslate"><span class="pre">BaseAnalyzer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.BaseAnalyzer.analyze"><code class="docutils literal notranslate"><span class="pre">BaseAnalyzer.analyze()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.BaseAnalyzer.summarize"><code class="docutils literal notranslate"><span class="pre">BaseAnalyzer.summarize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.BaseAnalyzer.clear"><code class="docutils literal notranslate"><span class="pre">BaseAnalyzer.clear()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench.analysis.FileSizeAnalyzer"><code class="docutils literal notranslate"><span class="pre">FileSizeAnalyzer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.FileSizeAnalyzer.analyze"><code class="docutils literal notranslate"><span class="pre">FileSizeAnalyzer.analyze()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.FileSizeAnalyzer.summarize"><code class="docutils literal notranslate"><span class="pre">FileSizeAnalyzer.summarize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.FileSizeAnalyzer.clear"><code class="docutils literal notranslate"><span class="pre">FileSizeAnalyzer.clear()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench.analysis.FileSizeAccumulator"><code class="docutils literal notranslate"><span class="pre">FileSizeAccumulator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.analysis.FileSizeAccumulator.analyze"><code class="docutils literal notranslate"><span class="pre">FileSizeAccumulator.analyze()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench.analysis.get_analyzer"><code class="docutils literal notranslate"><span class="pre">get_analyzer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench.analysis.check_if_analyzable"><code class="docutils literal notranslate"><span class="pre">check_if_analyzable()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench.analysis.analyze_model_size"><code class="docutils literal notranslate"><span class="pre">analyze_model_size()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../package.html">sc2bench API</a></li>
+      <li class="breadcrumb-item active">sc2bench.analysis</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/yoshitomo-matsubara/sc2-benchmark/blob/main/docs/source/subpkgs/analysis.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="sc2bench-analysis">
+<h1>sc2bench.analysis<a class="headerlink" href="#sc2bench-analysis" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<dl class="py function" id="module-sc2bench.analysis">
+<dt class="sig sig-object py" id="sc2bench.analysis.register_analysis_class">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.analysis.</span></span><span class="sig-name descname"><span class="pre">register_analysis_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#register_analysis_class"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.register_analysis_class" title="Link to this definition"></a></dt>
+<dd><p>Registers an analyzer class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cls</strong> (<em>class</em>) – analyzer class to be registered</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>registered analyzer class</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.analysis.AnalyzableModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.analysis.</span></span><span class="sig-name descname"><span class="pre">AnalyzableModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analyzer_configs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#AnalyzableModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.AnalyzableModule" title="Link to this definition"></a></dt>
+<dd><p>A base module to analyze and summarize the wrapped modules and intermediate representations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>analyzer_configs</strong> (<em>list</em><em>[</em><em>dict</em><em>] or </em><em>None</em>) – list of analysis configurations</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.AnalyzableModule.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#AnalyzableModule.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.AnalyzableModule.forward" title="Link to this definition"></a></dt>
+<dd><p>Define the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the <code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.AnalyzableModule.activate_analysis">
+<span class="sig-name descname"><span class="pre">activate_analysis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#AnalyzableModule.activate_analysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.AnalyzableModule.activate_analysis" title="Link to this definition"></a></dt>
+<dd><p>Makes internal analyzers ready to run.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.AnalyzableModule.deactivate_analysis">
+<span class="sig-name descname"><span class="pre">deactivate_analysis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#AnalyzableModule.deactivate_analysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.AnalyzableModule.deactivate_analysis" title="Link to this definition"></a></dt>
+<dd><p>Turns internal analyzers off.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.AnalyzableModule.analyze">
+<span class="sig-name descname"><span class="pre">analyze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compressed_obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#AnalyzableModule.analyze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.AnalyzableModule.analyze" title="Link to this definition"></a></dt>
+<dd><p>Analyzes a compressed object using internal analyzers.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>compressed_obj</strong> (<em>Any</em>) – compressed object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.AnalyzableModule.summarize">
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#AnalyzableModule.summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.AnalyzableModule.summarize" title="Link to this definition"></a></dt>
+<dd><p>Shows each of internal analyzers’ summary of results.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.AnalyzableModule.clear_analysis">
+<span class="sig-name descname"><span class="pre">clear_analysis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#AnalyzableModule.clear_analysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.AnalyzableModule.clear_analysis" title="Link to this definition"></a></dt>
+<dd><p>Clears each of internal analyzers’ results.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.analysis.BaseAnalyzer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.analysis.</span></span><span class="sig-name descname"><span class="pre">BaseAnalyzer</span></span><a class="reference internal" href="../_modules/sc2bench/analysis.html#BaseAnalyzer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.BaseAnalyzer" title="Link to this definition"></a></dt>
+<dd><p>A base analyzer to analyze and summarize the wrapped modules and intermediate representations.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.BaseAnalyzer.analyze">
+<span class="sig-name descname"><span class="pre">analyze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#BaseAnalyzer.analyze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.BaseAnalyzer.analyze" title="Link to this definition"></a></dt>
+<dd><p>Analyzes a compressed object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.BaseAnalyzer.summarize">
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#BaseAnalyzer.summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.BaseAnalyzer.summarize" title="Link to this definition"></a></dt>
+<dd><p>Shows the summary of results.</p>
+<p>This should be overridden by all subclasses.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.BaseAnalyzer.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#BaseAnalyzer.clear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.BaseAnalyzer.clear" title="Link to this definition"></a></dt>
+<dd><p>Clears the results.</p>
+<p>This should be overridden by all subclasses.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.analysis.FileSizeAnalyzer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.analysis.</span></span><span class="sig-name descname"><span class="pre">FileSizeAnalyzer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'KB'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#FileSizeAnalyzer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.FileSizeAnalyzer" title="Link to this definition"></a></dt>
+<dd><p>An analyzer to measure file size of compressed object in the designated unit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>unit</strong> (<em>str</em>) – unit of data size in bytes (‘B’, ‘KB’, ‘MB’)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.FileSizeAnalyzer.analyze">
+<span class="sig-name descname"><span class="pre">analyze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">compressed_obj</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#FileSizeAnalyzer.analyze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.FileSizeAnalyzer.analyze" title="Link to this definition"></a></dt>
+<dd><p>Computes and appends binary object size of the compressed object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>compressed_obj</strong> (<em>Any</em>) – compressed object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.FileSizeAnalyzer.summarize">
+<span class="sig-name descname"><span class="pre">summarize</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#FileSizeAnalyzer.summarize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.FileSizeAnalyzer.summarize" title="Link to this definition"></a></dt>
+<dd><p>Computes and shows mean and std of the stored file sizes and the number of samples .</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.FileSizeAnalyzer.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#FileSizeAnalyzer.clear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.FileSizeAnalyzer.clear" title="Link to this definition"></a></dt>
+<dd><p>Clears the file size list.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.analysis.FileSizeAccumulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.analysis.</span></span><span class="sig-name descname"><span class="pre">FileSizeAccumulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'KB'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#FileSizeAccumulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.FileSizeAccumulator" title="Link to this definition"></a></dt>
+<dd><p>An accumulator to store pre-computed file size in the designated unit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>unit</strong> (<em>str</em>) – unit of data size in bytes (‘B’, ‘KB’, ‘MB’)</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.analysis.FileSizeAccumulator.analyze">
+<span class="sig-name descname"><span class="pre">analyze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#FileSizeAccumulator.analyze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.FileSizeAccumulator.analyze" title="Link to this definition"></a></dt>
+<dd><p>Appends a file size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_size</strong> (<em>int</em><em> or </em><em>float</em>) – pre-computed file size</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sc2bench.analysis.get_analyzer">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.analysis.</span></span><span class="sig-name descname"><span class="pre">get_analyzer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls_name</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#get_analyzer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.get_analyzer" title="Link to this definition"></a></dt>
+<dd><p>Gets an analyzer module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cls_name</strong> (<em>str</em>) – analyzer class name</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – kwargs for the analyzer class</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>analyzer module</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#sc2bench.analysis.BaseAnalyzer" title="sc2bench.analysis.BaseAnalyzer">BaseAnalyzer</a> or None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sc2bench.analysis.check_if_analyzable">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.analysis.</span></span><span class="sig-name descname"><span class="pre">check_if_analyzable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#check_if_analyzable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.check_if_analyzable" title="Link to this definition"></a></dt>
+<dd><p>Checks if a module is an instance of <cite>AnalyzableModule</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>module</strong> (<em>Any</em>) – module</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the module is an instance of <cite>AnalyzableModule</cite>. False otherwise</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sc2bench.analysis.analyze_model_size">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.analysis.</span></span><span class="sig-name descname"><span class="pre">analyze_model_size</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoder_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">additional_rest_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignores_dtype_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/analysis.html#analyze_model_size"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.analysis.analyze_model_size" title="Link to this definition"></a></dt>
+<dd><p>Approximates numbers of bits used for parameters of the whole model, encoder, and the rest of the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>nn.Module</em>) – model</p></li>
+<li><p><strong>encoder_paths</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>None</em>) – list of module paths for the model to be considered as part of encoder’s parameters</p></li>
+<li><p><strong>additional_rest_paths</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>None</em>) – list of additional rest module paths whose parameters should be shared with encoder
+e.g., module path of entropy bottleneck in the model if applied</p></li>
+<li><p><strong>ignores_dtype_error</strong> (<em>bool</em>) – if False, raise an error when any unexpected dtypes are found</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>model size (sum of param x num_bits) with three keys: model (whole model), encoder, and the rest</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="loss.html" class="btn btn-neutral float-left" title="sc2bench.loss" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../projects.html" class="btn btn-neutral float-right" title="Projects" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

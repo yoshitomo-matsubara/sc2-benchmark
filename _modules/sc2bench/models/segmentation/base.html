@@ -1,0 +1,317 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.models.segmentation.base &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../package.html">sc2bench API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sc2bench.models.segmentation.base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sc2bench.models.segmentation.base</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.common.constant</span><span class="w"> </span><span class="kn">import</span> <span class="n">def_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..backbone</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_if_updatable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalyzableModule</span><span class="p">,</span> <span class="n">check_if_analyzable</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">def_logger</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="UpdatableSegmentationModel">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.UpdatableSegmentationModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UpdatableSegmentationModel</span><span class="p">(</span><span class="n">AnalyzableModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An abstract class for updatable semantic segmentation model.</span>
+
+<span class="sd">    :param analyzer_configs: list of analysis configurations</span>
+<span class="sd">    :type analyzer_configs: list[dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analyzer_configs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analyzer_configs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+<div class="viewcode-block" id="UpdatableSegmentationModel.update">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.UpdatableSegmentationModel.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates compression-specific parameters like `CompressAI models do &lt;https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.update&gt;`_.</span>
+
+<span class="sd">        This should be overridden by all subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="UpdatableSegmentationModel.get_aux_module">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.UpdatableSegmentationModel.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an auxiliary module to compute auxiliary loss if necessary like `CompressAI models do &lt;https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.aux_loss&gt;`_.</span>
+
+<span class="sd">        This should be overridden by all subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BaseSegmentationModel">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.BaseSegmentationModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseSegmentationModel</span><span class="p">(</span><span class="n">UpdatableSegmentationModel</span><span class="p">):</span>
+    <span class="c1"># Referred to the base implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/_utils.py</span>
+    <span class="n">__constants__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;aux_classifier&#39;</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base, updatable segmentation model.</span>
+
+<span class="sd">    :param backbone: backbone model (usually a classification model)</span>
+<span class="sd">    :type backbone: nn.Module</span>
+<span class="sd">    :param classifier: classification model</span>
+<span class="sd">    :type classifier: nn.Module</span>
+<span class="sd">    :param aux_classifier: auxiliary classification model to be used during training only</span>
+<span class="sd">    :type aux_classifier: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backbone</span><span class="p">,</span> <span class="n">classifier</span><span class="p">,</span> <span class="n">aux_classifier</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span> <span class="o">=</span> <span class="n">backbone</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">classifier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">aux_classifier</span> <span class="o">=</span> <span class="n">aux_classifier</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">input_shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="c1"># contract: features is a dict of tensors</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="s1">&#39;out&#39;</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">functional</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;bilinear&#39;</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">result</span><span class="p">[</span><span class="s1">&#39;out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux_classifier</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="s1">&#39;aux&#39;</span><span class="p">]</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aux_classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">functional</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">input_shape</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;bilinear&#39;</span><span class="p">,</span> <span class="n">align_corners</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">result</span><span class="p">[</span><span class="s1">&#39;aux&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+<div class="viewcode-block" id="BaseSegmentationModel.update">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.BaseSegmentationModel.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates compression-specific parameters like `CompressAI models do &lt;https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.update&gt;`_.</span>
+<span class="sd">        Needs to be called once after training to be able to later perform the evaluation with an actual entropy coder.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_if_updatable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;`backbone` </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s1"> is not updatable&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseSegmentationModel.get_aux_module">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.BaseSegmentationModel.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an auxiliary module to compute auxiliary loss if necessary like `CompressAI models do &lt;https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.aux_loss&gt;`_.</span>
+
+<span class="sd">        :return: auxiliary module</span>
+<span class="sd">        :rtype: nn.Module</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">get_aux_module</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseSegmentationModel.activate_analysis">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.BaseSegmentationModel.activate_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">activate_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Activates the analysis mode.</span>
+
+<span class="sd">        Should be called after training model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">activate_analysis</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseSegmentationModel.deactivate_analysis">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.BaseSegmentationModel.deactivate_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">deactivate_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deactivates the analysis mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">deactivate_analysis</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">deactivate_analysis</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseSegmentationModel.analyze">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.BaseSegmentationModel.analyze">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compressed_obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Analyzes a given compressed object (e.g., file size of the compressed object).</span>
+
+<span class="sd">        :param compressed_obj: compressed object to be analyzed</span>
+<span class="sd">        :type compressed_obj: Any</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">analyzer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="p">:</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">compressed_obj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">compressed_obj</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseSegmentationModel.summarize">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.BaseSegmentationModel.summarize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Summarizes the results that the configured analyzers store.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">analyzer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="p">:</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseSegmentationModel.clear_analysis">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.BaseSegmentationModel.clear_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears the results that the configured analyzers store.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">analyzer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="p">:</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">clear_analysis</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="check_if_updatable_segmentation_model">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.segmentation.base.check_if_updatable_segmentation_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_if_updatable_segmentation_model</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Checks if the given semantic segmentation model is updatable.</span>
+
+<span class="sd">    :param model: semantic segmentation model</span>
+<span class="sd">    :type model: nn.Module</span>
+<span class="sd">    :return: True if the model is updatable, False otherwise</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">UpdatableSegmentationModel</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

@@ -1,0 +1,444 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.analysis &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../package.html">sc2bench API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sc2bench.analysis</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sc2bench.analysis</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.common.constant</span><span class="w"> </span><span class="kn">import</span> <span class="n">def_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.common.file_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_binary_object_size</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">def_logger</span><span class="o">.</span><span class="n">getChild</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="n">ANALYZER_CLASS_DICT</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="register_analysis_class">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.register_analysis_class">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_analysis_class</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Registers an analyzer class.</span>
+
+<span class="sd">    :param cls: analyzer class to be registered</span>
+<span class="sd">    :type cls: class</span>
+<span class="sd">    :return: registered analyzer class</span>
+<span class="sd">    :rtype: class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ANALYZER_CLASS_DICT</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
+    <span class="k">return</span> <span class="bp">cls</span></div>
+
+
+
+<div class="viewcode-block" id="AnalyzableModule">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.AnalyzableModule">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AnalyzableModule</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base module to analyze and summarize the wrapped modules and intermediate representations.</span>
+
+<span class="sd">    :param analyzer_configs: list of analysis configurations</span>
+<span class="sd">    :type analyzer_configs: list[dict] or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analyzer_configs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analyzer_configs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analyzer_configs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span> <span class="o">=</span> <span class="p">[</span><span class="n">get_analyzer</span><span class="p">(</span><span class="n">analyzer_config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">analyzer_config</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+                          <span class="k">for</span> <span class="n">analyzer_config</span> <span class="ow">in</span> <span class="n">analyzer_configs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="AnalyzableModule.forward">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.AnalyzableModule.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="AnalyzableModule.activate_analysis">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.AnalyzableModule.activate_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">activate_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Makes internal analyzers ready to run.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="AnalyzableModule.deactivate_analysis">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.AnalyzableModule.deactivate_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">deactivate_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Turns internal analyzers off.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="AnalyzableModule.analyze">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.AnalyzableModule.analyze">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compressed_obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Analyzes a compressed object using internal analyzers.</span>
+
+<span class="sd">        :param compressed_obj: compressed object</span>
+<span class="sd">        :type compressed_obj: Any</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">analyzer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="p">:</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">compressed_obj</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnalyzableModule.summarize">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.AnalyzableModule.summarize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shows each of internal analyzers&#39; summary of results.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">analyzer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="p">:</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="AnalyzableModule.clear_analysis">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.AnalyzableModule.clear_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears each of internal analyzers&#39; results.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">analyzer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="p">:</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="BaseAnalyzer">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.BaseAnalyzer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseAnalyzer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base analyzer to analyze and summarize the wrapped modules and intermediate representations.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="BaseAnalyzer.analyze">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.BaseAnalyzer.analyze">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Analyzes a compressed object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseAnalyzer.summarize">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.BaseAnalyzer.summarize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shows the summary of results.</span>
+
+<span class="sd">        This should be overridden by all subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseAnalyzer.clear">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.BaseAnalyzer.clear">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears the results.</span>
+
+<span class="sd">        This should be overridden by all subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FileSizeAnalyzer">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.FileSizeAnalyzer">[docs]</a>
+<span class="nd">@register_analysis_class</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FileSizeAnalyzer</span><span class="p">(</span><span class="n">BaseAnalyzer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An analyzer to measure file size of compressed object in the designated unit.</span>
+
+<span class="sd">    :param unit: unit of data size in bytes (&#39;B&#39;, &#39;KB&#39;, &#39;MB&#39;)</span>
+<span class="sd">    :type unit: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">UNIT_DICT</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;KB&#39;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span> <span class="s1">&#39;MB&#39;</span><span class="p">:</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;KB&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unit_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">UNIT_DICT</span><span class="p">[</span><span class="n">unit</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_size_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+<div class="viewcode-block" id="FileSizeAnalyzer.analyze">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.FileSizeAnalyzer.analyze">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compressed_obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes and appends binary object size of the compressed object.</span>
+
+<span class="sd">        :param compressed_obj: compressed object</span>
+<span class="sd">        :type compressed_obj: Any</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_size</span> <span class="o">=</span> <span class="n">get_binary_object_size</span><span class="p">(</span><span class="n">compressed_obj</span><span class="p">,</span> <span class="n">unit_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">unit_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_size_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_size</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FileSizeAnalyzer.summarize">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.FileSizeAnalyzer.summarize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes and shows mean and std of the stored file sizes and the number of samples .</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">file_sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_size_list</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s1">&#39;Bottleneck size [</span><span class="si">{}</span><span class="s1">]: mean </span><span class="si">{}</span><span class="s1"> std </span><span class="si">{}</span><span class="s1"> for </span><span class="si">{}</span><span class="s1"> samples&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span> <span class="n">file_sizes</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+                                                                                 <span class="n">file_sizes</span><span class="o">.</span><span class="n">std</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_sizes</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="FileSizeAnalyzer.clear">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.FileSizeAnalyzer.clear">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears the file size list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_size_list</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="FileSizeAccumulator">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.FileSizeAccumulator">[docs]</a>
+<span class="nd">@register_analysis_class</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FileSizeAccumulator</span><span class="p">(</span><span class="n">FileSizeAnalyzer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An accumulator to store pre-computed file size in the designated unit.</span>
+
+<span class="sd">    :param unit: unit of data size in bytes (&#39;B&#39;, &#39;KB&#39;, &#39;MB&#39;)</span>
+<span class="sd">    :type unit: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">UNIT_DICT</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;B&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;KB&#39;</span><span class="p">:</span> <span class="mi">1024</span><span class="p">,</span> <span class="s1">&#39;MB&#39;</span><span class="p">:</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;KB&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">unit</span><span class="o">=</span><span class="n">unit</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="FileSizeAccumulator.analyze">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.FileSizeAccumulator.analyze">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_size</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Appends a file size.</span>
+
+<span class="sd">        :param file_size: pre-computed file size</span>
+<span class="sd">        :type file_size: int or float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_size_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">file_size</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">unit_size</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="get_analyzer">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.get_analyzer">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_analyzer</span><span class="p">(</span><span class="n">cls_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets an analyzer module.</span>
+
+<span class="sd">    :param cls_name: analyzer class name</span>
+<span class="sd">    :type cls_name: str</span>
+<span class="sd">    :param kwargs: kwargs for the analyzer class</span>
+<span class="sd">    :type kwargs: dict</span>
+<span class="sd">    :return: analyzer module</span>
+<span class="sd">    :rtype: BaseAnalyzer or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">cls_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ANALYZER_CLASS_DICT</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">ANALYZER_CLASS_DICT</span><span class="p">[</span><span class="n">cls_name</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="check_if_analyzable">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.check_if_analyzable">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_if_analyzable</span><span class="p">(</span><span class="n">module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Checks if a module is an instance of `AnalyzableModule`.</span>
+
+<span class="sd">    :param module: module</span>
+<span class="sd">    :type module: Any</span>
+<span class="sd">    :return: True if the module is an instance of `AnalyzableModule`. False otherwise</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">AnalyzableModule</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="analyze_model_size">
+<a class="viewcode-back" href="../../subpkgs/analysis.html#sc2bench.analysis.analyze_model_size">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">analyze_model_size</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">encoder_paths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">additional_rest_paths</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignores_dtype_error</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Approximates numbers of bits used for parameters of the whole model, encoder, and the rest of the model.</span>
+
+<span class="sd">    :param model: model</span>
+<span class="sd">    :type model: nn.Module</span>
+<span class="sd">    :param encoder_paths: list of module paths for the model to be considered as part of encoder&#39;s parameters</span>
+<span class="sd">    :type encoder_paths: list[str] or None</span>
+<span class="sd">    :param additional_rest_paths: list of additional rest module paths whose parameters should be shared with encoder</span>
+<span class="sd">                            e.g., module path of entropy bottleneck in the model if applied</span>
+<span class="sd">    :type additional_rest_paths: list[str] or None</span>
+<span class="sd">    :param ignores_dtype_error: if False, raise an error when any unexpected dtypes are found</span>
+<span class="sd">    :type ignores_dtype_error: bool</span>
+<span class="sd">    :return: model size (sum of param x num_bits) with three keys: model (whole model), encoder, and the rest</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">model_size</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">encoder_size</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">rest_size</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">encoder_paths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">encoder_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">additional_rest_paths</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">additional_rest_paths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="n">encoder_path_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">encoder_paths</span><span class="p">)</span>
+    <span class="n">additional_rest_path_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">additional_rest_paths</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span>
+        <span class="n">param_count</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+        <span class="n">v_dtype</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="k">if</span> <span class="n">v_dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">):</span>
+            <span class="n">num_bits</span> <span class="o">=</span> <span class="mi">64</span>
+        <span class="k">elif</span> <span class="n">v_dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">):</span>
+            <span class="n">num_bits</span> <span class="o">=</span> <span class="mi">32</span>
+        <span class="k">elif</span> <span class="n">v_dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">):</span>
+            <span class="n">num_bits</span> <span class="o">=</span> <span class="mi">16</span>
+        <span class="k">elif</span> <span class="n">v_dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">qint8</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">quint8</span><span class="p">):</span>
+            <span class="n">num_bits</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="k">elif</span> <span class="n">v_dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">:</span>
+            <span class="n">num_bits</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">error_message</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;For </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">, dtype `</span><span class="si">{</span><span class="n">v_dtype</span><span class="si">}</span><span class="s1">` is not expected&#39;</span>
+            <span class="k">if</span> <span class="n">ignores_dtype_error</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+
+        <span class="n">param_size</span> <span class="o">=</span> <span class="n">num_bits</span> <span class="o">*</span> <span class="n">param_count</span>
+        <span class="n">model_size</span> <span class="o">+=</span> <span class="n">param_size</span>
+        <span class="n">match_flag</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">encoder_path</span> <span class="ow">in</span> <span class="n">encoder_path_set</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">encoder_path</span><span class="p">):</span>
+                <span class="n">encoder_size</span> <span class="o">+=</span> <span class="n">param_size</span>
+                <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">additional_rest_path_set</span><span class="p">:</span>
+                    <span class="n">rest_size</span> <span class="o">+=</span> <span class="n">param_size</span>
+                <span class="n">match_flag</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">match_flag</span><span class="p">:</span>
+            <span class="n">rest_size</span> <span class="o">+=</span> <span class="n">param_size</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;model&#39;</span><span class="p">:</span> <span class="n">model_size</span><span class="p">,</span> <span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="n">encoder_size</span><span class="p">,</span> <span class="s1">&#39;rest&#39;</span><span class="p">:</span> <span class="n">rest_size</span><span class="p">}</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

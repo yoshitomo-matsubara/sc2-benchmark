@@ -1,0 +1,527 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.models.wrapper &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../package.html">sc2bench API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sc2bench.models.wrapper</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sc2bench.models.wrapper</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.common.main_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_ckpt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.models.util</span><span class="w"> </span><span class="kn">import</span> <span class="n">redesign_model</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.backbone</span><span class="w"> </span><span class="kn">import</span> <span class="n">UpdatableBackbone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.layer</span><span class="w"> </span><span class="kn">import</span> <span class="n">EntropyBottleneckLayer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_compression_model</span><span class="p">,</span> <span class="n">load_classification_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalyzableModule</span>
+
+<span class="n">WRAPPER_CLASS_DICT</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="register_wrapper_class">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.register_wrapper_class">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_wrapper_class</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Registers a model wrapper class.</span>
+
+<span class="sd">    :param cls: model wrapper to be registered</span>
+<span class="sd">    :type cls: class</span>
+<span class="sd">    :return: registered model wrapper class</span>
+<span class="sd">    :rtype: class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">WRAPPER_CLASS_DICT</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
+    <span class="k">return</span> <span class="bp">cls</span></div>
+
+
+
+<div class="viewcode-block" id="CodecInputCompressionClassifier">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.CodecInputCompressionClassifier">[docs]</a>
+<span class="nd">@register_wrapper_class</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CodecInputCompressionClassifier</span><span class="p">(</span><span class="n">AnalyzableModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A wrapper module for codec input compression model followed by a classification model.</span>
+
+<span class="sd">    :param classification_model: image classification model</span>
+<span class="sd">    :type classification_model: nn.Module</span>
+<span class="sd">    :param device: torch device</span>
+<span class="sd">    :type device: torch.device or str</span>
+<span class="sd">    :param codec_encoder_decoder: transform sequence configuration for codec</span>
+<span class="sd">    :type codec_encoder_decoder: nn.Module or None</span>
+<span class="sd">    :param post_transform: post-transform</span>
+<span class="sd">    :type post_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classification_model</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">codec_encoder_decoder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">post_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">codec_encoder_decoder</span> <span class="o">=</span> <span class="n">codec_encoder_decoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classification_model</span> <span class="o">=</span> <span class="n">classification_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span> <span class="o">=</span> <span class="n">post_transform</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            x (list of PIL Images): input sample.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Tensor: output tensor from self.classification_model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">tmp_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">sub_x</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">codec_encoder_decoder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">sub_x</span><span class="p">,</span> <span class="n">file_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">codec_encoder_decoder</span><span class="p">(</span><span class="n">sub_x</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">file_size</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">sub_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span><span class="p">(</span><span class="n">sub_x</span><span class="p">)</span>
+
+            <span class="n">tmp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sub_x</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">tmp_list</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">classification_model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="NeuralInputCompressionClassifier">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.NeuralInputCompressionClassifier">[docs]</a>
+<span class="nd">@register_wrapper_class</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuralInputCompressionClassifier</span><span class="p">(</span><span class="n">AnalyzableModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A wrapper module for neural input compression model followed by a classification model.</span>
+
+<span class="sd">    :param classification_model: image classification model</span>
+<span class="sd">    :type classification_model: nn.Module</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param compression_model: compression model</span>
+<span class="sd">    :type compression_model: nn.Module or None</span>
+<span class="sd">    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `compression_model`</span>
+<span class="sd">    :type uses_cpu4compression_model: bool</span>
+<span class="sd">    :param post_transform: post-transform</span>
+<span class="sd">    :type post_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classification_model</span><span class="p">,</span> <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">compression_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">uses_cpu4compression_model</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">post_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_pre_transform</span> <span class="o">=</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzes_after_pre_transform&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzes_after_compress&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="o">=</span> <span class="n">pre_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span> <span class="o">=</span> <span class="n">compression_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uses_cpu4compression_model</span> <span class="o">=</span> <span class="n">uses_cpu4compression_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classification_model</span> <span class="o">=</span> <span class="n">classification_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span> <span class="o">=</span> <span class="n">post_transform</span>
+
+<div class="viewcode-block" id="NeuralInputCompressionClassifier.use_cpu4compression">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.NeuralInputCompressionClassifier.use_cpu4compression">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">use_cpu4compression</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Changes the device of the compression model to CPU.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_cpu4compression_model</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_pre_transform</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">compressed_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">compressed_obj</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="o">**</span><span class="n">compressed_obj</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s1">&#39;x_hat&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">classification_model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="CodecFeatureCompressionClassifier">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.CodecFeatureCompressionClassifier">[docs]</a>
+<span class="nd">@register_wrapper_class</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CodecFeatureCompressionClassifier</span><span class="p">(</span><span class="n">AnalyzableModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A wrapper module for codec feature compression model injected to a classification model.</span>
+
+<span class="sd">    :param classification_model: image classification model</span>
+<span class="sd">    :type classification_model: nn.Module</span>
+<span class="sd">    :param device: torch device</span>
+<span class="sd">    :type device: torch.device or str</span>
+<span class="sd">    :param encoder_config: configuration to design an encoder using modules in classification_model</span>
+<span class="sd">    :type encoder_config: dict or None</span>
+<span class="sd">    :param codec_encoder_decoder: transform sequence configuration for codec</span>
+<span class="sd">    :type codec_encoder_decoder: nn.Module or None</span>
+<span class="sd">    :param decoder_config: configuration to design a decoder using modules in classification_model</span>
+<span class="sd">    :type decoder_config: dict or None</span>
+<span class="sd">    :param classifier_config: configuration to design a classifier using modules in classification_model</span>
+<span class="sd">    :type classifier_config: dict or None</span>
+<span class="sd">    :param post_transform: post-transform</span>
+<span class="sd">    :type post_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classification_model</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">encoder_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">codec_encoder_decoder</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">decoder_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">classifier_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">post_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">codec_encoder_decoder</span> <span class="o">=</span> <span class="n">codec_encoder_decoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span> <span class="k">if</span> <span class="n">encoder_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ignored&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> \
+            <span class="k">else</span> <span class="n">redesign_model</span><span class="p">(</span><span class="n">classification_model</span><span class="p">,</span> <span class="n">encoder_config</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;encoder&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span> <span class="k">if</span> <span class="n">decoder_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ignored&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> \
+            <span class="k">else</span> <span class="n">redesign_model</span><span class="p">(</span><span class="n">classification_model</span><span class="p">,</span> <span class="n">decoder_config</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;decoder&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">redesign_model</span><span class="p">(</span><span class="n">classification_model</span><span class="p">,</span> <span class="n">classifier_config</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;classification&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span> <span class="o">=</span> <span class="n">post_transform</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">tmp_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">sub_x</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">codec_encoder_decoder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">sub_x</span><span class="p">,</span> <span class="n">file_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">codec_encoder_decoder</span><span class="p">(</span><span class="n">sub_x</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">file_size</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">sub_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span><span class="p">(</span><span class="n">sub_x</span><span class="p">)</span>
+            <span class="n">tmp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sub_x</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">tmp_list</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="EntropicClassifier">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.EntropicClassifier">[docs]</a>
+<span class="nd">@register_wrapper_class</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EntropicClassifier</span><span class="p">(</span><span class="n">UpdatableBackbone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A wrapper module for entropic compression model injected to a classification model.</span>
+
+<span class="sd">    :param classification_model: image classification model</span>
+<span class="sd">    :type classification_model: nn.Module</span>
+<span class="sd">    :param device: torch device</span>
+<span class="sd">    :type device: torch.device or str</span>
+<span class="sd">    :param encoder_config: configuration to design an encoder using modules in classification_model</span>
+<span class="sd">    :type encoder_config: dict</span>
+<span class="sd">    :param compression_model_kwargs: kwargs for `EntropyBottleneckLayer` in `compressai`</span>
+<span class="sd">    :type compression_model_kwargs: dict</span>
+<span class="sd">    :param decoder_config: configuration to design a decoder using modules in classification_model</span>
+<span class="sd">    :type decoder_config: dict</span>
+<span class="sd">    :param classifier_config: configuration to design a classifier using modules in classification_model</span>
+<span class="sd">    :type classifier_config: dict</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classification_model</span><span class="p">,</span> <span class="n">encoder_config</span><span class="p">,</span> <span class="n">compression_model_kwargs</span><span class="p">,</span> <span class="n">decoder_config</span><span class="p">,</span>
+                 <span class="n">classifier_config</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzes_after_compress&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entropy_bottleneck</span> <span class="o">=</span> <span class="n">EntropyBottleneckLayer</span><span class="p">(</span><span class="o">**</span><span class="n">compression_model_kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span> <span class="k">if</span> <span class="n">encoder_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ignored&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> \
+            <span class="k">else</span> <span class="n">redesign_model</span><span class="p">(</span><span class="n">classification_model</span><span class="p">,</span> <span class="n">encoder_config</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;encoder&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span> <span class="k">if</span> <span class="n">decoder_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ignored&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> \
+            <span class="k">else</span> <span class="n">redesign_model</span><span class="p">(</span><span class="n">classification_model</span><span class="p">,</span> <span class="n">decoder_config</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;decoder&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">redesign_model</span><span class="p">(</span><span class="n">classification_model</span><span class="p">,</span> <span class="n">classifier_config</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;classification&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy_bottleneck</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy_bottleneck</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="o">**</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy_bottleneck</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="EntropicClassifier.update">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.EntropicClassifier.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entropy_bottleneck</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="EntropicClassifier.load_state_dict">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.EntropicClassifier.load_state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads parameters for all the sub-modules except entropy_bottleneck and then entropy_bottleneck.</span>
+
+<span class="sd">        :param state_dict: dict containing parameters and persistent buffers</span>
+<span class="sd">        :type state_dict: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">entropy_bottleneck_state_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;entropy_bottleneck.&#39;</span><span class="p">):</span>
+                <span class="n">entropy_bottleneck_state_dict</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;entropy_bottleneck.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entropy_bottleneck</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">entropy_bottleneck_state_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="EntropicClassifier.get_aux_module">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.EntropicClassifier.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy_bottleneck</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SplitClassifier">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.SplitClassifier">[docs]</a>
+<span class="nd">@register_wrapper_class</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SplitClassifier</span><span class="p">(</span><span class="n">UpdatableBackbone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A wrapper module for naively splitting a classification model.</span>
+
+<span class="sd">    :param classification_model: image classification model</span>
+<span class="sd">    :type classification_model: nn.Module</span>
+<span class="sd">    :param encoder_config: configuration to design an encoder using modules in classification_model</span>
+<span class="sd">    :type encoder_config: dict or None</span>
+<span class="sd">    :param decoder_config: configuration to design a decoder using modules in classification_model</span>
+<span class="sd">    :type decoder_config: dict or None</span>
+<span class="sd">    :param classifier_config: configuration to design a classifier using modules in classification_model</span>
+<span class="sd">    :type classifier_config: dict or None</span>
+<span class="sd">    :param compressor_transform: compressor transform</span>
+<span class="sd">    :type compressor_transform: nn.Module or None</span>
+<span class="sd">    :param decompressor_transform: decompressor transform</span>
+<span class="sd">    :type decompressor_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">classification_model</span><span class="p">,</span> <span class="n">encoder_config</span><span class="p">,</span> <span class="n">decoder_config</span><span class="p">,</span>
+                 <span class="n">classifier_config</span><span class="p">,</span> <span class="n">compressor_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">decompressor_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzes_after_compress&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compressor</span> <span class="o">=</span> <span class="n">compressor_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decompressor</span> <span class="o">=</span> <span class="n">decompressor_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span> <span class="k">if</span> <span class="n">encoder_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ignored&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> \
+            <span class="k">else</span> <span class="n">redesign_model</span><span class="p">(</span><span class="n">classification_model</span><span class="p">,</span> <span class="n">encoder_config</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;encoder&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span> <span class="k">if</span> <span class="n">decoder_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ignored&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> \
+            <span class="k">else</span> <span class="n">redesign_model</span><span class="p">(</span><span class="n">classification_model</span><span class="p">,</span> <span class="n">decoder_config</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;decoder&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">redesign_model</span><span class="p">(</span><span class="n">classification_model</span><span class="p">,</span> <span class="n">classifier_config</span><span class="p">,</span> <span class="n">model_label</span><span class="o">=</span><span class="s1">&#39;classification&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compressor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decompressor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SplitClassifier.update">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.SplitClassifier.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SplitClassifier.get_aux_module">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.SplitClassifier.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="wrap_model">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.wrap_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">wrap_model</span><span class="p">(</span><span class="n">wrapper_model_name</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">compression_model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wraps a model and a compression model with a wrapper module.</span>
+
+<span class="sd">    :param wrapper_model_name: wrapper model name</span>
+<span class="sd">    :type wrapper_model_name: str</span>
+<span class="sd">    :param model: model</span>
+<span class="sd">    :type model: nn.Module</span>
+<span class="sd">    :param compression_model: compression model</span>
+<span class="sd">    :type compression_model: nn.Module</span>
+<span class="sd">    :param kwargs: kwargs for the wrapper class or function to build the wrapper module</span>
+<span class="sd">    :type kwargs: dict</span>
+<span class="sd">    :return: wrapped model</span>
+<span class="sd">    :rtype: nn.Module</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">wrapper_model_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">WRAPPER_CLASS_DICT</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;wrapper_model_name `</span><span class="si">{}</span><span class="s1">` is not expected&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wrapper_model_name</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">WRAPPER_CLASS_DICT</span><span class="p">[</span><span class="n">wrapper_model_name</span><span class="p">](</span><span class="n">model</span><span class="p">,</span> <span class="n">compression_model</span><span class="o">=</span><span class="n">compression_model</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_wrapped_classification_model">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.wrapper.get_wrapped_classification_model">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_wrapped_classification_model</span><span class="p">(</span><span class="n">wrapper_model_config</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">distributed</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets a wrapped image classification model.</span>
+
+<span class="sd">    :param wrapper_model_config: wrapper model configuration</span>
+<span class="sd">    :type wrapper_model_config: dict</span>
+<span class="sd">    :param device: torch device</span>
+<span class="sd">    :type device: torch.device</span>
+<span class="sd">    :param distributed: whether to use the model in distributed training mode</span>
+<span class="sd">    :type distributed: bool</span>
+<span class="sd">    :return: wrapped image classification model</span>
+<span class="sd">    :rtype: nn.Module</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wrapper_model_name</span> <span class="o">=</span> <span class="n">wrapper_model_config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">wrapper_model_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">WRAPPER_CLASS_DICT</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;wrapper_model_name `</span><span class="si">{}</span><span class="s1">` is not expected&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">wrapper_model_name</span><span class="p">))</span>
+
+    <span class="n">compression_model_config</span> <span class="o">=</span> <span class="n">wrapper_model_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;compression_model&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">compression_model</span> <span class="o">=</span> <span class="n">get_compression_model</span><span class="p">(</span><span class="n">compression_model_config</span><span class="p">,</span> <span class="n">device</span><span class="p">)</span>
+    <span class="n">classification_model_config</span> <span class="o">=</span> <span class="n">wrapper_model_config</span><span class="p">[</span><span class="s1">&#39;classification_model&#39;</span><span class="p">]</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">load_classification_model</span><span class="p">(</span><span class="n">classification_model_config</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">distributed</span><span class="p">)</span>
+    <span class="n">wrapped_model</span> <span class="o">=</span> <span class="n">WRAPPER_CLASS_DICT</span><span class="p">[</span><span class="n">wrapper_model_name</span><span class="p">](</span><span class="n">model</span><span class="p">,</span> <span class="n">compression_model</span><span class="o">=</span><span class="n">compression_model</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                                                           <span class="o">**</span><span class="n">wrapper_model_config</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+    <span class="n">src_ckpt_file_path</span> <span class="o">=</span> <span class="n">wrapper_model_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;src_ckpt&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">src_ckpt_file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">load_ckpt</span><span class="p">(</span><span class="n">src_ckpt_file_path</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">wrapped_model</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">wrapped_model</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

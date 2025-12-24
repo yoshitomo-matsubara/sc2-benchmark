@@ -1,0 +1,1137 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.models.backbone &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../package.html">sc2bench API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sc2bench.models.backbone</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sc2bench.models.backbone</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">compressai.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">CompressionModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">timm.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">resnest</span><span class="p">,</span> <span class="n">regnet</span><span class="p">,</span> <span class="n">vision_transformer_hybrid</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.common.main_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_ckpt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.models.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision</span><span class="w"> </span><span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">misc</span> <span class="k">as</span> <span class="n">misc_nn_ops</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.layer</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_layer</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalyzableModule</span>
+
+<span class="n">BACKBONE_CLASS_DICT</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<span class="n">BACKBONE_FUNC_DICT</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="register_backbone_class">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.register_backbone_class">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_backbone_class</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Registers a backbone model (usually a classification model).</span>
+
+<span class="sd">    :param cls: backbone model class to be registered</span>
+<span class="sd">    :type cls: class</span>
+<span class="sd">    :return: registered backbone model class</span>
+<span class="sd">    :rtype: class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">BACKBONE_CLASS_DICT</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
+    <span class="n">register_model</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span></div>
+
+
+
+<div class="viewcode-block" id="register_backbone_func">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.register_backbone_func">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_backbone_func</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Registers a function to build a backbone model (usually a classification model).</span>
+
+<span class="sd">    :param func: function to build a backbone to be registered</span>
+<span class="sd">    :type func: typing.Callable</span>
+<span class="sd">    :return: registered function</span>
+<span class="sd">    :rtype: typing.Callable</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">BACKBONE_FUNC_DICT</span><span class="p">[</span><span class="n">func</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="n">func</span>
+    <span class="n">register_model</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">func</span></div>
+
+
+
+<div class="viewcode-block" id="UpdatableBackbone">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.UpdatableBackbone">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">UpdatableBackbone</span><span class="p">(</span><span class="n">AnalyzableModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base, updatable R-CNN model.</span>
+
+<span class="sd">    :param analyzer_configs: list of analysis configurations</span>
+<span class="sd">    :type analyzer_configs: list[dict] or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analyzer_configs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analyzer_configs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+<div class="viewcode-block" id="UpdatableBackbone.update">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.UpdatableBackbone.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates compression-specific parameters like `CompressAI models do &lt;https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.update&gt;`_.</span>
+
+<span class="sd">        This should be overridden by all subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="UpdatableBackbone.get_aux_module">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.UpdatableBackbone.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an auxiliary module to compute auxiliary loss if necessary like `CompressAI models do &lt;https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.aux_loss&gt;`_.</span>
+
+<span class="sd">        This should be overridden by all subclasses.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="check_if_updatable">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.check_if_updatable">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_if_updatable</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Checks if the given model is updatable.</span>
+
+<span class="sd">    :param model: model</span>
+<span class="sd">    :type model: nn.Module</span>
+<span class="sd">    :return: True if the model is updatable, False otherwise</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">UpdatableBackbone</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="FeatureExtractionBackbone">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.FeatureExtractionBackbone">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FeatureExtractionBackbone</span><span class="p">(</span><span class="n">UpdatableBackbone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A feature extraction-based backbone model.</span>
+
+<span class="sd">    :param model: model</span>
+<span class="sd">    :type model: nn.Module</span>
+<span class="sd">    :param return_layer_dict: mapping from name of module to return its output to a specified key</span>
+<span class="sd">    :type return_layer_dict: dict</span>
+<span class="sd">    :param analyzer_configs: list of analysis configurations</span>
+<span class="sd">    :type analyzer_configs: list[dict] or None</span>
+<span class="sd">    :param analyzes_after_compress: run analysis with `analyzer_configs` if True</span>
+<span class="sd">    :type analyzes_after_compress: bool</span>
+<span class="sd">    :param analyzable_layer_key: key of analyzable layer</span>
+<span class="sd">    :type analyzable_layer_key: str or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Referred to the IntermediateLayerGetter implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/_utils.py</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">return_layer_dict</span><span class="p">,</span> <span class="n">analyzer_configs</span><span class="p">,</span> <span class="n">analyzes_after_compress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">analyzable_layer_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">return_layer_dict</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">([</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_children</span><span class="p">()]):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;return_layer_dict are not present in model&#39;</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analyzer_configs</span><span class="p">)</span>
+        <span class="n">org_return_layer_dict</span> <span class="o">=</span> <span class="n">return_layer_dict</span>
+        <span class="n">return_layer_dict</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">):</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">return_layer_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">layer_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_children</span><span class="p">():</span>
+            <span class="n">layer_dict</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">module</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">return_layer_dict</span><span class="p">:</span>
+                <span class="n">return_layer_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="c1"># Once all the return layers are extracted, the remaining layers are no longer used, thus pruned</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">return_layer_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">layer_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">module</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">return_layer_dict</span> <span class="o">=</span> <span class="n">org_return_layer_dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span> <span class="o">=</span> <span class="n">analyzable_layer_key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analyzes_after_compress</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">module_key</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_children</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">module_key</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="o">**</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">module</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">module_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_layer_dict</span><span class="p">:</span>
+                <span class="n">out_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_layer_dict</span><span class="p">[</span><span class="n">module_key</span><span class="p">]</span>
+                <span class="n">out</span><span class="p">[</span><span class="n">out_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="n">out</span>
+
+<div class="viewcode-block" id="FeatureExtractionBackbone.check_if_updatable">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.FeatureExtractionBackbone.check_if_updatable">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_if_updatable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if this module is updatable with respect to CompressAI modules.</span>
+
+<span class="sd">        :return: True if the model is updatable, False otherwise</span>
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span> \
+                <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_modules</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span><span class="p">],</span> <span class="n">CompressionModel</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="FeatureExtractionBackbone.update">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.FeatureExtractionBackbone.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_if_updatable</span><span class="p">()</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_modules</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span><span class="p">],</span> <span class="n">CompressionModel</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;`analyzable_layer_key` (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span><span class="si">}</span><span class="s1">) does not &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;exist in </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="FeatureExtractionBackbone.get_aux_module">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.FeatureExtractionBackbone.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_modules</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">analyzable_layer_key</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_if_updatable</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SplittableResNet">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableResNet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SplittableResNet</span><span class="p">(</span><span class="n">UpdatableBackbone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ResNet/ResNeSt-based splittable image classification model optionally containing neural encoder, entropy bottleneck,</span>
+<span class="sd">    and decoder.</span>
+
+<span class="sd">    - Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun: `&quot;Deep Residual Learning for Image Recognition&quot; &lt;https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/He_Deep_Residual_Learning_CVPR_2016_paper.pdf&gt;`_ @ CVPR 2016 (2016)</span>
+<span class="sd">    - Hang Zhang, Chongruo Wu, Zhongyue Zhang, Yi Zhu, Haibin Lin, Zhi Zhang, Yue Sun, Tong He, Jonas Mueller, R. Manmatha, Mu Li, Alexander Smola: `&quot;ResNeSt: Split-Attention Networks&quot; &lt;https://openaccess.thecvf.com/content/CVPR2022W/ECV/html/Zhang_ResNeSt_Split-Attention_Networks_CVPRW_2022_paper.html&gt;`_ @ CVPRW 2022 (2022)</span>
+<span class="sd">    - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `&quot;Supervised Compression for Resource-Constrained Edge Computing Systems&quot; &lt;https://openaccess.thecvf.com/content/WACV2022/html/Matsubara_Supervised_Compression_for_Resource-Constrained_Edge_Computing_Systems_WACV_2022_paper.html&gt;`_ @ WACV 2022 (2022)</span>
+<span class="sd">    - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `&quot;SC2 Benchmark: Supervised Compression for Split Computing&quot; &lt;https://openreview.net/forum?id=p28wv4G65d&gt;`_ @ TMLR (2023)</span>
+
+<span class="sd">    :param bottleneck_layer: high-level bottleneck layer that consists of encoder and decoder</span>
+<span class="sd">    :type bottleneck_layer: nn.Module</span>
+<span class="sd">    :param resnet_model: ResNet model to be used as a base model</span>
+<span class="sd">    :type resnet_model: nn.Module</span>
+<span class="sd">    :param inplanes: ResNet model&#39;s inplanes</span>
+<span class="sd">    :type inplanes: int or None</span>
+<span class="sd">    :param skips_avgpool: if True, skips avgpool (average pooling) after layer4</span>
+<span class="sd">    :type skips_avgpool: bool</span>
+<span class="sd">    :param skips_fc: if True, skips fc (fully-connected layer) after layer4</span>
+<span class="sd">    :type skips_fc: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    :param short_module_names: child module names of &quot;ResNet&quot; to use</span>
+<span class="sd">    :type short_module_names: list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Referred to the ResNet implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">resnet_model</span><span class="p">,</span> <span class="n">inplanes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skips_fc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">short_module_names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">short_module_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">short_module_name_set</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;layer2&#39;</span><span class="p">,</span> <span class="s1">&#39;layer3&#39;</span><span class="p">,</span> <span class="s1">&#39;layer4&#39;</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">short_module_names</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="n">short_module_name_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">short_module_names</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="o">=</span> <span class="n">pre_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzes_after_compress&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">bottleneck_layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer2</span> <span class="o">=</span> <span class="n">resnet_model</span><span class="o">.</span><span class="n">layer2</span> <span class="k">if</span> <span class="s1">&#39;layer2&#39;</span> <span class="ow">in</span> <span class="n">short_module_name_set</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer3</span> <span class="o">=</span> <span class="n">resnet_model</span><span class="o">.</span><span class="n">layer3</span> <span class="k">if</span> <span class="s1">&#39;layer3&#39;</span> <span class="ow">in</span> <span class="n">short_module_name_set</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layer4</span> <span class="o">=</span> <span class="n">resnet_model</span><span class="o">.</span><span class="n">layer4</span> <span class="k">if</span> <span class="s1">&#39;layer4&#39;</span> <span class="ow">in</span> <span class="n">short_module_name_set</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">skips_avgpool</span> \
+            <span class="k">else</span> <span class="n">resnet_model</span><span class="o">.</span><span class="n">global_pool</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">resnet_model</span><span class="p">,</span> <span class="s1">&#39;global_pool&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">resnet_model</span><span class="o">.</span><span class="n">avgpool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">skips_fc</span> <span class="k">else</span> <span class="n">resnet_model</span><span class="o">.</span><span class="n">fc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inplanes</span> <span class="o">=</span> <span class="n">resnet_model</span><span class="o">.</span><span class="n">inplanes</span> <span class="k">if</span> <span class="n">inplanes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">inplanes</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="o">**</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer3</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer4</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer4</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SplittableResNet.update">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableResNet.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SplittableResNet.load_state_dict">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableResNet.load_state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads parameters for all the sub-modules except bottleneck_layer and then bottleneck_layer.</span>
+
+<span class="sd">        :param state_dict: dict containing parameters and persistent buffers</span>
+<span class="sd">        :type state_dict: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">entropy_bottleneck_state_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">):</span>
+                <span class="n">entropy_bottleneck_state_dict</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">entropy_bottleneck_state_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SplittableResNet.get_aux_module">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableResNet.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">CompressionModel</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SplittableDenseNet">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableDenseNet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SplittableDenseNet</span><span class="p">(</span><span class="n">UpdatableBackbone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    DenseNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck,</span>
+<span class="sd">    and decoder.</span>
+
+<span class="sd">    - Gao Huang, Zhuang Liu, Laurens van der Maaten, Kilian Q. Weinberger: `&quot;Densely Connected Convolutional Networks&quot; &lt;https://openaccess.thecvf.com/content_cvpr_2017/papers/Huang_Densely_Connected_Convolutional_CVPR_2017_paper.pdf&gt;`_ @ CVPR 2017 (2017)</span>
+<span class="sd">    - Yoshitomo Matsubara, Davide Callegaro, Sabur Baidya, Marco Levorato, Sameer Singh: `&quot;Head Network Distillation: Splitting Distilled Deep Neural Networks for Resource-constrained Edge Computing Systems&quot; &lt;https://ieeexplore.ieee.org/document/9265295&gt;`_ @ IEEE Access (2020)</span>
+
+
+<span class="sd">    :param bottleneck_layer: high-level bottleneck layer that consists of encoder and decoder</span>
+<span class="sd">    :type bottleneck_layer: nn.Module</span>
+<span class="sd">    :param short_feature_names: child module names of &quot;features&quot; to use</span>
+<span class="sd">    :type short_feature_names: list</span>
+<span class="sd">    :param densenet_model: DenseNet model to be used as a base model</span>
+<span class="sd">    :type densenet_model: nn.Module</span>
+<span class="sd">    :param skips_avgpool: if True, skips avgpool (average pooling) after features</span>
+<span class="sd">    :type skips_avgpool: bool</span>
+<span class="sd">    :param skips_classifier: if True, skips classifier after average pooling</span>
+<span class="sd">    :type skips_classifier: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Referred to the DenseNet implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/densenet.py</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">short_feature_names</span><span class="p">,</span> <span class="n">densenet_model</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skips_classifier</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+
+        <span class="n">module_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">short_features_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">short_feature_names</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;classifier&#39;</span> <span class="ow">in</span> <span class="n">short_features_set</span><span class="p">:</span>
+            <span class="n">short_features_set</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;classifier&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">child_name</span><span class="p">,</span> <span class="n">child_module</span> <span class="ow">in</span> <span class="n">densenet_model</span><span class="o">.</span><span class="n">features</span><span class="o">.</span><span class="n">named_children</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">child_name</span> <span class="ow">in</span> <span class="n">short_features_set</span><span class="p">:</span>
+                <span class="n">module_dict</span><span class="p">[</span><span class="n">child_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">child_module</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="o">=</span> <span class="n">pre_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzes_after_compress&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">bottleneck_layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">module_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">skips_avgpool</span> <span class="k">else</span> <span class="n">nn</span><span class="o">.</span><span class="n">AdaptiveAvgPool2d</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">skips_classifier</span> <span class="k">else</span> <span class="n">densenet_model</span><span class="o">.</span><span class="n">classifier</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="o">**</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SplittableDenseNet.update">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableDenseNet.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SplittableDenseNet.load_state_dict">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableDenseNet.load_state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads parameters for all the sub-modules except bottleneck_layer and then bottleneck_layer.</span>
+
+<span class="sd">        :param state_dict: dict containing parameters and persistent buffers</span>
+<span class="sd">        :type state_dict: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">entropy_bottleneck_state_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">):</span>
+                <span class="n">entropy_bottleneck_state_dict</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">entropy_bottleneck_state_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SplittableDenseNet.get_aux_module">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableDenseNet.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">CompressionModel</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SplittableInceptionV3">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableInceptionV3">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SplittableInceptionV3</span><span class="p">(</span><span class="n">UpdatableBackbone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Inception V3-based splittable image classification model optionally containing neural encoder, entropy bottleneck,</span>
+<span class="sd">    and decoder.</span>
+
+<span class="sd">    - Christian Szegedy, Vincent Vanhoucke, Sergey Ioffe, Jon Shlens, Zbigniew Wojna: `&quot;Rethinking the Inception Architecture for Computer Vision&quot; &lt;https://openaccess.thecvf.com/content_cvpr_2016/papers/Szegedy_Rethinking_the_Inception_CVPR_2016_paper.pdf&gt;`_ @ CVPR 2016 (2016)</span>
+<span class="sd">    - Yoshitomo Matsubara, Davide Callegaro, Sabur Baidya, Marco Levorato, Sameer Singh: `&quot;Head Network Distillation: Splitting Distilled Deep Neural Networks for Resource-constrained Edge Computing Systems&quot; &lt;https://ieeexplore.ieee.org/document/9265295&gt;`_ @ IEEE Access (2020)</span>
+
+
+<span class="sd">    :param bottleneck_layer: high-level bottleneck layer that consists of encoder and decoder</span>
+<span class="sd">    :type bottleneck_layer: nn.Module</span>
+<span class="sd">    :param short_module_names: child module names of &quot;Inception3&quot; to use</span>
+<span class="sd">    :type short_module_names: list</span>
+<span class="sd">    :param inception_v3_model: Inception V3 model to be used as a base model</span>
+<span class="sd">    :type inception_v3_model: nn.Module</span>
+<span class="sd">    :param skips_avgpool: if True, skips avgpool (average pooling)</span>
+<span class="sd">    :type skips_avgpool: bool</span>
+<span class="sd">    :param skips_dropout: if True, skips dropout after avgpool</span>
+<span class="sd">    :type skips_dropout: bool</span>
+<span class="sd">    :param skips_fc: if True, skips fc (fully-connected layer) after dropout</span>
+<span class="sd">    :type skips_fc: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Referred to the InceptionV3 implementation at https://github.com/pytorch/vision/blob/main/torchvision/models/inception.py</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">short_module_names</span><span class="p">,</span> <span class="n">inception_v3_model</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skips_dropout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">skips_fc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+
+        <span class="n">module_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">short_module_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">short_module_names</span><span class="p">)</span>
+        <span class="n">child_name_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">child_name</span><span class="p">,</span> <span class="n">child_module</span> <span class="ow">in</span> <span class="n">inception_v3_model</span><span class="o">.</span><span class="n">named_children</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">child_name</span> <span class="ow">in</span> <span class="n">short_module_set</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">child_name_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">child_name_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Conv2d_2b_3x3&#39;</span> \
+                        <span class="ow">and</span> <span class="n">child_name</span> <span class="o">==</span> <span class="s1">&#39;Conv2d_3b_1x1&#39;</span><span class="p">:</span>
+                    <span class="n">module_dict</span><span class="p">[</span><span class="s1">&#39;maxpool1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="n">child_name_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;maxpool1&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">child_name_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">child_name_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;Conv2d_4a_3x3&#39;</span> \
+                        <span class="ow">and</span> <span class="n">child_name</span> <span class="o">==</span> <span class="s1">&#39;Mixed_5b&#39;</span><span class="p">:</span>
+                    <span class="n">module_dict</span><span class="p">[</span><span class="s1">&#39;maxpool2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">MaxPool2d</span><span class="p">(</span><span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+                    <span class="n">child_name_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;maxpool2&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">child_name</span> <span class="o">==</span> <span class="s1">&#39;fc&#39;</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="n">module_dict</span><span class="p">[</span><span class="n">child_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">child_module</span>
+                <span class="n">child_name_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child_name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="o">=</span> <span class="n">pre_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzes_after_compress&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">bottleneck_layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inception_modules</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">module_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">skips_avgpool</span> <span class="k">else</span> <span class="n">inception_v3_model</span><span class="o">.</span><span class="n">avgpool</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">skips_dropout</span> <span class="k">else</span> <span class="n">inception_v3_model</span><span class="o">.</span><span class="n">dropout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">skips_fc</span> <span class="k">else</span> <span class="n">inception_v3_model</span><span class="o">.</span><span class="n">fc</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="o">**</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inception_modules</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">avgpool</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SplittableInceptionV3.update">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableInceptionV3.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SplittableInceptionV3.load_state_dict">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableInceptionV3.load_state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads parameters for all the sub-modules except bottleneck_layer and then bottleneck_layer.</span>
+
+<span class="sd">        :param state_dict: dict containing parameters and persistent buffers</span>
+<span class="sd">        :type state_dict: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">entropy_bottleneck_state_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">):</span>
+                <span class="n">entropy_bottleneck_state_dict</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">entropy_bottleneck_state_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SplittableInceptionV3.get_aux_module">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableInceptionV3.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">CompressionModel</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SplittableRegNet">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableRegNet">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SplittableRegNet</span><span class="p">(</span><span class="n">UpdatableBackbone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    RegNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck, and decoder.</span>
+
+<span class="sd">    - Ilija Radosavovic, Raj Prateek Kosaraju, Ross Girshick, Kaiming He, Piotr Dollár: `&quot;Designing Network Design Spaces&quot; &lt;https://openaccess.thecvf.com/content_CVPR_2020/html/Radosavovic_Designing_Network_Design_Spaces_CVPR_2020_paper.html&gt;`_ @ CVPR 2020 (2020)</span>
+<span class="sd">    - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `&quot;SC2 Benchmark: Supervised Compression for Split Computing&quot; &lt;https://openreview.net/forum?id=p28wv4G65d&gt;`_ @ TMLR (2023)</span>
+
+<span class="sd">    :param bottleneck_layer: high-level bottleneck layer that consists of encoder and decoder</span>
+<span class="sd">    :type bottleneck_layer: nn.Module</span>
+<span class="sd">    :param regnet_model: RegNet model (`timm`-style) to be used as a base model</span>
+<span class="sd">    :type regnet_model: nn.Module</span>
+<span class="sd">    :param inplanes: mapping from name of module to return its output to a specified key</span>
+<span class="sd">    :type inplanes: int or None</span>
+<span class="sd">    :param skips_head: if True, skips fc (fully-connected layer) after layer4</span>
+<span class="sd">    :type skips_head: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Referred to the RegNet implementation at https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/regnet.py</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">regnet_model</span><span class="p">,</span> <span class="n">inplanes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skips_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="o">=</span> <span class="n">pre_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzes_after_compress&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">bottleneck_layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2</span> <span class="o">=</span> <span class="n">regnet_model</span><span class="o">.</span><span class="n">s2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s3</span> <span class="o">=</span> <span class="n">regnet_model</span><span class="o">.</span><span class="n">s3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s4</span> <span class="o">=</span> <span class="n">regnet_model</span><span class="o">.</span><span class="n">s4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">skips_head</span> <span class="k">else</span> <span class="n">regnet_model</span><span class="o">.</span><span class="n">head</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inplanes</span> <span class="o">=</span> <span class="n">inplanes</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="o">**</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s4</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SplittableRegNet.update">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableRegNet.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SplittableRegNet.load_state_dict">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableRegNet.load_state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads parameters for all the sub-modules except bottleneck_layer and then bottleneck_layer.</span>
+
+<span class="sd">        :param state_dict: dict containing parameters and persistent buffers</span>
+<span class="sd">        :type state_dict: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">entropy_bottleneck_state_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">):</span>
+                <span class="n">entropy_bottleneck_state_dict</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">entropy_bottleneck_state_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SplittableRegNet.get_aux_module">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableRegNet.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">CompressionModel</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SplittableHybridViT">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableHybridViT">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SplittableHybridViT</span><span class="p">(</span><span class="n">UpdatableBackbone</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Hybrid ViT-based splittable image classification model optionally containing neural encoder, entropy bottleneck,</span>
+<span class="sd">    and decoder.</span>
+
+<span class="sd">    - Andreas Peter Steiner, Alexander Kolesnikov, Xiaohua Zhai, Ross Wightman, Jakob Uszkoreit, Lucas Beyer: `&quot;How to train your ViT? Data, Augmentation, and Regularization in Vision Transformers&quot; &lt;https://openreview.net/forum?id=4nPswr1KcP&gt;`_ @ TMLR (2022)</span>
+<span class="sd">    - Yoshitomo Matsubara, Ruihan Yang, Marco Levorato, Stephan Mandt: `&quot;SC2 Benchmark: Supervised Compression for Split Computing&quot; &lt;https://openreview.net/forum?id=p28wv4G65d&gt;`_ @ TMLR (2023)</span>
+
+<span class="sd">    :param bottleneck_layer: high-level bottleneck layer that consists of encoder and decoder</span>
+<span class="sd">    :type bottleneck_layer: nn.Module</span>
+<span class="sd">    :param hybrid_vit_model: Hybrid Vision Transformer model (`timm`-style) to be used as a base model</span>
+<span class="sd">    :type hybrid_vit_model: nn.Module</span>
+<span class="sd">    :param num_pruned_stages: number of stages in the ResNet backbone of Hybrid ViT to be pruned</span>
+<span class="sd">    :type num_pruned_stages: int</span>
+<span class="sd">    :param skips_head: if True, skips classification head</span>
+<span class="sd">    :type skips_head: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Referred to Hybrid ViT implementation at https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision_transformer.py</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">hybrid_vit_model</span><span class="p">,</span> <span class="n">num_pruned_stages</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">skips_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="o">=</span> <span class="n">pre_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzes_after_compress&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">bottleneck_layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patch_embed_pruned_stages</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">patch_embed</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">stages</span><span class="p">[</span><span class="n">num_pruned_stages</span><span class="p">:]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patch_embed_norm</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">patch_embed</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">norm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patch_embed_head</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">patch_embed</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">head</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patch_embed_proj</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">patch_embed</span><span class="o">.</span><span class="n">proj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cls_token</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">cls_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_embed</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">pos_embed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_drop</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">pos_drop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">blocks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">norm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_logits</span> <span class="o">=</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">pre_logits</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">skips_head</span> <span class="k">else</span> <span class="n">hybrid_vit_model</span><span class="o">.</span><span class="n">head</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="o">**</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_embed_pruned_stages</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_embed_norm</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_embed_head</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">patch_embed_proj</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">cls_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cls_token</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">cls_token</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_drop</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_embed</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_logits</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SplittableHybridViT.update">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableHybridViT.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_updated</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SplittableHybridViT.load_state_dict">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableHybridViT.load_state_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Loads parameters for all the sub-modules except bottleneck_layer and then bottleneck_layer.</span>
+
+<span class="sd">        :param state_dict: dict containing parameters and persistent buffers</span>
+<span class="sd">        :type state_dict: dict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">entropy_bottleneck_state_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">):</span>
+                <span class="n">entropy_bottleneck_state_dict</span><span class="p">[</span><span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;bottleneck_layer.&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">entropy_bottleneck_state_dict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SplittableHybridViT.get_aux_module">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.SplittableHybridViT.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">CompressionModel</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="splittable_resnet">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.splittable_resnet">[docs]</a>
+<span class="nd">@register_backbone_func</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">splittable_resnet</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">,</span> <span class="n">resnet_name</span><span class="o">=</span><span class="s1">&#39;resnet50&#39;</span><span class="p">,</span> <span class="n">inplanes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skips_fc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                      <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org_model_ckpt_file_path_or_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">org_ckpt_strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">short_module_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">resnet_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds ResNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck,</span>
+<span class="sd">    and decoder.</span>
+
+<span class="sd">    :param bottleneck_config: bottleneck configuration</span>
+<span class="sd">    :type bottleneck_config: dict</span>
+<span class="sd">    :param resnet_name: name of ResNet function in `torchvision`</span>
+<span class="sd">    :type resnet_name: str</span>
+<span class="sd">    :param inplanes: ResNet model&#39;s inplanes</span>
+<span class="sd">    :type inplanes: int or None</span>
+<span class="sd">    :param skips_avgpool: if True, skips avgpool (average pooling) after layer4</span>
+<span class="sd">    :type skips_avgpool: bool</span>
+<span class="sd">    :param skips_fc: if True, skips fc (fully-connected layer) after layer4</span>
+<span class="sd">    :type skips_fc: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    :param org_model_ckpt_file_path_or_url: original ResNet model checkpoint file path or URL</span>
+<span class="sd">    :type org_model_ckpt_file_path_or_url: str or None</span>
+<span class="sd">    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original ResNet model’s `state_dict()` function</span>
+<span class="sd">    :type org_ckpt_strict: bool</span>
+<span class="sd">    :param short_module_names: child module names of &quot;ResNet&quot; to use</span>
+<span class="sd">    :type short_module_names: list</span>
+<span class="sd">    :return: splittable ResNet model</span>
+<span class="sd">    :rtype: SplittableResNet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">get_layer</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">resnet_kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;norm_layer&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;FrozenBatchNorm2d&#39;</span><span class="p">:</span>
+        <span class="n">resnet_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">resnet_name</span><span class="p">](</span><span class="n">norm_layer</span><span class="o">=</span><span class="n">misc_nn_ops</span><span class="o">.</span><span class="n">FrozenBatchNorm2d</span><span class="p">,</span> <span class="o">**</span><span class="n">resnet_kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">resnet_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">resnet_name</span><span class="p">](</span><span class="o">**</span><span class="n">resnet_kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">org_model_ckpt_file_path_or_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">load_ckpt</span><span class="p">(</span><span class="n">org_model_ckpt_file_path_or_url</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">resnet_model</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">org_ckpt_strict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SplittableResNet</span><span class="p">(</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">resnet_model</span><span class="p">,</span> <span class="n">inplanes</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="p">,</span> <span class="n">skips_fc</span><span class="p">,</span>
+                            <span class="n">pre_transform</span><span class="p">,</span> <span class="n">analysis_config</span><span class="p">,</span> <span class="n">short_module_names</span><span class="o">=</span><span class="n">short_module_names</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="splittable_densenet">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.splittable_densenet">[docs]</a>
+<span class="nd">@register_backbone_func</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">splittable_densenet</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">,</span> <span class="n">densenet_name</span><span class="o">=</span><span class="s1">&#39;densenet169&#39;</span><span class="p">,</span> <span class="n">short_feature_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">skips_avgpool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skips_classifier</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">org_model_ckpt_file_path_or_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org_ckpt_strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">densenet_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds DenseNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck,</span>
+<span class="sd">    and decoder.</span>
+
+<span class="sd">    :param bottleneck_config: bottleneck configuration</span>
+<span class="sd">    :type bottleneck_config: dict</span>
+<span class="sd">    :param densenet_name: name of DenseNet function in `torchvision`</span>
+<span class="sd">    :type densenet_name: str</span>
+<span class="sd">    :param short_feature_names: child module names of &quot;features&quot; to use</span>
+<span class="sd">    :type short_feature_names: list</span>
+<span class="sd">    :param skips_avgpool: if True, skips adaptive_avgpool (average pooling) after features</span>
+<span class="sd">    :type skips_avgpool: bool</span>
+<span class="sd">    :param skips_classifier: if True, skips classifier after average pooling</span>
+<span class="sd">    :type skips_classifier: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    :param org_model_ckpt_file_path_or_url: original DenseNet model checkpoint file path or URL</span>
+<span class="sd">    :type org_model_ckpt_file_path_or_url: str or None</span>
+<span class="sd">    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original DenseNet model’s `state_dict()` function</span>
+<span class="sd">    :type org_ckpt_strict: bool</span>
+<span class="sd">    :return: splittable DenseNet model</span>
+<span class="sd">    :rtype: SplittableDenseNet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">get_layer</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+    <span class="n">densenet_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">densenet_name</span><span class="p">](</span><span class="o">**</span><span class="n">densenet_kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">short_feature_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">short_feature_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;denseblock3&#39;</span><span class="p">,</span> <span class="s1">&#39;transition3&#39;</span><span class="p">,</span> <span class="s1">&#39;denseblock4&#39;</span><span class="p">,</span> <span class="s1">&#39;norm5&#39;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">org_model_ckpt_file_path_or_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">load_ckpt</span><span class="p">(</span><span class="n">org_model_ckpt_file_path_or_url</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">densenet_model</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">org_ckpt_strict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SplittableDenseNet</span><span class="p">(</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">short_feature_names</span><span class="p">,</span> <span class="n">densenet_model</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="p">,</span> <span class="n">skips_classifier</span><span class="p">,</span>
+                              <span class="n">pre_transform</span><span class="p">,</span> <span class="n">analysis_config</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="splittable_inception_v3">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.splittable_inception_v3">[docs]</a>
+<span class="nd">@register_backbone_func</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">splittable_inception_v3</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">,</span> <span class="n">short_module_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skips_dropout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">skips_fc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">org_model_ckpt_file_path_or_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org_ckpt_strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">inception_v3_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds InceptionV3-based splittable image classification model optionally containing neural encoder,</span>
+<span class="sd">    entropy bottleneck, and decoder.</span>
+
+<span class="sd">    :param bottleneck_config: bottleneck configuration</span>
+<span class="sd">    :type bottleneck_config: dict</span>
+<span class="sd">    :param short_module_names: child module names of &quot;Inception3&quot; to use</span>
+<span class="sd">    :type short_module_names: list</span>
+<span class="sd">    :param skips_avgpool: if True, skips avgpool (average pooling)</span>
+<span class="sd">    :type skips_avgpool: bool</span>
+<span class="sd">    :param skips_dropout: if True, skips dropout after avgpool</span>
+<span class="sd">    :type skips_dropout: bool</span>
+<span class="sd">    :param skips_fc: if True, skips fc (fully-connected layer) after dropout</span>
+<span class="sd">    :type skips_fc: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    :param org_model_ckpt_file_path_or_url: original InceptionV3 model checkpoint file path or URL</span>
+<span class="sd">    :type org_model_ckpt_file_path_or_url: str or None</span>
+<span class="sd">    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original InceptionV3 model’s `state_dict()` function</span>
+<span class="sd">    :type org_ckpt_strict: bool</span>
+<span class="sd">    :return: splittable InceptionV3 model</span>
+<span class="sd">    :rtype: SplittableInceptionV3</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">get_layer</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+    <span class="n">inception_v3_model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">inception_v3</span><span class="p">(</span><span class="o">**</span><span class="n">inception_v3_kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">short_module_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">short_module_names</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s1">&#39;Mixed_5b&#39;</span><span class="p">,</span> <span class="s1">&#39;Mixed_5c&#39;</span><span class="p">,</span> <span class="s1">&#39;Mixed_5d&#39;</span><span class="p">,</span> <span class="s1">&#39;Mixed_6a&#39;</span><span class="p">,</span> <span class="s1">&#39;Mixed_6b&#39;</span><span class="p">,</span> <span class="s1">&#39;Mixed_6c&#39;</span><span class="p">,</span> <span class="s1">&#39;Mixed_6d&#39;</span><span class="p">,</span> <span class="s1">&#39;Mixed_6e&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Mixed_7a&#39;</span><span class="p">,</span> <span class="s1">&#39;Mixed_7b&#39;</span><span class="p">,</span> <span class="s1">&#39;Mixed_7c&#39;</span><span class="p">,</span> <span class="s1">&#39;fc&#39;</span>
+        <span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">org_model_ckpt_file_path_or_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">load_ckpt</span><span class="p">(</span><span class="n">org_model_ckpt_file_path_or_url</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">inception_v3_model</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">org_ckpt_strict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SplittableInceptionV3</span><span class="p">(</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">short_module_names</span><span class="p">,</span> <span class="n">inception_v3_model</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="p">,</span> <span class="n">skips_dropout</span><span class="p">,</span>
+                                 <span class="n">skips_fc</span><span class="p">,</span> <span class="n">pre_transform</span><span class="p">,</span> <span class="n">analysis_config</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="splittable_resnest">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.splittable_resnest">[docs]</a>
+<span class="nd">@register_backbone_func</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">splittable_resnest</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">,</span> <span class="n">resnest_name</span><span class="o">=</span><span class="s1">&#39;resnest50d&#39;</span><span class="p">,</span> <span class="n">inplanes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">skips_fc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org_model_ckpt_file_path_or_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">org_ckpt_strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">resnest_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds ResNeSt-based splittable image classification model optionally containing neural encoder, entropy bottleneck,</span>
+<span class="sd">    and decoder.</span>
+
+<span class="sd">    :param bottleneck_config: bottleneck configuration</span>
+<span class="sd">    :type bottleneck_config: dict</span>
+<span class="sd">    :param resnest_name: name of ResNeSt function in `timm`</span>
+<span class="sd">    :type resnest_name: str</span>
+<span class="sd">    :param inplanes: ResNeSt model&#39;s inplanes</span>
+<span class="sd">    :type inplanes: int or None</span>
+<span class="sd">    :param skips_avgpool: if True, skips avgpool (average pooling) after layer4</span>
+<span class="sd">    :type skips_avgpool: bool</span>
+<span class="sd">    :param skips_fc: if True, skips fc (fully-connected layer) after layer4</span>
+<span class="sd">    :type skips_fc: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    :param org_model_ckpt_file_path_or_url: original ResNeSt model checkpoint file path or URL</span>
+<span class="sd">    :type org_model_ckpt_file_path_or_url: str or None</span>
+<span class="sd">    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original ResNeSt model’s `state_dict()` function</span>
+<span class="sd">    :type org_ckpt_strict: bool</span>
+<span class="sd">    :return: splittable ResNet model</span>
+<span class="sd">    :rtype: SplittableResNet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">get_layer</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+    <span class="n">resnest_model</span> <span class="o">=</span> <span class="n">resnest</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">resnest_name</span><span class="p">](</span><span class="o">**</span><span class="n">resnest_kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">org_model_ckpt_file_path_or_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">load_ckpt</span><span class="p">(</span><span class="n">org_model_ckpt_file_path_or_url</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">resnest_model</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">org_ckpt_strict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SplittableResNet</span><span class="p">(</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">resnest_model</span><span class="p">,</span> <span class="n">inplanes</span><span class="p">,</span> <span class="n">skips_avgpool</span><span class="p">,</span> <span class="n">skips_fc</span><span class="p">,</span>
+                            <span class="n">pre_transform</span><span class="p">,</span> <span class="n">analysis_config</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="splittable_regnet">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.splittable_regnet">[docs]</a>
+<span class="nd">@register_backbone_func</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">splittable_regnet</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">,</span> <span class="n">regnet_name</span><span class="o">=</span><span class="s1">&#39;regnety_064&#39;</span><span class="p">,</span> <span class="n">inplanes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skips_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                      <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org_model_ckpt_file_path_or_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">org_ckpt_strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">regnet_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds RegNet-based splittable image classification model optionally containing neural encoder, entropy bottleneck,</span>
+<span class="sd">    and decoder.</span>
+
+<span class="sd">    :param bottleneck_config: bottleneck configuration</span>
+<span class="sd">    :type bottleneck_config: dict</span>
+<span class="sd">    :param regnet_name: name of RegNet function in `timm`</span>
+<span class="sd">    :type regnet_name: str</span>
+<span class="sd">    :param inplanes: mapping from name of module to return its output to a specified key</span>
+<span class="sd">    :type inplanes: int or None</span>
+<span class="sd">    :param skips_head: if True, skips fc (fully-connected layer) after layer4</span>
+<span class="sd">    :type skips_head: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    :param org_model_ckpt_file_path_or_url: original RegNet model checkpoint file path or URL</span>
+<span class="sd">    :type org_model_ckpt_file_path_or_url: str or None</span>
+<span class="sd">    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by original RegNet model’s `state_dict()` function</span>
+<span class="sd">    :type org_ckpt_strict: bool</span>
+<span class="sd">    :return: splittable RegNet model</span>
+<span class="sd">    :rtype: SplittableRegNet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">get_layer</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+    <span class="n">regnet_model</span> <span class="o">=</span> <span class="n">regnet</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">regnet_name</span><span class="p">](</span><span class="o">**</span><span class="n">regnet_kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">org_model_ckpt_file_path_or_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">load_ckpt</span><span class="p">(</span><span class="n">org_model_ckpt_file_path_or_url</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">regnet_model</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">org_ckpt_strict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SplittableRegNet</span><span class="p">(</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">regnet_model</span><span class="p">,</span> <span class="n">inplanes</span><span class="p">,</span> <span class="n">skips_head</span><span class="p">,</span> <span class="n">pre_transform</span><span class="p">,</span> <span class="n">analysis_config</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="splittable_hybrid_vit">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.splittable_hybrid_vit">[docs]</a>
+<span class="nd">@register_backbone_func</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">splittable_hybrid_vit</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">,</span> <span class="n">hybrid_vit_name</span><span class="o">=</span><span class="s1">&#39;vit_small_r26_s32_224&#39;</span><span class="p">,</span> <span class="n">num_pruned_stages</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                          <span class="n">skips_head</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                          <span class="n">org_model_ckpt_file_path_or_url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">org_ckpt_strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">hybrid_vit_kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds Hybrid ViT-based splittable image classification model optionally containing neural encoder,</span>
+<span class="sd">    entropy bottleneck, and decoder.</span>
+
+
+<span class="sd">    :param bottleneck_config: bottleneck configuration</span>
+<span class="sd">    :type bottleneck_config: dict</span>
+<span class="sd">    :param hybrid_vit_name: name of Hybrid ViT function in `timm`</span>
+<span class="sd">    :type hybrid_vit_name: str</span>
+<span class="sd">    :param num_pruned_stages: number of stages in the ResNet backbone of Hybrid ViT to be pruned</span>
+<span class="sd">    :type num_pruned_stages: int</span>
+<span class="sd">    :param skips_head: if True, skips classification head</span>
+<span class="sd">    :type skips_head: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    :param org_model_ckpt_file_path_or_url: original Hybrid ViT model checkpoint file path or URL</span>
+<span class="sd">    :type org_model_ckpt_file_path_or_url: str or None</span>
+<span class="sd">    :param org_ckpt_strict: whether to strictly enforce that the keys in state_dict match the keys returned by</span>
+<span class="sd">                                original Hybrid ViT model’s `state_dict()` function</span>
+<span class="sd">    :type org_ckpt_strict: bool</span>
+<span class="sd">    :return: splittable Hybrid ViT model</span>
+<span class="sd">    :rtype: SplittableHybridViT</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bottleneck_layer</span> <span class="o">=</span> <span class="n">get_layer</span><span class="p">(</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">],</span> <span class="o">**</span><span class="n">bottleneck_config</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">])</span>
+    <span class="n">hybrid_vit_model</span> <span class="o">=</span> <span class="n">vision_transformer_hybrid</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">hybrid_vit_name</span><span class="p">](</span><span class="o">**</span><span class="n">hybrid_vit_kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">org_model_ckpt_file_path_or_url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">load_ckpt</span><span class="p">(</span><span class="n">org_model_ckpt_file_path_or_url</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">hybrid_vit_model</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">org_ckpt_strict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">SplittableHybridViT</span><span class="p">(</span><span class="n">bottleneck_layer</span><span class="p">,</span> <span class="n">hybrid_vit_model</span><span class="p">,</span> <span class="n">num_pruned_stages</span><span class="p">,</span> <span class="n">skips_head</span><span class="p">,</span>
+                               <span class="n">pre_transform</span><span class="p">,</span> <span class="n">analysis_config</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_backbone">
+<a class="viewcode-back" href="../../../subpkgs/models.html#sc2bench.models.backbone.get_backbone">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_backbone</span><span class="p">(</span><span class="n">cls_or_func_name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Gets a backbone model.</span>
+
+<span class="sd">    :param cls_or_func_name: backbone class or function name</span>
+<span class="sd">    :type cls_or_func_name: str</span>
+<span class="sd">    :param kwargs: kwargs for the backbone class or function to build the backbone model</span>
+<span class="sd">    :type kwargs: dict</span>
+<span class="sd">    :return: backbone model</span>
+<span class="sd">    :rtype: nn.Module or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">cls_or_func_name</span> <span class="ow">in</span> <span class="n">BACKBONE_CLASS_DICT</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BACKBONE_CLASS_DICT</span><span class="p">[</span><span class="n">cls_or_func_name</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">cls_or_func_name</span> <span class="ow">in</span> <span class="n">BACKBONE_FUNC_DICT</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BACKBONE_FUNC_DICT</span><span class="p">[</span><span class="n">cls_or_func_name</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

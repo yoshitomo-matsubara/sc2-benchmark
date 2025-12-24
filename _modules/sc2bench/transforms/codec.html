@@ -1,0 +1,613 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.transforms.codec &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../package.html">sc2bench API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sc2bench.transforms.codec</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sc2bench.transforms.codec</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BytesIO</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tempfile</span><span class="w"> </span><span class="kn">import</span> <span class="n">mkstemp</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">compressai.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">rgb2ycbcr</span><span class="p">,</span> <span class="n">ycbcr2rgb</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">compressai.utils.bench.codecs</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_command</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">file_util</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.datasets.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_transform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomResizedCrop</span><span class="p">,</span> <span class="n">Resize</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">InterpolationMode</span><span class="p">,</span> <span class="n">to_pil_image</span><span class="p">,</span> <span class="n">to_tensor</span>
+
+<span class="n">CODEC_TRANSFORM_MODULE_DICT</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<span class="n">INTERPOLATION_MODE_DICT</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;nearest&#39;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">,</span>
+    <span class="s1">&#39;bicubic&#39;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span><span class="p">,</span>
+    <span class="s1">&#39;bilinear&#39;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
+    <span class="s1">&#39;box&#39;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BOX</span><span class="p">,</span>
+    <span class="s1">&#39;hamming&#39;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">HAMMING</span><span class="p">,</span>
+    <span class="s1">&#39;lanczos&#39;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">LANCZOS</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="register_codec_transform_module">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.register_codec_transform_module">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_codec_transform_module</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Registers a codec transform class.</span>
+
+<span class="sd">    :param cls: codec transform class to be registered</span>
+<span class="sd">    :type cls: class</span>
+<span class="sd">    :return: registered codec transform class</span>
+<span class="sd">    :rtype: class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">CODEC_TRANSFORM_MODULE_DICT</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
+    <span class="n">register_transform</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span></div>
+
+
+
+<div class="viewcode-block" id="WrappedRandomResizedCrop">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.WrappedRandomResizedCrop">[docs]</a>
+<span class="nd">@register_codec_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WrappedRandomResizedCrop</span><span class="p">(</span><span class="n">RandomResizedCrop</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    `RandomResizedCrop` in torchvision wrapped to be defined by `interpolation` as a str object.</span>
+
+<span class="sd">    :param interpolation: desired interpolation mode (&#39;nearest&#39;, &#39;bicubic&#39;, &#39;bilinear&#39;, &#39;box&#39;, &#39;hamming&#39;, &#39;lanczos&#39;)</span>
+<span class="sd">    :type interpolation: str or None</span>
+<span class="sd">    :param kwargs: kwargs for `RandomResizedCrop` in torchvision</span>
+<span class="sd">    :type kwargs: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">interpolation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="n">INTERPOLATION_MODE_DICT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="WrappedResize">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.WrappedResize">[docs]</a>
+<span class="nd">@register_codec_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WrappedResize</span><span class="p">(</span><span class="n">Resize</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    `Resize` in torchvision wrapped to be defined by `interpolation` as a str object.</span>
+
+<span class="sd">    :param interpolation: desired interpolation mode (&#39;nearest&#39;, &#39;bicubic&#39;, &#39;bilinear&#39;, &#39;box&#39;, &#39;hamming&#39;, &#39;lanczos&#39;)</span>
+<span class="sd">    :type interpolation: str or None</span>
+<span class="sd">    :param kwargs: kwargs for `Resize` in torchvision</span>
+<span class="sd">    :type kwargs: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">interpolation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">interpolation</span> <span class="o">=</span> <span class="n">INTERPOLATION_MODE_DICT</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">interpolation</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PILImageModule">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.PILImageModule">[docs]</a>
+<span class="nd">@register_codec_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PILImageModule</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A generalized PIL module to compress (decompress) images e.g., as part of transform pipeline.</span>
+
+<span class="sd">    :param returns_file_size: returns file size of compressed object in addition to PIL image if True</span>
+<span class="sd">    :type returns_file_size: bool</span>
+<span class="sd">    :param open_kwargs: kwargs to be used as part of `Image.open(img_buffer, **open_kwargs)`</span>
+<span class="sd">    :type open_kwargs: dict or None</span>
+<span class="sd">    :param save_kwargs: kwargs to be used as part of `Image.save(img_buffer, **save_kwargs)`</span>
+<span class="sd">    :type save_kwargs: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">returns_file_size</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">open_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">save_kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span> <span class="o">=</span> <span class="n">returns_file_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span> <span class="o">=</span> <span class="n">open_kwargs</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_kwargs</span> <span class="o">=</span> <span class="n">save_kwargs</span>
+
+<div class="viewcode-block" id="PILImageModule.forward">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.PILImageModule.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pil_img</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Saves PIL Image to BytesIO and reopens the image saved in the buffer.</span>
+
+<span class="sd">        :param pil_img: image to be transformed.</span>
+<span class="sd">        :type pil_img: PIL.Image.Image</span>
+<span class="sd">        :return: Affine transformed image or with its file size if returns_file_size=True</span>
+<span class="sd">        :rtype: PIL.Image.Image or (PIL.Image.Image, int)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">img_buffer</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">()</span>
+        <span class="n">pil_img</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">img_buffer</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">save_kwargs</span><span class="p">)</span>
+        <span class="n">file_size</span> <span class="o">=</span> <span class="n">img_buffer</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+        <span class="n">pil_img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">img_buffer</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">pil_img</span><span class="p">,</span> <span class="n">file_size</span>
+        <span class="k">return</span> <span class="n">pil_img</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> \
+               <span class="s1">&#39;(returns_file_size=</span><span class="si">{}</span><span class="s1">, open_kwargs=</span><span class="si">{}</span><span class="s1">, save_kwargs=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span><span class="p">,</span>
+                                                                               <span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="PILTensorModule">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.PILTensorModule">[docs]</a>
+<span class="nd">@register_codec_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PILTensorModule</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A generalized PIL module to compress (decompress) tensors e.g., as part of transform pipeline.</span>
+
+<span class="sd">    :param returns_file_size: returns file size of compressed object in addition to PIL image if True</span>
+<span class="sd">    :type returns_file_size: bool</span>
+<span class="sd">    :param open_kwargs: kwargs to be used as part of `Image.open(img_buffer, **open_kwargs)`</span>
+<span class="sd">    :type open_kwargs: dict or None</span>
+<span class="sd">    :param save_kwargs: kwargs to be used as part of `Image.save(img_buffer, **save_kwargs)`</span>
+<span class="sd">    :type save_kwargs: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">returns_file_size</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">open_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">save_kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span> <span class="o">=</span> <span class="n">returns_file_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span> <span class="o">=</span> <span class="n">open_kwargs</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_kwargs</span> <span class="o">=</span> <span class="n">save_kwargs</span>
+
+<div class="viewcode-block" id="PILTensorModule.forward">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.PILTensorModule.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Splits tensor&#39;s channels into sub-tensors (3 or fewer channels each),</span>
+<span class="sd">        normalizes each using its min and max values, saves the normalized sub-tensor to BytesIO,</span>
+<span class="sd">        and reopens the sub-tensor saved in the buffer to reconstruct the input tensor.</span>
+
+<span class="sd">        :param x: image tensor (C, H, W) to be transformed.</span>
+<span class="sd">        :type x: torch.Tensor</span>
+<span class="sd">        :return: Affine transformed image tensor or with its file size if returns_file_size=True</span>
+<span class="sd">        :rtype: torch.Tensor or (torch.Tensor, int)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">device</span>
+        <span class="n">split_features</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">last_shape</span> <span class="o">=</span> <span class="n">split_features</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="n">last_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">more_split_last_features</span> <span class="o">=</span> <span class="n">split_features</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">split_features</span> <span class="o">=</span> <span class="n">split_features</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">more_split_last_features</span>
+
+        <span class="n">file_size</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">norm_max_list</span><span class="p">,</span> <span class="n">norm_min_list</span><span class="p">,</span> <span class="n">reconstructed_split_feature_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(),</span> <span class="nb">list</span><span class="p">(),</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">split_feature</span> <span class="ow">in</span> <span class="n">split_features</span><span class="p">:</span>
+            <span class="c1"># split_feature: (3 or 1, H, W)</span>
+            <span class="n">max_value</span> <span class="o">=</span> <span class="n">split_feature</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+            <span class="n">min_value</span> <span class="o">=</span> <span class="n">split_feature</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+            <span class="n">norm_max_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_value</span><span class="p">)</span>
+            <span class="n">norm_min_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">min_value</span><span class="p">)</span>
+            <span class="c1"># normalize to [0, 1]</span>
+            <span class="n">normed_feature</span> <span class="o">=</span> <span class="p">(</span><span class="n">split_feature</span> <span class="o">-</span> <span class="n">min_value</span><span class="p">)</span> <span class="o">/</span> <span class="n">max_value</span>
+            <span class="n">pil_img</span> <span class="o">=</span> <span class="n">to_pil_image</span><span class="p">(</span><span class="n">normed_feature</span><span class="p">)</span>
+            <span class="n">img_buffer</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">()</span>
+            <span class="c1"># Compress split feature by codec</span>
+            <span class="n">pil_img</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">img_buffer</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">save_kwargs</span><span class="p">)</span>
+            <span class="n">file_size</span> <span class="o">+=</span> <span class="n">img_buffer</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
+            <span class="n">pil_img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">img_buffer</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">split_feature</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">pil_img</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s1">&#39;L&#39;</span><span class="p">:</span>
+                <span class="n">pil_img</span> <span class="o">=</span> <span class="n">pil_img</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s1">&#39;L&#39;</span><span class="p">)</span>
+
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">to_tensor</span><span class="p">(</span><span class="n">pil_img</span><span class="p">)</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="o">*</span> <span class="n">max_value</span> <span class="o">+</span> <span class="n">min_value</span>
+            <span class="n">reconstructed_split_feature_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+
+        <span class="n">reconstructed_features</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">reconstructed_split_feature_list</span><span class="p">)</span>
+        <span class="c1"># File size: Compressed feature by codec + values to denormalize (norm_min_list, norm_max_list)</span>
+        <span class="n">norm_data_size</span> <span class="o">=</span> \
+            <span class="n">file_util</span><span class="o">.</span><span class="n">get_binary_object_size</span><span class="p">(</span><span class="n">norm_min_list</span><span class="p">,</span> <span class="n">unit_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> \
+            <span class="o">+</span> <span class="n">file_util</span><span class="o">.</span><span class="n">get_binary_object_size</span><span class="p">(</span><span class="n">norm_max_list</span><span class="p">,</span> <span class="n">unit_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">file_size</span> <span class="o">+=</span> <span class="n">norm_data_size</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">reconstructed_features</span><span class="p">,</span> <span class="n">file_size</span>
+        <span class="k">return</span> <span class="n">reconstructed_features</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> \
+               <span class="s1">&#39;(returns_file_size=</span><span class="si">{}</span><span class="s1">, open_kwargs=</span><span class="si">{}</span><span class="s1">, save_kwargs=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span><span class="p">,</span>
+                                                                               <span class="bp">self</span><span class="o">.</span><span class="n">open_kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="BPGModule">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.BPGModule">[docs]</a>
+<span class="nd">@register_codec_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">BPGModule</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A BPG module to compress (decompress) images e.g., as part of transform pipeline.</span>
+
+<span class="sd">    Modified https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py</span>
+
+<span class="sd">    Fabrice Bellard: `&quot;BPG Image format&quot; &lt;https://bellard.org/bpg/&gt;`_</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        You need to manually install BPG software beforehand and confirm the encoder and decoder paths.</span>
+<span class="sd">        For Debian machines (e.g., Ubuntu), you can use `this script &lt;https://github.com/yoshitomo-matsubara/sc2-benchmark/blob/main/script/software/install_bpg.sh&gt;`_.</span>
+
+<span class="sd">    :param encoder_path: file path of BPG encoder you manually installed</span>
+<span class="sd">    :type encoder_path: str</span>
+<span class="sd">    :param decoder_path: file path of BPG decoder you manually installed</span>
+<span class="sd">    :type decoder_path: str</span>
+<span class="sd">    :param color_mode: color mode (&#39;ycbcr&#39; or &#39;rgb&#39;)</span>
+<span class="sd">    :type color_mode: str</span>
+<span class="sd">    :param encoder: encoder type (&#39;x265&#39; or &#39;jctvc&#39;)</span>
+<span class="sd">    :type encoder: str</span>
+<span class="sd">    :param subsampling_mode: subsampling mode (&#39;420&#39; or &#39;444&#39;)</span>
+<span class="sd">    :type subsampling_mode: str or int</span>
+<span class="sd">    :param bit_depth: bit depth (8 or 10)</span>
+<span class="sd">    :type bit_depth: str or int</span>
+<span class="sd">    :param quality: quality value in range [0, 51]</span>
+<span class="sd">    :type quality: int</span>
+<span class="sd">    :param returns_file_size: returns file size of compressed object in addition to PIL image if True</span>
+<span class="sd">    :type returns_file_size: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;.bpg&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoder_path</span><span class="p">,</span> <span class="n">decoder_path</span><span class="p">,</span> <span class="n">color_mode</span><span class="o">=</span><span class="s1">&#39;ycbcr&#39;</span><span class="p">,</span> <span class="n">encoder</span><span class="o">=</span><span class="s1">&#39;x265&#39;</span><span class="p">,</span>
+                 <span class="n">subsampling_mode</span><span class="o">=</span><span class="s1">&#39;444&#39;</span><span class="p">,</span> <span class="n">bit_depth</span><span class="o">=</span><span class="s1">&#39;8&#39;</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">returns_file_size</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subsampling_mode</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">subsampling_mode</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">subsampling_mode</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">bit_depth</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">bit_depth</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">bit_depth</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">color_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ycbcr&#39;</span><span class="p">,</span> <span class="s1">&#39;rgb&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid color mode value: `</span><span class="si">{</span><span class="n">color_mode</span><span class="si">}</span><span class="s1">`, which should be either &quot;ycbcr&quot; or &quot;rgb&quot;&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">encoder</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;x265&#39;</span><span class="p">,</span> <span class="s1">&#39;jctvc&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid encoder value: `</span><span class="si">{</span><span class="n">encoder</span><span class="si">}</span><span class="s1">`, which should be either &quot;x265&quot; or &quot;jctvc&quot;&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">subsampling_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;420&#39;</span><span class="p">,</span> <span class="s1">&#39;444&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid subsampling mode value: `</span><span class="si">{</span><span class="n">subsampling_mode</span><span class="si">}</span><span class="s1">`, which should be either 420 or 444&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">bit_depth</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;8&#39;</span><span class="p">,</span> <span class="s1">&#39;10&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid bit depth value: `</span><span class="si">{</span><span class="n">bit_depth</span><span class="si">}</span><span class="s1">`, which should be either 8 or 10&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">quality</span> <span class="o">&lt;=</span> <span class="mi">51</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid quality value: `</span><span class="si">{</span><span class="n">quality</span><span class="si">}</span><span class="s1">`, which should be between 0 and 51&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">encoder_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">decoder_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color_mode</span> <span class="o">=</span> <span class="n">color_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">encoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subsampling_mode</span> <span class="o">=</span> <span class="n">subsampling_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bit_depth</span> <span class="o">=</span> <span class="n">bit_depth</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">quality</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span> <span class="o">=</span> <span class="n">returns_file_size</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_encode_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img_file_path</span><span class="p">,</span> <span class="n">output_file_path</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">encoder_path</span><span class="p">,</span>
+            <span class="s1">&#39;-o&#39;</span><span class="p">,</span>
+            <span class="n">output_file_path</span><span class="p">,</span>
+            <span class="s1">&#39;-q&#39;</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">quality</span><span class="p">),</span>
+            <span class="s1">&#39;-f&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">subsampling_mode</span><span class="p">,</span>
+            <span class="s1">&#39;-e&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">,</span>
+            <span class="s1">&#39;-c&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">color_mode</span><span class="p">,</span>
+            <span class="s1">&#39;-b&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bit_depth</span><span class="p">,</span>
+            <span class="n">img_file_path</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">cmd</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_decode_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_file_path</span><span class="p">,</span> <span class="n">reconst_file_path</span><span class="p">):</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">decoder_path</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">reconst_file_path</span><span class="p">,</span> <span class="n">output_file_path</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">cmd</span>
+
+<div class="viewcode-block" id="BPGModule.forward">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.BPGModule.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pil_img</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compresses and decompresses PIL Image using BPG software.</span>
+
+<span class="sd">        :param pil_img: image to be transformed.</span>
+<span class="sd">        :type pil_img: PIL.Image.Image</span>
+<span class="sd">        :return: Affine transformed image or with its file size if returns_file_size=True</span>
+<span class="sd">        :rtype: PIL.Image.Image or (PIL.Image.Image, int)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fd_i</span><span class="p">,</span> <span class="n">resized_input_filepath</span> <span class="o">=</span> <span class="n">mkstemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.jpg&#39;</span><span class="p">)</span>
+        <span class="n">fd_r</span><span class="p">,</span> <span class="n">reconst_file_path</span> <span class="o">=</span> <span class="n">mkstemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.jpg&#39;</span><span class="p">)</span>
+        <span class="n">fd_o</span><span class="p">,</span> <span class="n">output_file_path</span> <span class="o">=</span> <span class="n">mkstemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fmt</span><span class="p">)</span>
+        <span class="n">pil_img</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">resized_input_filepath</span><span class="p">,</span> <span class="s1">&#39;JPEG&#39;</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+
+        <span class="c1"># Encode</span>
+        <span class="n">run_command</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_encode_cmd</span><span class="p">(</span><span class="n">resized_input_filepath</span><span class="p">,</span> <span class="n">output_file_path</span><span class="p">))</span>
+        <span class="n">file_size_byte</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">output_file_path</span><span class="p">)</span><span class="o">.</span><span class="n">st_size</span>
+
+        <span class="c1"># Decode</span>
+        <span class="n">run_command</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_decode_cmd</span><span class="p">(</span><span class="n">output_file_path</span><span class="p">,</span> <span class="n">reconst_file_path</span><span class="p">))</span>
+
+        <span class="c1"># Read image</span>
+        <span class="n">reconst_img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">reconst_file_path</span><span class="p">)</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s1">&#39;RGB&#39;</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fd_i</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">resized_input_filepath</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fd_r</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">reconst_file_path</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fd_o</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">output_file_path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">reconst_img</span><span class="p">,</span> <span class="n">file_size_byte</span>
+        <span class="k">return</span> <span class="n">reconst_img</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(encoder_path=</span><span class="si">{}</span><span class="s1">, decoder_path=</span><span class="si">{}</span><span class="s1">, color_mode=</span><span class="si">{}</span><span class="s1">, &#39;</span> \
+                                         <span class="s1">&#39;encoder=</span><span class="si">{}</span><span class="s1">, subsampling_mode=</span><span class="si">{}</span><span class="s1">, bit_depth=</span><span class="si">{}</span><span class="s1">, quality=</span><span class="si">{}</span><span class="s1">, &#39;</span> \
+                                         <span class="s1">&#39;returns_file_size=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encoder_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder_path</span><span class="p">,</span>
+                                                                        <span class="bp">self</span><span class="o">.</span><span class="n">color_mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">,</span>
+                                                                        <span class="bp">self</span><span class="o">.</span><span class="n">subsampling_mode</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bit_depth</span><span class="p">,</span>
+                                                                        <span class="bp">self</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="VTMModule">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.VTMModule">[docs]</a>
+<span class="nd">@register_codec_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VTMModule</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A VTM module to compress (decompress) images e.g., as part of transform pipeline.</span>
+
+<span class="sd">    Modified https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py</span>
+
+<span class="sd">    The Joint Video Exploration Team: `&quot;VTM reference software for VVC&quot; &lt;https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM&gt;`_</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        You need to manually install VTM software beforehand and confirm the encoder and decoder paths.</span>
+<span class="sd">        For Debian machines (e.g., Ubuntu), you can use `this script &lt;https://github.com/yoshitomo-matsubara/sc2-benchmark/blob/main/script/software/install_vtm.sh&gt;`_.</span>
+
+<span class="sd">    :param encoder_path: file path of VTM encoder you manually installed</span>
+<span class="sd">    :type encoder_path: str</span>
+<span class="sd">    :param decoder_path: file path of VTM decoder you manually installed</span>
+<span class="sd">    :type decoder_path: str</span>
+<span class="sd">    :param config_path: VTM configuration file path</span>
+<span class="sd">    :type config_path: str</span>
+<span class="sd">    :param color_mode: color mode (&#39;ycbcr&#39; or &#39;rgb&#39;)</span>
+<span class="sd">    :type color_mode: str</span>
+<span class="sd">    :param quality: quality value in range [0, 63]</span>
+<span class="sd">    :type quality: int</span>
+<span class="sd">    :param returns_file_size: returns file size of compressed object in addition to PIL image if True</span>
+<span class="sd">    :type returns_file_size: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;.bin&#39;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoder_path</span><span class="p">,</span> <span class="n">decoder_path</span><span class="p">,</span> <span class="n">config_path</span><span class="p">,</span> <span class="n">color_mode</span><span class="o">=</span><span class="s1">&#39;ycbcr&#39;</span><span class="p">,</span>
+                 <span class="n">quality</span><span class="o">=</span><span class="mi">63</span><span class="p">,</span> <span class="n">returns_file_size</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="c1"># According to https://github.com/InterDigitalInc/CompressAI/issues/31,</span>
+        <span class="c1"># CompressAI used &quot;encoder_intra_vtm.cfg&quot; config file</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">color_mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;ycbcr&#39;</span><span class="p">,</span> <span class="s1">&#39;rgb&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid color mode value: `</span><span class="si">{</span><span class="n">color_mode</span><span class="si">}</span><span class="s1">`, which should be either &quot;ycbcr&quot; or &quot;rgb&quot;&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">quality</span> <span class="o">&lt;=</span> <span class="mi">63</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid quality value: `</span><span class="si">{</span><span class="n">quality</span><span class="si">}</span><span class="s1">`, which should be between 0 and 63&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">encoder_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">encoder_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decoder_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">decoder_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uses_rgb</span> <span class="o">=</span> <span class="n">color_mode</span> <span class="o">!=</span> <span class="s1">&#39;ycbcr&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">quality</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span> <span class="o">=</span> <span class="n">returns_file_size</span>
+
+<div class="viewcode-block" id="VTMModule.forward">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.codec.VTMModule.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pil_img</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compresses and decompresses PIL Image using VTM software.</span>
+
+<span class="sd">        :param pil_img: image to be transformed.</span>
+<span class="sd">        :type pil_img: PIL.Image.Image</span>
+<span class="sd">        :return: Affine transformed image or with its file size if returns_file_size=True</span>
+<span class="sd">        :rtype: PIL.Image.Image or (PIL.Image.Image, int)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Taking 8bit input for now</span>
+        <span class="n">bitdepth</span> <span class="o">=</span> <span class="mi">8</span>
+
+        <span class="c1"># Convert input image to yuv 444 file</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">pil_img</span><span class="p">)</span>
+        <span class="n">fd</span><span class="p">,</span> <span class="n">yuv_path</span> <span class="o">=</span> <span class="n">mkstemp</span><span class="p">(</span><span class="n">suffix</span><span class="o">=</span><span class="s1">&#39;.yuv&#39;</span><span class="p">)</span>
+        <span class="n">output_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">yuv_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmt</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">transpose</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>  <span class="c1"># color channel first</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_rgb</span><span class="p">:</span>
+            <span class="c1"># convert rgb content to YCbCr</span>
+            <span class="n">rgb</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">bitdepth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">rgb2ycbcr</span><span class="p">(</span><span class="n">rgb</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="p">(</span><span class="n">arr</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">bitdepth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">yuv_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">tobytes</span><span class="p">())</span>
+
+        <span class="c1"># Encode</span>
+        <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">encoder_path</span><span class="p">,</span>
+            <span class="s1">&#39;-i&#39;</span><span class="p">,</span>
+            <span class="n">yuv_path</span><span class="p">,</span>
+            <span class="s1">&#39;-c&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config_path</span><span class="p">,</span>
+            <span class="s1">&#39;-q&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span>
+            <span class="s1">&#39;-o&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;/dev/null&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;-b&#39;</span><span class="p">,</span>
+            <span class="n">output_file_path</span><span class="p">,</span>
+            <span class="s1">&#39;-wdt&#39;</span><span class="p">,</span>
+            <span class="n">width</span><span class="p">,</span>
+            <span class="s1">&#39;-hgt&#39;</span><span class="p">,</span>
+            <span class="n">height</span><span class="p">,</span>
+            <span class="s1">&#39;-fr&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;-f&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;--InputChromaFormat=444&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;--InputBitDepth=8&#39;</span><span class="p">,</span>
+            <span class="c1"># &quot;--ConformanceMode=1&quot; # It looks like ConformanceMode arg is no longer supported</span>
+        <span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_rgb</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span>
+                <span class="s1">&#39;--InputColourSpaceConvert=RGBtoGBR&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;--SNRInternalColourSpace=1&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;--OutputInternalColourSpace=0&#39;</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+        <span class="n">file_size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">output_file_path</span><span class="p">)</span><span class="o">.</span><span class="n">st_size</span>
+        <span class="c1"># cleanup encoder input</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fd</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">yuv_path</span><span class="p">)</span>
+
+        <span class="c1"># Decode</span>
+        <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">decoder_path</span><span class="p">,</span> <span class="s1">&#39;-b&#39;</span><span class="p">,</span> <span class="n">output_file_path</span><span class="p">,</span> <span class="s1">&#39;-o&#39;</span><span class="p">,</span> <span class="n">yuv_path</span><span class="p">,</span> <span class="s1">&#39;-d&#39;</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_rgb</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;--OutputInternalColourSpace=GBRtoRGB&#39;</span><span class="p">)</span>
+
+        <span class="n">run_command</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+        <span class="c1"># Compute PSNR</span>
+        <span class="n">rec_arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">yuv_path</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="n">rec_arr</span> <span class="o">=</span> <span class="n">rec_arr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+        <span class="n">rec_arr</span> <span class="o">=</span> <span class="n">rec_arr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">bitdepth</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_rgb</span><span class="p">:</span>
+            <span class="n">rec_arr</span> <span class="o">=</span> <span class="n">ycbcr2rgb</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">rec_arr</span><span class="o">.</span><span class="n">copy</span><span class="p">()))</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+        <span class="c1"># Cleanup</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">yuv_path</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">output_file_path</span><span class="p">)</span>
+        <span class="n">rec</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">fromarray</span><span class="p">((</span><span class="n">rec_arr</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="mf">255.0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">rec</span><span class="p">,</span> <span class="n">file_size</span>
+        <span class="k">return</span> <span class="n">rec</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s1">&#39;(encoder_path=</span><span class="si">{}</span><span class="s1">, decoder_path=</span><span class="si">{}</span><span class="s1">, config_path=</span><span class="si">{}</span><span class="s1">, &#39;</span> \
+                                         <span class="s1">&#39;uses_rgb=</span><span class="si">{}</span><span class="s1">, quality=</span><span class="si">{}</span><span class="s1">, &#39;</span> \
+                                         <span class="s1">&#39;returns_file_size=</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">encoder_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder_path</span><span class="p">,</span>
+                                                                        <span class="bp">self</span><span class="o">.</span><span class="n">config_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_rgb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span>
+                                                                        <span class="bp">self</span><span class="o">.</span><span class="n">returns_file_size</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

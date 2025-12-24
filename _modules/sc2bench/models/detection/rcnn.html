@@ -1,0 +1,373 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.models.detection.rcnn &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../package.html">sc2bench API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sc2bench.models.detection.rcnn</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sc2bench.models.detection.rcnn</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.common.main_util</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_ckpt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.detection._utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">overwrite_eps</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.detection.faster_rcnn</span><span class="w"> </span><span class="kn">import</span> <span class="n">FasterRCNN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.detection.generalized_rcnn</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeneralizedRCNN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">misc</span> <span class="k">as</span> <span class="n">misc_nn_ops</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.ops.feature_pyramid_network</span><span class="w"> </span><span class="kn">import</span> <span class="n">LastLevelMaxPool</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">UpdatableDetectionModel</span><span class="p">,</span> <span class="n">UpdatableBackboneWithFPN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_detection_model_func</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..backbone</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_if_updatable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_classification_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_if_analyzable</span>
+
+<span class="n">MODEL_URL_DICT</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;fasterrcnn_resnet50_fpn_coco&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;fasterrcnn_resnet50_fpn_v2_coco&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_v2_coco-dd69338a.pth&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;fasterrcnn_mobilenet_v3_large_fp&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;fasterrcnn_mobilenet_v3_large_320_fpn&#39;</span><span class="p">:</span> <span class="s1">&#39;https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth&#39;</span><span class="p">,</span>
+
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="BaseRCNN">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.BaseRCNN">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BaseRCNN</span><span class="p">(</span><span class="n">GeneralizedRCNN</span><span class="p">,</span> <span class="n">UpdatableDetectionModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base, updatable R-CNN model.</span>
+
+<span class="sd">    :param rcnn_model: backbone model (usually a classification model)</span>
+<span class="sd">    :type rcnn_model: nn.Module</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Referred to https://github.com/pytorch/vision/blob/main/torchvision/models/detection/generalized_rcnn.py</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rcnn_model</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="n">UpdatableDetectionModel</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;analyzer_configs&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">()))</span>
+        <span class="n">GeneralizedRCNN</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rcnn_model</span><span class="o">.</span><span class="n">backbone</span><span class="p">,</span> <span class="n">rcnn_model</span><span class="o">.</span><span class="n">rpn</span><span class="p">,</span> <span class="n">rcnn_model</span><span class="o">.</span><span class="n">roi_heads</span><span class="p">,</span> <span class="n">rcnn_model</span><span class="o">.</span><span class="n">transform</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseRCNN.update">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.BaseRCNN.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Updates compression-specific parameters like `CompressAI models do &lt;https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.update&gt;`_.</span>
+<span class="sd">        Needs to be called once after training to be able to later perform the evaluation with an actual entropy coder.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_if_updatable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;`backbone` </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s1"> is not updatable&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseRCNN.get_aux_module">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.BaseRCNN.get_aux_module">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_aux_module</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns an auxiliary module to compute auxiliary loss if necessary like `CompressAI models do &lt;https://interdigitalinc.github.io/CompressAI/models.html#compressai.models.CompressionModel.aux_loss&gt;`_.</span>
+
+<span class="sd">        :return: auxiliary module</span>
+<span class="sd">        :rtype: nn.Module</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">get_aux_module</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseRCNN.activate_analysis">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.BaseRCNN.activate_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">activate_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Activates the analysis mode.</span>
+
+<span class="sd">        Should be called after training model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">activate_analysis</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseRCNN.deactivate_analysis">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.BaseRCNN.deactivate_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">deactivate_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Deactivates the analysis mode.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">deactivate_analysis</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">deactivate_analysis</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseRCNN.analyze">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.BaseRCNN.analyze">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">compressed_obj</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Analyzes a given compressed object (e.g., file size of the compressed object).</span>
+
+<span class="sd">        :param compressed_obj: compressed object to be analyzed</span>
+<span class="sd">        :type compressed_obj: Any</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">activated_analysis</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">analyzer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="p">:</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">compressed_obj</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">compressed_obj</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseRCNN.summarize">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.BaseRCNN.summarize">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Summarizes the results that the configured analyzers store.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">analyzer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="p">:</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">summarize</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseRCNN.clear_analysis">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.BaseRCNN.clear_analysis">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_analysis</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Clears the results that the configured analyzers store.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">analyzer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzers</span><span class="p">:</span>
+            <span class="n">analyzer</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">check_if_analyzable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">clear_analysis</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="create_faster_rcnn_fpn">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.create_faster_rcnn_fpn">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_faster_rcnn_fpn</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">extra_blocks</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">return_layer_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">in_channels_list</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="n">in_channels_stage2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">returned_layers</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span>
+                           <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">analyzable_layer_key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds Faster R-CNN model using a given updatable backbone model.</span>
+
+<span class="sd">    :param backbone: backbone model (usually a classification model)</span>
+<span class="sd">    :type backbone: nn.Module</span>
+<span class="sd">    :param extra_blocks: if provided, extra operations will</span>
+<span class="sd">            be performed. It is expected to take the fpn features, the original</span>
+<span class="sd">            features and the names of the original features as input, and returns</span>
+<span class="sd">            a new list of feature maps and their corresponding names</span>
+<span class="sd">    :type extra_blocks: ExtraFPNBlock or None</span>
+<span class="sd">    :param return_layer_dict: mapping from name of module to return its output to a specified key</span>
+<span class="sd">    :type return_layer_dict: dict</span>
+<span class="sd">    :param in_channels_list: number of channels for each feature map that is passed to the module for FPN</span>
+<span class="sd">    :type in_channels_list: list[int] or None</span>
+<span class="sd">    :param in_channels_stage2: base number of channels used to define `in_channels_list` if `in_channels_list` is `None`</span>
+<span class="sd">    :type in_channels_stage2: int or None</span>
+<span class="sd">    :param out_channels: number of channels of the FPN representation</span>
+<span class="sd">    :type out_channels: int</span>
+<span class="sd">    :param returned_layers: list of layer numbers to define `return_layer_dict` if `return_layer_dict` is `None`</span>
+<span class="sd">    :type returned_layers: list[int] or None</span>
+<span class="sd">    :param num_classes: number of output classes of the model (including the background)</span>
+<span class="sd">    :type num_classes: int</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    :param analyzable_layer_key: key of analyzable layer</span>
+<span class="sd">    :type analyzable_layer_key: str or None</span>
+<span class="sd">    :return: Faster R-CNN model with backbone model with FPN</span>
+<span class="sd">    :rtype: torchvision.models.detection.faster_rcnn.FasterRCNN</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">extra_blocks</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">extra_blocks</span> <span class="o">=</span> <span class="n">LastLevelMaxPool</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">returned_layers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">returned_layers</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">return_layer_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">return_layer_dict</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;layer</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">returned_layers</span><span class="p">)}</span>
+
+    <span class="k">if</span> <span class="n">in_channels_stage2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">in_channels_stage2</span> <span class="o">=</span> <span class="n">backbone</span><span class="o">.</span><span class="n">inplanes</span> <span class="o">//</span> <span class="mi">8</span>
+
+    <span class="k">if</span> <span class="n">in_channels_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">in_channels_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">in_channels_stage2</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">returned_layers</span><span class="p">]</span>
+
+    <span class="n">backbone_with_fpn</span> <span class="o">=</span> \
+        <span class="n">UpdatableBackboneWithFPN</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">return_layer_dict</span><span class="p">,</span> <span class="n">in_channels_list</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">extra_blocks</span><span class="o">=</span><span class="n">extra_blocks</span><span class="p">,</span>
+                                 <span class="n">analyzable_layer_key</span><span class="o">=</span><span class="n">analyzable_layer_key</span><span class="p">,</span> <span class="o">**</span><span class="n">analysis_config</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">FasterRCNN</span><span class="p">(</span><span class="n">backbone_with_fpn</span><span class="p">,</span> <span class="n">num_classes</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_process_torchvision_pretrained_weights</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">pretrained_backbone_name</span><span class="p">,</span> <span class="n">progress</span><span class="p">):</span>
+    <span class="n">base_backbone_name</span> <span class="o">=</span> <span class="s1">&#39;resnet50&#39;</span>
+    <span class="k">if</span> <span class="n">pretrained_backbone_name</span> <span class="o">==</span> <span class="s1">&#39;mobilenet_v3_large_320&#39;</span><span class="p">:</span>
+        <span class="n">base_backbone_name</span> <span class="o">=</span> <span class="s1">&#39;mobilenet_v3_large_320&#39;</span>
+    <span class="k">elif</span> <span class="n">pretrained_backbone_name</span> <span class="o">==</span> <span class="s1">&#39;mobilenet_v3_large&#39;</span><span class="p">:</span>
+        <span class="n">base_backbone_name</span> <span class="o">=</span> <span class="s1">&#39;mobilenet_v3_large&#39;</span>
+    <span class="n">state_dict</span> <span class="o">=</span> \
+        <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">MODEL_URL_DICT</span><span class="p">[</span><span class="s1">&#39;fasterrcnn_</span><span class="si">{}</span><span class="s1">_fpn_coco&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base_backbone_name</span><span class="p">)],</span>
+                                 <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pretrained_backbone_name</span> <span class="o">==</span> <span class="s1">&#39;resnet50&#39;</span><span class="p">:</span>
+        <span class="n">overwrite_eps</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="faster_rcnn_model">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.rcnn.faster_rcnn_model">[docs]</a>
+<span class="nd">@register_detection_model_func</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">faster_rcnn_model</span><span class="p">(</span><span class="n">backbone_config</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">pretrained_backbone_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                      <span class="n">backbone_fpn_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="mi">91</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">start_ckpt_file_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Builds Faster R-CNN model.</span>
+
+<span class="sd">    :param backbone_config: backbone configuration</span>
+<span class="sd">    :type backbone_config: dict</span>
+<span class="sd">    :param pretrained: if True, returns a model pre-trained on COCO train2017 (torchvision)</span>
+<span class="sd">    :type pretrained: bool</span>
+<span class="sd">    :param pretrained_backbone_name: pretrained backbone name such as</span>
+<span class="sd">            `&#39;resnet50&#39;`, `&#39;mobilenet_v3_large_320&#39;`, and `&#39;mobilenet_v3_large&#39;`</span>
+<span class="sd">    :type pretrained_backbone_name: str</span>
+<span class="sd">    :param progress: if True, displays a progress bar of the download to stderr</span>
+<span class="sd">    :type progress: bool</span>
+<span class="sd">    :param backbone_fpn_kwargs: keyword arguments for `create_faster_rcnn_fpn`</span>
+<span class="sd">    :type backbone_fpn_kwargs: dict</span>
+<span class="sd">    :param num_classes: number of output classes of the model (including the background)</span>
+<span class="sd">    :type num_classes: int</span>
+<span class="sd">    :param analysis_config: analysis configuration</span>
+<span class="sd">    :type analysis_config: dict or None</span>
+<span class="sd">    :param start_ckpt_file_path: checkpoint file path to be loaded for the built Faster R-CNN model</span>
+<span class="sd">    :type start_ckpt_file_path: str or None</span>
+<span class="sd">    :return: Faster R-CNN model with splittable backbone model and FPN</span>
+<span class="sd">    :rtype: BaseRCNN</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">backbone_fpn_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">backbone_fpn_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">analysis_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">analysis_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="n">backbone_config</span><span class="p">[</span><span class="s1">&#39;kwargs&#39;</span><span class="p">][</span><span class="s1">&#39;norm_layer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">misc_nn_ops</span><span class="o">.</span><span class="n">FrozenBatchNorm2d</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">load_classification_model</span><span class="p">(</span><span class="n">backbone_config</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">),</span> <span class="kc">False</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">rcnn_model</span> <span class="o">=</span> <span class="n">create_faster_rcnn_fpn</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span> <span class="o">**</span><span class="n">backbone_fpn_kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">BaseRCNN</span><span class="p">(</span><span class="n">rcnn_model</span><span class="p">,</span> <span class="n">analysis_config</span><span class="o">=</span><span class="n">analysis_config</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pretrained</span> <span class="ow">and</span> <span class="n">pretrained_backbone_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;resnet50&#39;</span><span class="p">,</span> <span class="s1">&#39;mobilenet_v3_large_320&#39;</span><span class="p">,</span> <span class="s1">&#39;mobilenet_v3_large&#39;</span><span class="p">):</span>
+        <span class="n">_process_torchvision_pretrained_weights</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">pretrained_backbone_name</span><span class="p">,</span> <span class="n">progress</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">start_ckpt_file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">load_ckpt</span><span class="p">(</span><span class="n">start_ckpt_file_path</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

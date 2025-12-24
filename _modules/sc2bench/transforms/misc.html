@@ -1,0 +1,381 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.transforms.misc &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../package.html">sc2bench API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sc2bench.transforms.misc</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sc2bench.transforms.misc</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">collections</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PIL.Image</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.utils.data._utils.collate</span><span class="w"> </span><span class="kn">import</span> <span class="n">np_str_obj_array_pattern</span><span class="p">,</span> <span class="n">default_collate_err_msg_format</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">tensor_util</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchdistill.datasets.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_collate_func</span><span class="p">,</span> <span class="n">register_transform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">pad</span>
+
+<span class="n">MISC_TRANSFORM_MODULE_DICT</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="register_misc_transform_module">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.register_misc_transform_module">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">register_misc_transform_module</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Registers a miscellaneous transform class.</span>
+
+<span class="sd">    :param cls: miscellaneous transform class to be registered</span>
+<span class="sd">    :type cls: class</span>
+<span class="sd">    :return: registered miscellaneous transform class</span>
+<span class="sd">    :rtype: class</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">MISC_TRANSFORM_MODULE_DICT</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span>
+    <span class="n">register_transform</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">cls</span></div>
+
+
+
+<div class="viewcode-block" id="default_collate_w_pil">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.default_collate_w_pil">[docs]</a>
+<span class="nd">@register_collate_func</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_collate_w_pil</span><span class="p">(</span><span class="n">batch</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Puts each data field into a tensor or PIL Image with outer dimension batch size.</span>
+
+<span class="sd">    :param batch: single batch to be collated</span>
+<span class="sd">    :return: collated batch</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Extended `default_collate` function in PyTorch</span>
+
+    <span class="n">elem</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">elem_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get_worker_info</span><span class="p">()</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># If we&#39;re in a background process, concatenate directly into a</span>
+            <span class="c1"># shared memory tensor to avoid an extra copy</span>
+            <span class="n">numel</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">)</span>
+            <span class="n">storage</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">_typed_storage</span><span class="p">()</span><span class="o">.</span><span class="n">_new_shared</span><span class="p">(</span><span class="n">numel</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">elem</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">storage</span><span class="p">)</span><span class="o">.</span><span class="n">resize_</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">),</span> <span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">size</span><span class="p">()))</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">elem_type</span><span class="o">.</span><span class="vm">__module__</span> <span class="o">==</span> <span class="s1">&#39;numpy&#39;</span> <span class="ow">and</span> <span class="n">elem_type</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">!=</span> <span class="s1">&#39;str_&#39;</span> \
+            <span class="ow">and</span> <span class="n">elem_type</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">!=</span> <span class="s1">&#39;string_&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">elem_type</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;ndarray&#39;</span> <span class="ow">or</span> <span class="n">elem_type</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;memmap&#39;</span><span class="p">:</span>
+            <span class="c1"># array of string classes and object</span>
+            <span class="k">if</span> <span class="n">np_str_obj_array_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">str</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">default_collate_err_msg_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">elem</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+
+            <span class="k">return</span> <span class="n">default_collate_w_pil</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">elem</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="p">():</span>  <span class="c1"># scalars</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">batch</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">default_collate_w_pil</span><span class="p">([</span><span class="n">d</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">elem</span><span class="p">}</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="s1">&#39;_fields&#39;</span><span class="p">):</span>  <span class="c1"># namedtuple</span>
+        <span class="k">return</span> <span class="n">elem_type</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">default_collate_w_pil</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="k">for</span> <span class="n">samples</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">)))</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sequence</span><span class="p">):</span>
+        <span class="c1"># check to make sure that the elements in batch have consistent size</span>
+        <span class="n">it</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+        <span class="n">elem_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">it</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">elem</span><span class="p">)</span> <span class="o">==</span> <span class="n">elem_size</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">it</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;each element in list of batch should be of equal size&#39;</span><span class="p">)</span>
+        <span class="n">transposed</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">batch</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">default_collate_w_pil</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="k">for</span> <span class="n">samples</span> <span class="ow">in</span> <span class="n">transposed</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">elem</span><span class="p">,</span> <span class="n">Image</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">batch</span>
+
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">default_collate_err_msg_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">elem_type</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="ClearTargetTransform">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.ClearTargetTransform">[docs]</a>
+<span class="nd">@register_misc_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClearTargetTransform</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A transform module that replaces target with an empty list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ClearTargetTransform.forward">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.ClearTargetTransform.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Replaces target data field with an empty list.</span>
+
+<span class="sd">        :param sample: image or image tensor</span>
+<span class="sd">        :type sample: PIL.Image.Image or torch.Tensor</span>
+<span class="sd">        :return: sample and an empty list</span>
+<span class="sd">        :rtype: (PIL.Image.Image or torch.Tensor, list)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">sample</span><span class="p">,</span> <span class="nb">list</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AdaptivePad">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.AdaptivePad">[docs]</a>
+<span class="nd">@register_misc_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">AdaptivePad</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A transform module that adaptively determines the size of padded sample.</span>
+
+<span class="sd">    :param fill: padded value</span>
+<span class="sd">    :type fill: int</span>
+<span class="sd">    :param padding_position: &#39;hw&#39; (default) to pad left and right for padding horizontal size // 2 and top and</span>
+<span class="sd">            bottom for padding vertical size // 2; &#39;right_bottom&#39; to pad bottom and right only</span>
+<span class="sd">    :type padding_position: str</span>
+<span class="sd">    :param padding_mode: padding mode passed to pad module</span>
+<span class="sd">    :type padding_mode: str</span>
+<span class="sd">    :param factor: factor value for the padded input sample</span>
+<span class="sd">    :type factor: int</span>
+<span class="sd">    :param returns_org_patch_size: if True, returns the patch size of the original input</span>
+<span class="sd">    :type returns_org_patch_size: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">padding_position</span><span class="o">=</span><span class="s1">&#39;hw&#39;</span><span class="p">,</span> <span class="n">padding_mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                 <span class="n">factor</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">returns_org_patch_size</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding_position</span> <span class="o">=</span> <span class="n">padding_position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span> <span class="o">=</span> <span class="n">padding_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">=</span> <span class="n">factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">returns_org_patch_size</span> <span class="o">=</span> <span class="n">returns_org_patch_size</span>
+
+<div class="viewcode-block" id="AdaptivePad.forward">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.AdaptivePad.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adaptively determines the size of padded image or image tensor.</span>
+
+<span class="sd">        :param x: image or image tensor</span>
+<span class="sd">        :type x: PIL.Image.Image or torch.Tensor</span>
+<span class="sd">        :return: padded image or image tensor, and the patch size of the input (height, width)</span>
+<span class="sd">                    if returns_org_patch_size=True</span>
+<span class="sd">        :rtype: PIL.Image.Image or torch.Tensor or (PIL.Image.Image or torch.Tensor, list[int, int])</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">height</span><span class="p">,</span> <span class="n">width</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="n">vertical_pad_size</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">height</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">int</span><span class="p">((</span><span class="n">height</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">-</span> <span class="n">height</span><span class="p">)</span>
+        <span class="n">horizontal_pad_size</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">width</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">int</span><span class="p">((</span><span class="n">width</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">-</span> <span class="n">width</span><span class="p">)</span>
+        <span class="n">padded_vertical_size</span> <span class="o">=</span> <span class="n">vertical_pad_size</span> <span class="o">+</span> <span class="n">height</span>
+        <span class="n">padded_horizontal_size</span> <span class="o">=</span> <span class="n">horizontal_pad_size</span> <span class="o">+</span> <span class="n">width</span>
+        <span class="k">assert</span> <span class="n">padded_vertical_size</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">padded_horizontal_size</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> \
+            <span class="s1">&#39;padded vertical and horizontal sizes (</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">) should be &#39;</span> \
+            <span class="s1">&#39;factor of </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">padded_vertical_size</span><span class="p">,</span> <span class="n">padded_horizontal_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span><span class="p">)</span>
+        <span class="n">padding</span> <span class="o">=</span> <span class="p">[</span><span class="n">horizontal_pad_size</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">vertical_pad_size</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_position</span> <span class="o">==</span> <span class="s1">&#39;equal_side&#39;</span> \
+            <span class="k">else</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">horizontal_pad_size</span><span class="p">,</span> <span class="n">vertical_pad_size</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">padding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns_org_patch_size</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="n">width</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CustomToTensor">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.CustomToTensor">[docs]</a>
+<span class="nd">@register_misc_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomToTensor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A customized ToTensor module that can be applied to sample and target selectively.</span>
+
+<span class="sd">    :param converts_sample: if True, applies to_tensor to sample</span>
+<span class="sd">    :type converts_sample: bool</span>
+<span class="sd">    :param converts_target: if True, applies torch.as_tensor to target</span>
+<span class="sd">    :type converts_target: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">converts_sample</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">converts_target</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">converts_sample</span> <span class="o">=</span> <span class="n">converts_sample</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">converts_target</span> <span class="o">=</span> <span class="n">converts_target</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">converts_sample</span><span class="p">:</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">to_tensor</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">converts_target</span><span class="p">:</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">target</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">image</span><span class="p">,</span> <span class="n">target</span></div>
+
+
+
+<div class="viewcode-block" id="SimpleQuantizer">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.SimpleQuantizer">[docs]</a>
+<span class="nd">@register_misc_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SimpleQuantizer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A module to quantize tensor with its half() function if num_bits=16 (FP16) or</span>
+<span class="sd">    Jacob et al.&#39;s method if num_bits=8 (INT8 + one FP32 scale parameter).</span>
+
+<span class="sd">    Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, Dmitry Kalenichenko: `&quot;Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference&quot; &lt;https://openaccess.thecvf.com/content_cvpr_2018/html/Jacob_Quantization_and_Training_CVPR_2018_paper.html&gt;`_ @ CVPR 2018 (2018)</span>
+
+<span class="sd">    :param num_bits: number of bits for quantization</span>
+<span class="sd">    :type num_bits: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bits</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_bits</span> <span class="o">=</span> <span class="n">num_bits</span>
+
+<div class="viewcode-block" id="SimpleQuantizer.forward">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.SimpleQuantizer.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Quantizes tensor.</span>
+
+<span class="sd">        :param z: tensor</span>
+<span class="sd">        :type z: torch.Tensor</span>
+<span class="sd">        :return: quantized tensor</span>
+<span class="sd">        :rtype: torch.Tensor or torchdistill.common.tensor_util.QuantizedTensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">z</span><span class="o">.</span><span class="n">half</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_bits</span> <span class="o">==</span> <span class="mi">16</span> <span class="k">else</span> <span class="n">tensor_util</span><span class="o">.</span><span class="n">quantize_tensor</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_bits</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SimpleDequantizer">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.SimpleDequantizer">[docs]</a>
+<span class="nd">@register_misc_transform_module</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SimpleDequantizer</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A module to dequantize quantized tensor in FP32. If num_bits=8, it uses Jacob et al.&#39;s method.</span>
+
+<span class="sd">    Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, Dmitry Kalenichenko: `&quot;Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference&quot; &lt;https://openaccess.thecvf.com/content_cvpr_2018/html/Jacob_Quantization_and_Training_CVPR_2018_paper.html&gt;`_ @ CVPR 2018 (2018)</span>
+
+<span class="sd">    :param num_bits: number of bits used for quantization</span>
+<span class="sd">    :type num_bits: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_bits</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_bits</span> <span class="o">=</span> <span class="n">num_bits</span>
+
+<div class="viewcode-block" id="SimpleDequantizer.forward">
+<a class="viewcode-back" href="../../../subpkgs/transform.html#sc2bench.transforms.misc.SimpleDequantizer.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dequantizes quantized tensor.</span>
+
+<span class="sd">        :param z: quantized tensor</span>
+<span class="sd">        :type z: torch.Tensor or torchdistill.common.tensor_util.QuantizedTensor</span>
+<span class="sd">        :return: dequantized tensor</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">z</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_bits</span> <span class="o">==</span> <span class="mi">16</span> <span class="k">else</span> <span class="n">tensor_util</span><span class="o">.</span><span class="n">dequantize_tensor</span><span class="p">(</span><span class="n">z</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

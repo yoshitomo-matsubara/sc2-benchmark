@@ -1,0 +1,295 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.models.detection.transform &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../package.html">sc2bench API</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">sc2bench.models.detection.transform</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for sc2bench.models.detection.transform</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.detection.image_list</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImageList</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.models.detection.transform</span><span class="w"> </span><span class="kn">import</span> <span class="n">GeneralizedRCNNTransform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torchvision.transforms.functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_pil_image</span><span class="p">,</span> <span class="n">to_tensor</span><span class="p">,</span> <span class="n">crop</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">...analysis</span><span class="w"> </span><span class="kn">import</span> <span class="n">AnalyzableModule</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">...transforms.misc</span><span class="w"> </span><span class="kn">import</span> <span class="n">AdaptivePad</span>
+
+
+<div class="viewcode-block" id="RCNNTransformWithCompression">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.transform.RCNNTransformWithCompression">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RCNNTransformWithCompression</span><span class="p">(</span><span class="n">GeneralizedRCNNTransform</span><span class="p">,</span> <span class="n">AnalyzableModule</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An R-CNN Transform with codec-based or model-based compression.</span>
+
+<span class="sd">    :param transform: performs the data transformation from the inputs to feed into the model</span>
+<span class="sd">    :type transform: nn.Module</span>
+<span class="sd">    :param device: torch device</span>
+<span class="sd">    :type device: torch.device or str</span>
+<span class="sd">    :param codec_encoder_decoder: transform sequence configuration for codec</span>
+<span class="sd">    :type codec_encoder_decoder: nn.Module</span>
+<span class="sd">    :param analyzer_configs: list of analysis configurations</span>
+<span class="sd">    :type analyzer_configs: list[dict]</span>
+<span class="sd">    :param analyzes_after_compress: run analysis with `analyzer_configs` if True</span>
+<span class="sd">    :type analyzes_after_compress: bool</span>
+<span class="sd">    :param compression_model: compression model</span>
+<span class="sd">    :type compression_model: nn.Module or None</span>
+<span class="sd">    :param uses_cpu4compression_model: whether to use CPU instead of GPU for `compression_model`</span>
+<span class="sd">    :type uses_cpu4compression_model: bool</span>
+<span class="sd">    :param pre_transform: pre-transform</span>
+<span class="sd">    :type pre_transform: nn.Module or None</span>
+<span class="sd">    :param post_transform: post-transform</span>
+<span class="sd">    :type post_transform: nn.Module or None</span>
+<span class="sd">    :param adaptive_pad_kwargs: keyword arguments for AdaptivePad</span>
+<span class="sd">    :type adaptive_pad_kwargs: dict or None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Referred to https://github.com/pytorch/vision/blob/main/torchvision/models/detection/transform.py</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">codec_encoder_decoder</span><span class="p">,</span> <span class="n">analyzer_configs</span><span class="p">,</span> <span class="n">analyzes_after_compress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">compression_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">uses_cpu4compression_model</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">pre_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">post_transform</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">adaptive_pad_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">GeneralizedRCNNTransform</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transform</span><span class="o">.</span><span class="n">min_size</span><span class="p">,</span> <span class="n">transform</span><span class="o">.</span><span class="n">max_size</span><span class="p">,</span>
+                                          <span class="n">transform</span><span class="o">.</span><span class="n">image_mean</span><span class="p">,</span> <span class="n">transform</span><span class="o">.</span><span class="n">image_std</span><span class="p">)</span>
+        <span class="n">AnalyzableModule</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">analyzer_configs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">codec_encoder_decoder</span> <span class="o">=</span> <span class="n">codec_encoder_decoder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span> <span class="o">=</span> <span class="n">analyzes_after_compress</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="o">=</span> <span class="n">pre_transform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span> <span class="o">=</span> <span class="n">post_transform</span>
+        <span class="k">if</span> <span class="n">uses_cpu4compression_model</span><span class="p">:</span>
+            <span class="n">compression_model</span> <span class="o">=</span> <span class="n">compression_model</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span> <span class="o">=</span> <span class="n">compression_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uses_cpu4compression_model</span> <span class="o">=</span> <span class="n">uses_cpu4compression_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_pad</span> <span class="o">=</span> <span class="n">AdaptivePad</span><span class="p">(</span><span class="o">**</span><span class="n">adaptive_pad_kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adaptive_pad_kwargs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="RCNNTransformWithCompression.compress_by_codec">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.transform.RCNNTransformWithCompression.compress_by_codec">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compress_by_codec</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">org_img</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a tensor to an image and compress-decompress it by codec.</span>
+
+<span class="sd">        :param org_img: image tensor</span>
+<span class="sd">        :type org_img: torch.Tensor</span>
+<span class="sd">        :return: compressed-and-decompressed image tensor</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pil_img</span> <span class="o">=</span> <span class="n">to_pil_image</span><span class="p">(</span><span class="n">org_img</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;RGB&#39;</span><span class="p">)</span>
+        <span class="n">pil_img</span><span class="p">,</span> <span class="n">file_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">codec_encoder_decoder</span><span class="p">(</span><span class="n">pil_img</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">file_size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">to_tensor</span><span class="p">(</span><span class="n">pil_img</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">org_img</span><span class="o">.</span><span class="n">device</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RCNNTransformWithCompression.compress_by_model">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.transform.RCNNTransformWithCompression.compress_by_model">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compress_by_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">org_img</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a tensor to an image and compress-decompress it by model.</span>
+
+<span class="sd">        :param org_img: image tensor</span>
+<span class="sd">        :type org_img: torch.Tensor</span>
+<span class="sd">        :return: compressed-and-decompressed image tensor</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">org_img</span> <span class="o">=</span> <span class="n">org_img</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">org_height</span><span class="p">,</span> <span class="n">org_width</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_pad</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">org_height</span><span class="p">,</span> <span class="n">org_width</span> <span class="o">=</span> <span class="n">org_img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+            <span class="n">org_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_pad</span><span class="p">(</span><span class="n">org_img</span><span class="p">)</span>
+
+        <span class="n">compressed_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">org_img</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">training</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">analyzes_after_compress</span><span class="p">:</span>
+            <span class="n">compressed_data</span> <span class="o">=</span> <span class="n">compressed_obj</span> <span class="k">if</span> <span class="n">org_height</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">org_width</span> <span class="ow">is</span> <span class="kc">None</span> \
+                <span class="k">else</span> <span class="p">(</span><span class="n">compressed_obj</span><span class="p">,</span> <span class="n">org_height</span><span class="p">,</span> <span class="n">org_width</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">compressed_data</span><span class="p">)</span>
+
+        <span class="n">decompressed_obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="o">**</span><span class="n">compressed_obj</span><span class="p">)</span>
+        <span class="n">decompressed_obj</span> <span class="o">=</span> <span class="n">decompressed_obj</span><span class="p">[</span><span class="s1">&#39;x_hat&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">org_height</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">org_width</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">decompressed_obj</span> <span class="o">=</span> <span class="n">crop</span><span class="p">(</span><span class="n">decompressed_obj</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">org_height</span><span class="p">,</span> <span class="n">org_width</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">decompressed_obj</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RCNNTransformWithCompression.compress">
+<a class="viewcode-back" href="../../../../subpkgs/models.html#sc2bench.models.detection.transform.RCNNTransformWithCompression.compress">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">org_img</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply `pre_transform` to an image tensor, compress and decompress it, and apply `post_transform` to</span>
+<span class="sd">        the compressed-decompressed image tensor.</span>
+
+<span class="sd">        :param org_img: image tensor</span>
+<span class="sd">        :type org_img: torch.Tensor</span>
+<span class="sd">        :return: compressed-and-decompressed image tensor</span>
+<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">org_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_transform</span><span class="p">(</span><span class="n">org_img</span><span class="p">)</span>
+
+        <span class="n">org_device</span> <span class="o">=</span> <span class="n">org_img</span><span class="o">.</span><span class="n">device</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_cpu4compression_model</span><span class="p">:</span>
+            <span class="n">org_img</span> <span class="o">=</span> <span class="n">org_img</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+
+        <span class="n">org_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_by_codec</span><span class="p">(</span><span class="n">org_img</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_model</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress_by_model</span><span class="p">(</span><span class="n">org_img</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_cpu4compression_model</span><span class="p">:</span>
+            <span class="n">org_img</span> <span class="o">=</span> <span class="n">org_img</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">org_device</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">org_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_transform</span><span class="p">(</span><span class="n">org_img</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">org_img</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">targets</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">ImageList</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]]]:</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">img</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># make a copy of targets to avoid modifying it in-place</span>
+            <span class="c1"># once torchscript supports dict comprehension</span>
+            <span class="c1"># this can be simplified as as follows</span>
+            <span class="c1"># targets = [{k: v for k,v in t.items()} for t in targets]</span>
+            <span class="n">targets_copy</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+                <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+                <span class="n">targets_copy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets_copy</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">)):</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">target_index</span> <span class="o">=</span> <span class="n">targets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;images is expected to be a list of 3d tensors &quot;</span>
+                                 <span class="s2">&quot;of shape [C, H, W], got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+            <span class="n">image</span><span class="p">,</span> <span class="n">target_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">target_index</span><span class="p">)</span>
+            <span class="n">shape_before_compression</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+            <span class="n">shape_after_compression</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">assert</span> <span class="n">shape_after_compression</span> <span class="o">==</span> <span class="n">shape_before_compression</span><span class="p">,</span> \
+                <span class="s1">&#39;Compression should not change tensor shape </span><span class="si">{}</span><span class="s1"> -&gt; </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">shape_before_compression</span><span class="p">,</span>
+                                                                             <span class="n">shape_after_compression</span><span class="p">)</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+            <span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">image</span>
+            <span class="k">if</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">target_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">targets</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_index</span>
+
+        <span class="n">image_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">img</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">images</span><span class="p">]</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_images</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="n">image_sizes_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">image_size</span> <span class="ow">in</span> <span class="n">image_sizes</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_size</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
+            <span class="n">image_sizes_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">image_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">image_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+        <span class="n">image_list</span> <span class="o">=</span> <span class="n">ImageList</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">image_sizes_list</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">image_list</span><span class="p">,</span> <span class="n">targets</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

@@ -1,0 +1,590 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>sc2bench.transform &mdash; SC2 Benchmark v0.1.2-dev documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=3f9519be"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="sc2bench.common" href="common.html" />
+    <link rel="prev" title="sc2bench.models" href="models.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            SC2 Benchmark
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📚 Overview</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../package.html">sc2bench API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="models.html">sc2bench.models</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">sc2bench.transform</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench-transform-codec">sc2bench.transform.codec</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.codec.register_codec_transform_module"><code class="docutils literal notranslate"><span class="pre">register_codec_transform_module()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.codec.WrappedRandomResizedCrop"><code class="docutils literal notranslate"><span class="pre">WrappedRandomResizedCrop</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.codec.WrappedResize"><code class="docutils literal notranslate"><span class="pre">WrappedResize</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.codec.PILImageModule"><code class="docutils literal notranslate"><span class="pre">PILImageModule</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.codec.PILTensorModule"><code class="docutils literal notranslate"><span class="pre">PILTensorModule</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.codec.BPGModule"><code class="docutils literal notranslate"><span class="pre">BPGModule</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.codec.VTMModule"><code class="docutils literal notranslate"><span class="pre">VTMModule</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench-transform-collator">sc2bench.transform.collator</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.collator.cat_list"><code class="docutils literal notranslate"><span class="pre">cat_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.collator.pascal_seg_collate_fn"><code class="docutils literal notranslate"><span class="pre">pascal_seg_collate_fn()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.collator.pascal_seg_eval_collate_fn"><code class="docutils literal notranslate"><span class="pre">pascal_seg_eval_collate_fn()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#sc2bench-transform-misc">sc2bench.transform.misc</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.misc.register_misc_transform_module"><code class="docutils literal notranslate"><span class="pre">register_misc_transform_module()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.misc.default_collate_w_pil"><code class="docutils literal notranslate"><span class="pre">default_collate_w_pil()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.misc.ClearTargetTransform"><code class="docutils literal notranslate"><span class="pre">ClearTargetTransform</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.misc.AdaptivePad"><code class="docutils literal notranslate"><span class="pre">AdaptivePad</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.misc.CustomToTensor"><code class="docutils literal notranslate"><span class="pre">CustomToTensor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.misc.SimpleQuantizer"><code class="docutils literal notranslate"><span class="pre">SimpleQuantizer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#sc2bench.transforms.misc.SimpleDequantizer"><code class="docutils literal notranslate"><span class="pre">SimpleDequantizer</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="common.html">sc2bench.common</a></li>
+<li class="toctree-l2"><a class="reference internal" href="loss.html">sc2bench.loss</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html">sc2bench.analysis</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">🧑🏻‍💻 Research</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../projects.html">Projects</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SC2 Benchmark</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../package.html">sc2bench API</a></li>
+      <li class="breadcrumb-item active">sc2bench.transform</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/yoshitomo-matsubara/sc2-benchmark/blob/main/docs/source/subpkgs/transform.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="sc2bench-transform">
+<h1>sc2bench.transform<a class="headerlink" href="#sc2bench-transform" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<hr class="docutils" />
+<section id="sc2bench-transform-codec">
+<h2>sc2bench.transform.codec<a class="headerlink" href="#sc2bench-transform-codec" title="Link to this heading"></a></h2>
+<dl class="py function" id="module-sc2bench.transforms.codec">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.register_codec_transform_module">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.codec.</span></span><span class="sig-name descname"><span class="pre">register_codec_transform_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#register_codec_transform_module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.register_codec_transform_module" title="Link to this definition"></a></dt>
+<dd><p>Registers a codec transform class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cls</strong> (<em>class</em>) – codec transform class to be registered</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>registered codec transform class</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.WrappedRandomResizedCrop">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.codec.</span></span><span class="sig-name descname"><span class="pre">WrappedRandomResizedCrop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpolation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#WrappedRandomResizedCrop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.WrappedRandomResizedCrop" title="Link to this definition"></a></dt>
+<dd><p><cite>RandomResizedCrop</cite> in torchvision wrapped to be defined by <cite>interpolation</cite> as a str object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interpolation</strong> (<em>str</em><em> or </em><em>None</em>) – desired interpolation mode (‘nearest’, ‘bicubic’, ‘bilinear’, ‘box’, ‘hamming’, ‘lanczos’)</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – kwargs for <cite>RandomResizedCrop</cite> in torchvision</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.WrappedResize">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.codec.</span></span><span class="sig-name descname"><span class="pre">WrappedResize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interpolation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#WrappedResize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.WrappedResize" title="Link to this definition"></a></dt>
+<dd><p><cite>Resize</cite> in torchvision wrapped to be defined by <cite>interpolation</cite> as a str object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interpolation</strong> (<em>str</em><em> or </em><em>None</em>) – desired interpolation mode (‘nearest’, ‘bicubic’, ‘bilinear’, ‘box’, ‘hamming’, ‘lanczos’)</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – kwargs for <cite>Resize</cite> in torchvision</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.PILImageModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.codec.</span></span><span class="sig-name descname"><span class="pre">PILImageModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">returns_file_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">save_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#PILImageModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.PILImageModule" title="Link to this definition"></a></dt>
+<dd><p>A generalized PIL module to compress (decompress) images e.g., as part of transform pipeline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>returns_file_size</strong> (<em>bool</em>) – returns file size of compressed object in addition to PIL image if True</p></li>
+<li><p><strong>open_kwargs</strong> (<em>dict</em><em> or </em><em>None</em>) – kwargs to be used as part of <cite>Image.open(img_buffer, **open_kwargs)</cite></p></li>
+<li><p><strong>save_kwargs</strong> (<em>dict</em><em> or </em><em>None</em>) – kwargs to be used as part of <cite>Image.save(img_buffer, **save_kwargs)</cite></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.PILImageModule.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pil_img</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#PILImageModule.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.PILImageModule.forward" title="Link to this definition"></a></dt>
+<dd><p>Saves PIL Image to BytesIO and reopens the image saved in the buffer.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pil_img</strong> (<em>PIL.Image.Image</em>) – image to be transformed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Affine transformed image or with its file size if returns_file_size=True</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PIL.Image.Image or (PIL.Image.Image, int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.PILTensorModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.codec.</span></span><span class="sig-name descname"><span class="pre">PILTensorModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">returns_file_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">save_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#PILTensorModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.PILTensorModule" title="Link to this definition"></a></dt>
+<dd><p>A generalized PIL module to compress (decompress) tensors e.g., as part of transform pipeline.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>returns_file_size</strong> (<em>bool</em>) – returns file size of compressed object in addition to PIL image if True</p></li>
+<li><p><strong>open_kwargs</strong> (<em>dict</em><em> or </em><em>None</em>) – kwargs to be used as part of <cite>Image.open(img_buffer, **open_kwargs)</cite></p></li>
+<li><p><strong>save_kwargs</strong> (<em>dict</em><em> or </em><em>None</em>) – kwargs to be used as part of <cite>Image.save(img_buffer, **save_kwargs)</cite></p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.PILTensorModule.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#PILTensorModule.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.PILTensorModule.forward" title="Link to this definition"></a></dt>
+<dd><p>Splits tensor’s channels into sub-tensors (3 or fewer channels each),
+normalizes each using its min and max values, saves the normalized sub-tensor to BytesIO,
+and reopens the sub-tensor saved in the buffer to reconstruct the input tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – image tensor (C, H, W) to be transformed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Affine transformed image tensor or with its file size if returns_file_size=True</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor or (torch.Tensor, int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.BPGModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.codec.</span></span><span class="sig-name descname"><span class="pre">BPGModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decoder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ycbcr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x265'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subsampling_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'444'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bit_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'8'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returns_file_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#BPGModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.BPGModule" title="Link to this definition"></a></dt>
+<dd><p>A BPG module to compress (decompress) images e.g., as part of transform pipeline.</p>
+<p>Modified <a class="reference external" href="https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py">https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py</a></p>
+<p>Fabrice Bellard: <a class="reference external" href="https://bellard.org/bpg/">“BPG Image format”</a></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You need to manually install BPG software beforehand and confirm the encoder and decoder paths.
+For Debian machines (e.g., Ubuntu), you can use <a class="reference external" href="https://github.com/yoshitomo-matsubara/sc2-benchmark/blob/main/script/software/install_bpg.sh">this script</a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>encoder_path</strong> (<em>str</em>) – file path of BPG encoder you manually installed</p></li>
+<li><p><strong>decoder_path</strong> (<em>str</em>) – file path of BPG decoder you manually installed</p></li>
+<li><p><strong>color_mode</strong> (<em>str</em>) – color mode (‘ycbcr’ or ‘rgb’)</p></li>
+<li><p><strong>encoder</strong> (<em>str</em>) – encoder type (‘x265’ or ‘jctvc’)</p></li>
+<li><p><strong>subsampling_mode</strong> (<em>str</em><em> or </em><em>int</em>) – subsampling mode (‘420’ or ‘444’)</p></li>
+<li><p><strong>bit_depth</strong> (<em>str</em><em> or </em><em>int</em>) – bit depth (8 or 10)</p></li>
+<li><p><strong>quality</strong> (<em>int</em>) – quality value in range [0, 51]</p></li>
+<li><p><strong>returns_file_size</strong> (<em>bool</em>) – returns file size of compressed object in addition to PIL image if True</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.BPGModule.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pil_img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#BPGModule.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.BPGModule.forward" title="Link to this definition"></a></dt>
+<dd><p>Compresses and decompresses PIL Image using BPG software.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pil_img</strong> (<em>PIL.Image.Image</em>) – image to be transformed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Affine transformed image or with its file size if returns_file_size=True</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PIL.Image.Image or (PIL.Image.Image, int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.VTMModule">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.codec.</span></span><span class="sig-name descname"><span class="pre">VTMModule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">encoder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decoder_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ycbcr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quality</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">63</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returns_file_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#VTMModule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.VTMModule" title="Link to this definition"></a></dt>
+<dd><p>A VTM module to compress (decompress) images e.g., as part of transform pipeline.</p>
+<p>Modified <a class="reference external" href="https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py">https://github.com/InterDigitalInc/CompressAI/blob/master/compressai/utils/bench/codecs.py</a></p>
+<p>The Joint Video Exploration Team: <a class="reference external" href="https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM">“VTM reference software for VVC”</a></p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>You need to manually install VTM software beforehand and confirm the encoder and decoder paths.
+For Debian machines (e.g., Ubuntu), you can use <a class="reference external" href="https://github.com/yoshitomo-matsubara/sc2-benchmark/blob/main/script/software/install_vtm.sh">this script</a>.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>encoder_path</strong> (<em>str</em>) – file path of VTM encoder you manually installed</p></li>
+<li><p><strong>decoder_path</strong> (<em>str</em>) – file path of VTM decoder you manually installed</p></li>
+<li><p><strong>config_path</strong> (<em>str</em>) – VTM configuration file path</p></li>
+<li><p><strong>color_mode</strong> (<em>str</em>) – color mode (‘ycbcr’ or ‘rgb’)</p></li>
+<li><p><strong>quality</strong> (<em>int</em>) – quality value in range [0, 63]</p></li>
+<li><p><strong>returns_file_size</strong> (<em>bool</em>) – returns file size of compressed object in addition to PIL image if True</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.transforms.codec.VTMModule.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pil_img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/codec.html#VTMModule.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.codec.VTMModule.forward" title="Link to this definition"></a></dt>
+<dd><p>Compresses and decompresses PIL Image using VTM software.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>pil_img</strong> (<em>PIL.Image.Image</em>) – image to be transformed.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Affine transformed image or with its file size if returns_file_size=True</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PIL.Image.Image or (PIL.Image.Image, int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="sc2bench-transform-collator">
+<h2>sc2bench.transform.collator<a class="headerlink" href="#sc2bench-transform-collator" title="Link to this heading"></a></h2>
+<dl class="py function" id="module-sc2bench.transforms.collator">
+<dt class="sig sig-object py" id="sc2bench.transforms.collator.cat_list">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.collator.</span></span><span class="sig-name descname"><span class="pre">cat_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/collator.html#cat_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.collator.cat_list" title="Link to this definition"></a></dt>
+<dd><p>Concatenates a list of images with the max size for each of heights and widths and
+fills empty spaces with a specified value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>images</strong> (<em>torch.Tensor</em>) – batch tensor</p></li>
+<li><p><strong>fill_value</strong> (<em>int</em>) – value to be filled</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>backbone model</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sc2bench.transforms.collator.pascal_seg_collate_fn">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.collator.</span></span><span class="sig-name descname"><span class="pre">pascal_seg_collate_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/collator.html#pascal_seg_collate_fn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.collator.pascal_seg_collate_fn" title="Link to this definition"></a></dt>
+<dd><p>Collates input data for PASCAL VOC 2012 segmentation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>batch</strong> (<em>list</em><em> or </em><em>tuple</em>) – list/tuple of triplets (image, target, supp_dict), where supp_dict can be an empty dict</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>collated images, targets, and supplementary dicts</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(torch.Tensor, tensor.Tensor, list[dict])</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sc2bench.transforms.collator.pascal_seg_eval_collate_fn">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.collator.</span></span><span class="sig-name descname"><span class="pre">pascal_seg_eval_collate_fn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/collator.html#pascal_seg_eval_collate_fn"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.collator.pascal_seg_eval_collate_fn" title="Link to this definition"></a></dt>
+<dd><p>Collates input data for PASCAL VOC 2012 segmentation in evaluation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>batch</strong> (<em>list</em><em> or </em><em>tuple</em>) – list/tuple of tuples (image, target)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>collated images and targets</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(torch.Tensor, tensor.Tensor)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<hr class="docutils" />
+<section id="sc2bench-transform-misc">
+<h2>sc2bench.transform.misc<a class="headerlink" href="#sc2bench-transform-misc" title="Link to this heading"></a></h2>
+<dl class="py function" id="module-sc2bench.transforms.misc">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.register_misc_transform_module">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.misc.</span></span><span class="sig-name descname"><span class="pre">register_misc_transform_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#register_misc_transform_module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.register_misc_transform_module" title="Link to this definition"></a></dt>
+<dd><p>Registers a miscellaneous transform class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>cls</strong> (<em>class</em>) – miscellaneous transform class to be registered</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>registered miscellaneous transform class</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>class</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.default_collate_w_pil">
+<span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.misc.</span></span><span class="sig-name descname"><span class="pre">default_collate_w_pil</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#default_collate_w_pil"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.default_collate_w_pil" title="Link to this definition"></a></dt>
+<dd><p>Puts each data field into a tensor or PIL Image with outer dimension batch size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>batch</strong> – single batch to be collated</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>collated batch</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.ClearTargetTransform">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.misc.</span></span><span class="sig-name descname"><span class="pre">ClearTargetTransform</span></span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#ClearTargetTransform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.ClearTargetTransform" title="Link to this definition"></a></dt>
+<dd><p>A transform module that replaces target with an empty list.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.ClearTargetTransform.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#ClearTargetTransform.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.ClearTargetTransform.forward" title="Link to this definition"></a></dt>
+<dd><p>Replaces target data field with an empty list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>sample</strong> (<em>PIL.Image.Image</em><em> or </em><em>torch.Tensor</em>) – image or image tensor</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>sample and an empty list</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>(PIL.Image.Image or torch.Tensor, list)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.AdaptivePad">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.misc.</span></span><span class="sig-name descname"><span class="pre">AdaptivePad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fill</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding_position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'hw'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">128</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returns_org_patch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#AdaptivePad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.AdaptivePad" title="Link to this definition"></a></dt>
+<dd><p>A transform module that adaptively determines the size of padded sample.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fill</strong> (<em>int</em>) – padded value</p></li>
+<li><p><strong>padding_position</strong> (<em>str</em>) – ‘hw’ (default) to pad left and right for padding horizontal size // 2 and top and
+bottom for padding vertical size // 2; ‘right_bottom’ to pad bottom and right only</p></li>
+<li><p><strong>padding_mode</strong> (<em>str</em>) – padding mode passed to pad module</p></li>
+<li><p><strong>factor</strong> (<em>int</em>) – factor value for the padded input sample</p></li>
+<li><p><strong>returns_org_patch_size</strong> (<em>bool</em>) – if True, returns the patch size of the original input</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.AdaptivePad.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#AdaptivePad.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.AdaptivePad.forward" title="Link to this definition"></a></dt>
+<dd><p>Adaptively determines the size of padded image or image tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>PIL.Image.Image</em><em> or </em><em>torch.Tensor</em>) – image or image tensor</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>padded image or image tensor, and the patch size of the input (height, width)
+if returns_org_patch_size=True</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>PIL.Image.Image or torch.Tensor or (PIL.Image.Image or torch.Tensor, list[int, int])</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.CustomToTensor">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.misc.</span></span><span class="sig-name descname"><span class="pre">CustomToTensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">converts_sample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">converts_target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#CustomToTensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.CustomToTensor" title="Link to this definition"></a></dt>
+<dd><p>A customized ToTensor module that can be applied to sample and target selectively.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>converts_sample</strong> (<em>bool</em>) – if True, applies to_tensor to sample</p></li>
+<li><p><strong>converts_target</strong> (<em>bool</em>) – if True, applies torch.as_tensor to target</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.SimpleQuantizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.misc.</span></span><span class="sig-name descname"><span class="pre">SimpleQuantizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_bits</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#SimpleQuantizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.SimpleQuantizer" title="Link to this definition"></a></dt>
+<dd><p>A module to quantize tensor with its half() function if num_bits=16 (FP16) or
+Jacob et al.’s method if num_bits=8 (INT8 + one FP32 scale parameter).</p>
+<p>Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, Dmitry Kalenichenko: <a class="reference external" href="https://openaccess.thecvf.com/content_cvpr_2018/html/Jacob_Quantization_and_Training_CVPR_2018_paper.html">“Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference”</a> &#64; CVPR 2018 (2018)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_bits</strong> (<em>int</em>) – number of bits for quantization</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.SimpleQuantizer.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#SimpleQuantizer.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.SimpleQuantizer.forward" title="Link to this definition"></a></dt>
+<dd><p>Quantizes tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>z</strong> (<em>torch.Tensor</em>) – tensor</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>quantized tensor</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor or torchdistill.common.tensor_util.QuantizedTensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.SimpleDequantizer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">sc2bench.transforms.misc.</span></span><span class="sig-name descname"><span class="pre">SimpleDequantizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_bits</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#SimpleDequantizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.SimpleDequantizer" title="Link to this definition"></a></dt>
+<dd><p>A module to dequantize quantized tensor in FP32. If num_bits=8, it uses Jacob et al.’s method.</p>
+<p>Benoit Jacob, Skirmantas Kligys, Bo Chen, Menglong Zhu, Matthew Tang, Andrew Howard, Hartwig Adam, Dmitry Kalenichenko: <a class="reference external" href="https://openaccess.thecvf.com/content_cvpr_2018/html/Jacob_Quantization_and_Training_CVPR_2018_paper.html">“Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference”</a> &#64; CVPR 2018 (2018)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>num_bits</strong> (<em>int</em>) – number of bits used for quantization</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="sc2bench.transforms.misc.SimpleDequantizer.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/sc2bench/transforms/misc.html#SimpleDequantizer.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#sc2bench.transforms.misc.SimpleDequantizer.forward" title="Link to this definition"></a></dt>
+<dd><p>Dequantizes quantized tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>z</strong> (<em>torch.Tensor</em><em> or </em><em>torchdistill.common.tensor_util.QuantizedTensor</em>) – quantized tensor</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>dequantized tensor</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="models.html" class="btn btn-neutral float-left" title="sc2bench.models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="common.html" class="btn btn-neutral float-right" title="sc2bench.common" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Yoshitomo Matsubara.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-39T9X4DN85"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-39T9X4DN85', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>
